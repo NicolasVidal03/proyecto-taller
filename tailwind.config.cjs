@@ -1,7 +1,7 @@
 module.exports = {
   content: [
     './index.html',
-    './src/**/*.{ts,tsx}',
+    './src-new/**/*.{ts,tsx}',
   ],
   theme: {
     extend: {

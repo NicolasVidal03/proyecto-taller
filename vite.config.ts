@@ -6,9 +6,10 @@ export default defineConfig({
   plugins: [react()],
   resolve: {
     alias: {
-      '@app': path.resolve(__dirname, 'src/app'),
-      '@modules': path.resolve(__dirname, 'src/modules'),
-      '@shared': path.resolve(__dirname, 'src/shared'),
+      '@domain': path.resolve(__dirname, 'src-new/domain'),
+      '@application': path.resolve(__dirname, 'src-new/application'),
+      '@infrastructure': path.resolve(__dirname, 'src-new/infrastructure'),
+      '@presentation': path.resolve(__dirname, 'src-new/presentation'),
     },
   },
   server: {
