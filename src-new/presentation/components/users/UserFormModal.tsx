@@ -33,6 +33,7 @@ type FormState = {
   branchId: string;
   role: AssignableRole;
   password: string;
+  confirmPassword: string;
 };
 
 type UserFormModalProps = {
@@ -54,6 +55,7 @@ const emptyForm: FormState = {
   branchId: '',
   role: defaultRole,
   password: '',
+  confirmPassword: '',
 };
 
 const UserFormModal: React.FC<UserFormModalProps> = ({ open, mode, initialUser, submitting, onClose, onSubmit }) => {
@@ -66,11 +68,10 @@ const UserFormModal: React.FC<UserFormModalProps> = ({ open, mode, initialUser, 
   useEffect(() => {
     if (!open) return;
     if (mode === 'edit' && initialUser) {
-      // parse ci into main and ext if it contains a dash
       const rawCi = initialUser.ci ?? '';
       const [mainPart, extPart] = rawCi.includes('-') ? rawCi.split('-', 2) : [rawCi, ''];
       setForm({
-        username: initialUser.username,
+        username: initialUser.userName,
         ciMain: mainPart,
         ciExt: extPart,
         names: initialUser.names,
@@ -79,6 +80,7 @@ const UserFormModal: React.FC<UserFormModalProps> = ({ open, mode, initialUser, 
         branchId: initialUser.branchId != null ? String(initialUser.branchId) : '',
         role: initialUser.role === 'super_admin' ? defaultRole : (initialUser.role as AssignableRole),
         password: '',
+        confirmPassword: '',
       });
     } else {
       setForm(emptyForm);
@@ -101,8 +103,17 @@ const UserFormModal: React.FC<UserFormModalProps> = ({ open, mode, initialUser, 
     const { name, value } = event.target as HTMLInputElement;
     let nextValue = value;
     // Force uppercase for name fields and CI extension
-    if (name === 'names' || name === 'lastName' || name === 'secondLastName' || name === 'ciExt') {
-      nextValue = value.toUpperCase();
+    if (name === 'names' || name === 'lastName' || name === 'secondLastName') {
+      // Allow only letters and spaces, convert to uppercase
+      nextValue = value.replace(/[^A-Za-z\s]/g, '').toUpperCase();
+    }
+    if (name === 'ciMain') {
+      // Allow only digits and limit to 7 characters
+      nextValue = value.replace(/\D/g, '').slice(0, 7);
+    }
+    if (name === 'ciExt') {
+      // Allow only digit(s) and letters, limit to 2 chars (one digit + one letter)
+      nextValue = value.replace(/[^0-9a-zA-Z]/g, '').slice(0, 2).toUpperCase();
     }
     setForm(prev => ({ ...prev, [name]: nextValue }));
   };
@@ -111,6 +122,8 @@ const UserFormModal: React.FC<UserFormModalProps> = ({ open, mode, initialUser, 
     const nextErrors: Record<string, string> = {};
     if (!form.username.trim()) nextErrors.username = 'El usuario es obligatorio';
     if (!form.ciMain.trim()) nextErrors.ciMain = 'La cédula (CI) es obligatoria';
+    // ciMain must be digits only and max 7
+    if (form.ciMain && !/^\d{1,7}$/.test(form.ciMain)) nextErrors.ciMain = 'CI inválida (solo hasta 7 dígitos)';
     if (!form.names.trim()) nextErrors.names = 'El nombre es obligatorio';
     if (!form.lastName.trim()) nextErrors.lastName = 'El apellido es obligatorio';
     if (!form.branchId.trim()) nextErrors.branchId = 'La sucursal es obligatoria';
@@ -123,11 +136,24 @@ const UserFormModal: React.FC<UserFormModalProps> = ({ open, mode, initialUser, 
     if (mode === 'create' && !form.password.trim()) {
       nextErrors.password = 'La contraseña es obligatoria';
     }
-    // validate ciExt if provided: must be number(s) followed by a single letter, e.g. '1b'
-    if (form.ciExt.trim()) {
-      const re = /^\d+[a-zA-Z]$/;
-      if (!re.test(form.ciExt.trim())) nextErrors.ciExt = 'Formato de ext inválido (ej: 1b)';
+    if (mode === 'create') {
+      if (!form.confirmPassword.trim()) {
+        nextErrors.confirmPassword = 'Confirma la contraseña';
+      } else if (form.password.trim() !== form.confirmPassword.trim()) {
+        nextErrors.confirmPassword = 'Las contraseñas no coinciden';
+      }
     }
+    // validate ciExt if provided: must be exactly one digit and one letter, e.g. '1B'
+    if (form.ciExt.trim()) {
+      const re = /^\d[a-zA-Z]$/;
+      if (!re.test(form.ciExt.trim())) nextErrors.ciExt = 'Formato de ext inválido (ej: 1B)';
+    }
+
+    // Names / last names must contain only letters and spaces
+    const nameRe = /^[A-Z\s]+$/;
+    if (form.names && !nameRe.test(form.names)) nextErrors.names = 'El nombre sólo puede contener letras';
+    if (form.lastName && !nameRe.test(form.lastName)) nextErrors.lastName = 'El apellido sólo puede contener letras';
+    if (form.secondLastName && !nameRe.test(form.secondLastName)) nextErrors.secondLastName = 'El segundo apellido sólo puede contener letras';
     setErrors(nextErrors);
     return Object.keys(nextErrors).length === 0;
   };
@@ -235,7 +261,7 @@ const UserFormModal: React.FC<UserFormModalProps> = ({ open, mode, initialUser, 
               onChange={handleChange}
               className={`mt-1 block w-full rounded-lg border px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500 ${errors.secondLastName ? 'border-red-500' : 'border-lead-300 bg-white'}`}
               placeholder="Fernández"
-              disabled={submitting}
+                disabled={submitting || mode === 'edit'}
             />
             {errors.secondLastName ? <p className="mt-1 text-xs text-red-600">{errors.secondLastName}</p> : null}
           </div>
@@ -282,27 +308,43 @@ const UserFormModal: React.FC<UserFormModalProps> = ({ open, mode, initialUser, 
               onChange={handleChange}
               className={`mt-1 block w-full rounded-lg border px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500 ${errors.username ? 'border-red-500' : 'border-lead-300 bg-white'}`}
               placeholder="usuario.unico"
-              disabled={submitting}
+              disabled={submitting || mode === 'edit'}
             />
             {errors.username ? <p className="mt-1 text-xs text-red-600">{errors.username}</p> : null}
           </div>
+          {mode === 'create' && (
+            <div>
+              <label htmlFor="password" className="block text-sm font-medium text-lead-700">Contraseña</label>
+              <input
+                id="password"
+                name="password"
+                type="password"
+                value={form.password}
+                onChange={handleChange}
+                className={`mt-1 block w-full rounded-lg border px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500 ${errors.password ? 'border-red-500' : 'border-lead-300 bg-white'}`}
+                placeholder="••••••••"
+                disabled={submitting}
+              />
+              {errors.password ? <p className="mt-1 text-xs text-red-600">{errors.password}</p> : null}
+            </div>
+          )}
 
-          <div>
-            <label htmlFor="password" className="block text-sm font-medium text-lead-700">
-              {mode === 'create' ? 'Contraseña' : 'Nueva contraseña (dejar vacío para no cambiar)'}
-            </label>
-            <input
-              id="password"
-              name="password"
-              type="password"
-              value={form.password}
-              onChange={handleChange}
-              className={`mt-1 block w-full rounded-lg border px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500 ${errors.password ? 'border-red-500' : 'border-lead-300 bg-white'}`}
-              placeholder="••••••••"
-              disabled={submitting}
-            />
-            {errors.password ? <p className="mt-1 text-xs text-red-600">{errors.password}</p> : null}
-          </div>
+          {mode === 'create' && (
+            <div>
+              <label htmlFor="confirmPassword" className="block text-sm font-medium text-lead-700">Confirmar contraseña</label>
+              <input
+                id="confirmPassword"
+                name="confirmPassword"
+                type="password"
+                value={form.confirmPassword}
+                onChange={handleChange}
+                className={`mt-1 block w-full rounded-lg border px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500 ${errors.confirmPassword ? 'border-red-500' : 'border-lead-300 bg-white'}`}
+                placeholder="••••••••"
+                disabled={submitting}
+              />
+              {errors.confirmPassword ? <p className="mt-1 text-xs text-red-600">{errors.confirmPassword}</p> : null}
+            </div>
+          )}
           <div className="flex justify-end gap-3 pt-4 border-t border-lead-100">
             <button
               type="button"

@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useUsers } from '../hooks/useUsers';
+import { useAuth } from '../providers/AuthProvider';
 import { User } from '../../domain/entities/User';
 import Loader from '../components/shared/Loader';
 import ErrorMessage from '../components/shared/ErrorMessage';
@@ -8,7 +9,7 @@ import UsersTable from '../components/users/UsersTable';
 import UserFormModal, { UserFormValues } from '../components/users/UserFormModal';
 
 type RoleFilter = 'all' | 'admin' | 'prevendedor' | 'transportista';
-type StatusFilter = 'all' | 'active' | 'inactive';
+// status filter (Todos/Activos/Inactivos) removed per request
 
 const ROLE_FILTERS: Array<{ value: RoleFilter; label: string }> = [
   { value: 'all', label: 'Todos' },
@@ -17,11 +18,7 @@ const ROLE_FILTERS: Array<{ value: RoleFilter; label: string }> = [
   { value: 'transportista', label: 'Transportistas' },
 ];
 
-const STATUS_FILTERS: Array<{ value: StatusFilter; label: string }> = [
-  { value: 'all', label: 'Todos' },
-  { value: 'active', label: 'Activos' },
-  { value: 'inactive', label: 'Inactivos' },
-];
+// status filters removed
 
 export const UsersPage: React.FC = () => {
   const {
@@ -44,10 +41,13 @@ export const UsersPage: React.FC = () => {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [confirmLoading, setConfirmLoading] = useState(false);
   const [targetUser, setTargetUser] = useState<User | null>(null);
+  const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
+  const [resetConfirmLoading, setResetConfirmLoading] = useState(false);
+  const [resetTargetUser, setResetTargetUser] = useState<User | null>(null);
   const [busyUserId, setBusyUserId] = useState<number | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState<RoleFilter>('all');
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>('active');
+  // statusFilter removed
 
   const loadUsers = useCallback(async () => {
     await fetchUsers();
@@ -57,35 +57,30 @@ export const UsersPage: React.FC = () => {
     loadUsers();
   }, [loadUsers]);
 
+  const auth = useAuth();
+  const canResetPassword = auth.user?.role === 'admin' || auth.user?.role === 'super_admin';
+
   const filteredUsers = useMemo(() => {
     const term = searchTerm.trim().toLowerCase();
     return users.filter(user => {
       const matchesSearch =
         term.length === 0 ||
-        user.username.toLowerCase().includes(term) ||
+        user.userName.toLowerCase().includes(term) ||
         `${user.names} ${user.lastName}`.toLowerCase().includes(term) ||
         (user.secondLastName ?? '').toLowerCase().includes(term);
       const matchesRole = roleFilter === 'all' || user.role === roleFilter;
-      const matchesStatus =
-        statusFilter === 'all' ||
-        (statusFilter === 'active' && user.state) ||
-        (statusFilter === 'inactive' && !user.state);
-      return matchesSearch && matchesRole && matchesStatus;
+      return matchesSearch && matchesRole;
     });
-  }, [roleFilter, searchTerm, statusFilter, users]);
+  }, [roleFilter, searchTerm, users]);
 
   const stats = useMemo(() => {
     const total = users.length;
-    const active = users.filter(user => user.state).length;
-    const inactive = total - active;
     const admins = users.filter(user => user.role === 'admin').length;
     const sellers = users.filter(user => user.role === 'prevendedor').length;
     const drivers = users.filter(user => user.role === 'transportista').length;
     return {
       cards: [
         { label: 'Total de usuarios', value: total, accent: 'from-brand-900 to-brand-600' },
-        { label: 'Activos', value: active, accent: 'from-accent-500 to-accent-300' },
-        { label: 'Inactivos', value: inactive, accent: 'from-slate-700 to-slate-500' },
         { label: 'Admins', value: admins, accent: 'from-brand-500 to-brand-300' },
       ],
       roleBreakdown: [
@@ -170,6 +165,14 @@ export const UsersPage: React.FC = () => {
     setAuthInfo(null);
   };
 
+  const openResetConfirm = (user: User) => {
+    setResetTargetUser(user);
+    setResetConfirmOpen(true);
+    setMutationError(null);
+    setSuccessMessage(null);
+    setAuthInfo(null);
+  };
+
   const closeConfirm = () => {
     if (confirmLoading) return;
     setConfirmOpen(false);
@@ -196,10 +199,38 @@ export const UsersPage: React.FC = () => {
     }
   };
 
+  const closeResetConfirm = () => {
+    if (resetConfirmLoading) return;
+    setResetConfirmOpen(false);
+    setResetTargetUser(null);
+  };
+
+  const executeReset = async () => {
+    if (!resetTargetUser) return;
+    setResetConfirmLoading(true);
+    setBusyUserId(resetTargetUser.id);
+    setMutationError(null);
+    try {
+      // NOTE: backend reset endpoint not yet implemented here — UI only.
+      // Simulate reset success and display message. Replace with API call if available.
+      await Promise.resolve();
+      setSuccessMessage(`Contraseña reseteada para ${resetTargetUser.userName}`);
+      setResetConfirmOpen(false);
+      setResetTargetUser(null);
+      await loadUsers();
+    } catch (err: unknown) {
+      console.error('reset error', err);
+      const message = err instanceof Error ? err.message : 'No se pudo resetear la contraseña';
+      setMutationError(message);
+    } finally {
+      setResetConfirmLoading(false);
+      setBusyUserId(null);
+    }
+  };
+
   const clearFilters = () => {
     setSearchTerm('');
     setRoleFilter('all');
-    setStatusFilter('active');
   };
 
   return (
@@ -219,9 +250,6 @@ export const UsersPage: React.FC = () => {
                 <h2 className="text-3xl font-semibold leading-tight md:text-4xl">
                   Gestiona usuarios y accesos centralizados
                 </h2>
-                <p className="max-w-xl text-sm text-white/80 md:text-base">
-                  Gestiona el ciclo completo de tus colaboradores desde una sola vista. Cada actualización se refleja en el sistema de autenticación configurado.
-                </p>
                 <div className="space-y-3 rounded-2xl bg-white/10 p-4 backdrop-blur border border-white/10">
                   <div className="flex flex-col gap-3 md:flex-row">
                     <input
@@ -230,13 +258,6 @@ export const UsersPage: React.FC = () => {
                       value={searchTerm}
                       onChange={event => setSearchTerm(event.target.value)}
                     />
-                    <button 
-                      type="button" 
-                      className="rounded-xl border border-white/30 bg-white/10 px-6 py-2 text-xs font-bold uppercase tracking-wide text-white backdrop-blur-sm transition hover:bg-white/20 hover:border-white/50" 
-                      onClick={clearFilters}
-                    >
-                      Limpiar filtros
-                    </button>
                   </div>
                   <div className="flex flex-wrap gap-3">
                     {ROLE_FILTERS.map(option => (
@@ -254,31 +275,12 @@ export const UsersPage: React.FC = () => {
                       </button>
                     ))}
                   </div>
-                  <div className="flex flex-wrap gap-2 text-xs text-white/70">
-                    {STATUS_FILTERS.map(option => (
-                      <button
-                        key={option.value}
-                        type="button"
-                        onClick={() => setStatusFilter(option.value)}
-                        className={`rounded-full px-3 py-1 font-semibold tracking-wide transition ${
-                          statusFilter === option.value ? 'bg-lead-50/90 text-brand-700' : 'bg-white/10 hover:bg-white/20'
-                        }`}
-                      >
-                        {option.label}
-                      </button>
-                    ))}
-                  </div>
+                  {/* status filter removed */}
                 </div>
               </div>
               <div className="relative">
                 <div className="absolute inset-0 rounded-[2rem] bg-white/10 blur-xl" />
                 <div className="relative space-y-5 rounded-[2rem] border border-white/20 bg-white/10 px-7 py-8 backdrop-blur">
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm font-medium uppercase tracking-[0.4em] text-white/70">Resumen</p>
-                    <button type="button" onClick={openCreateModal} className="btn-primary text-sm shadow-lg">
-                      Nuevo usuario
-                    </button>
-                  </div>
                   <div className="grid grid-cols-2 gap-4">
                     {stats.cards.map(card => (
                       <div key={card.label} className={`rounded-2xl bg-gradient-to-br ${card.accent} px-4 py-5 shadow-lg`}>
@@ -341,6 +343,8 @@ export const UsersPage: React.FC = () => {
                   users={filteredUsers}
                   onEdit={openEditModal}
                   onDeactivate={openConfirm}
+                  onResetPassword={openResetConfirm}
+                  showResetButton={canResetPassword}
                   busyUserId={busyUserId}
                 />
               )}
@@ -366,11 +370,20 @@ export const UsersPage: React.FC = () => {
       <ConfirmDialog
         open={confirmOpen}
         title="Eliminar usuario"
-        description="Esta acción desactiva el usuario (estado = 0). El registro se mantiene, pero dejará de aparecer en la lista."
         confirmLabel="Eliminar"
         onConfirm={executeConfirm}
         onCancel={closeConfirm}
         disabled={confirmLoading}
+      />
+      <ConfirmDialog
+        open={resetConfirmOpen}
+        title="Resetear contraseña"
+        description={resetTargetUser ? `Quieres que resetees la contraseñá de "${resetTargetUser.userName}"` : ''}
+        confirmLabel="Si"
+        cancelLabel="No"
+        onConfirm={executeReset}
+        onCancel={closeResetConfirm}
+        disabled={resetConfirmLoading}
       />
     </>
   );

@@ -24,7 +24,4 @@ export class UserService {
     return this.userRepo.update(id, { state } as any);
   }
 
-  async delete(id: number): Promise<void> {
-    return this.userRepo.delete(id);
-  }
 }

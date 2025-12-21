@@ -23,7 +23,6 @@ export const CategoriesPage: React.FC = () => {
   const [confirmDelete, setConfirmDelete] = useState<Category | null>(null);
   const [saving, setSaving] = useState(false);
   const [busyId, setBusyId] = useState<number | null>(null);
-  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
   const [search, setSearch] = useState('');
 
   useEffect(() => {
@@ -33,14 +32,12 @@ export const CategoriesPage: React.FC = () => {
   /* ───────── Filtros ───────── */
   const filtered = useMemo(() => {
     let list = categories;
-    if (statusFilter === 'active') list = list.filter(c => c.state);
-    if (statusFilter === 'inactive') list = list.filter(c => !c.state);
     if (search.trim()) {
       const s = search.toLowerCase();
       list = list.filter(c => c.name.toLowerCase().includes(s) || (c.description ?? '').toLowerCase().includes(s));
     }
     return list;
-  }, [categories, statusFilter, search]);
+  }, [categories, search]);
 
   /* ───────── Stats ───────── */
   const totalActive = categories.filter(c => c.state).length;
@@ -125,15 +122,7 @@ export const CategoriesPage: React.FC = () => {
               onChange={(e) => setSearch(e.target.value)}
               className="input flex-1 min-w-[200px]"
             />
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value as 'all' | 'active' | 'inactive')}
-              className="input w-auto"
-            >
-              <option value="all">Todos los estados</option>
-              <option value="active">Activos</option>
-              <option value="inactive">Inactivos</option>
-            </select>
+            {/* status filter removed */}
           </div>
         </section>
 

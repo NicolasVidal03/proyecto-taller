@@ -23,7 +23,5 @@ export class HttpUserRepository implements IUserRepository {
     return res.data.user;
   }
 
-  async delete(id: number): Promise<void> {
-    await http.delete(`/users/${id}`);
-  }
+  
 }

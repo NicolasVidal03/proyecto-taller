@@ -12,7 +12,6 @@ export interface UseUsersReturn {
   createUser: (data: CreateUserDTO) => Promise<User | null>;
   updateUser: (id: number, data: UpdateUserDTO) => Promise<User | null>;
   updateUserState: (id: number, state: boolean) => Promise<boolean>;
-  deleteUser: (id: number) => Promise<boolean>;
 }
 
 export const useUsers = (): UseUsersReturn => {
@@ -88,20 +87,7 @@ export const useUsers = (): UseUsersReturn => {
     }
   }, []);
 
-  const deleteUser = useCallback(async (id: number): Promise<boolean> => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      await container.users.delete(id);
-      setUsers(prev => prev.filter(u => u.id !== id));
-      return true;
-    } catch (err: any) {
-      setError(err?.message || 'Error al eliminar usuario');
-      return false;
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+ 
 
   return {
     users,
@@ -112,6 +98,5 @@ export const useUsers = (): UseUsersReturn => {
     createUser,
     updateUser,
     updateUserState,
-    deleteUser,
   };
 };

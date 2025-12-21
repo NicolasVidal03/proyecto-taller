@@ -28,7 +28,6 @@ export const InventoryPage: React.FC = () => {
   const [confirmDelete, setConfirmDelete] = useState<ProductSupplier | null>(null);
   const [saving, setSaving] = useState(false);
   const [busyId, setBusyId] = useState<number | null>(null);
-  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
   const [search, setSearch] = useState('');
 
   /* Form state */
@@ -49,8 +48,6 @@ export const InventoryPage: React.FC = () => {
   /* ───────── Filtros ───────── */
   const filtered = useMemo(() => {
     let list = productSuppliers;
-    if (statusFilter === 'active') list = list.filter(ps => ps.state);
-    if (statusFilter === 'inactive') list = list.filter(ps => !ps.state);
     if (search.trim()) {
       const q = search.toLowerCase();
       list = list.filter(ps =>
@@ -59,7 +56,7 @@ export const InventoryPage: React.FC = () => {
       );
     }
     return list;
-  }, [productSuppliers, statusFilter, search, products, suppliers]);
+  }, [productSuppliers, search, products, suppliers]);
 
   /* ───────── Stats ───────── */
   const totalActive = productSuppliers.filter(ps => ps.state).length;
@@ -174,15 +171,7 @@ export const InventoryPage: React.FC = () => {
               onChange={(e) => setSearch(e.target.value)}
               className="input flex-1 min-w-[200px]"
             />
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value as 'all' | 'active' | 'inactive')}
-              className="input w-auto"
-            >
-              <option value="all">Todos los estados</option>
-              <option value="active">Activos</option>
-              <option value="inactive">Inactivos</option>
-            </select>
+            {/* status filter removed */}
           </div>
         </section>
 
@@ -205,7 +194,7 @@ export const InventoryPage: React.FC = () => {
                       <th className="px-4 py-4 text-left font-semibold">Proveedor</th>
                       <th className="px-4 py-4 text-left font-semibold">Precio Acordado</th>
                       <th className="px-4 py-4 text-left font-semibold">Estado</th>
-                      <th className="w-40 px-4 py-4 text-left font-semibold">Acciones</th>
+                      <th className="w-40 px-4 py-4 text-center align-middle font-semibold">Acciones</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-lead-200">
@@ -220,7 +209,7 @@ export const InventoryPage: React.FC = () => {
                             {ps.state ? 'Activo' : 'Inactivo'}
                           </span>
                         </td>
-                        <td className="px-4 py-3 text-center">
+                        <td className="px-4 py-3 text-center align-middle">
                           <div className="flex items-center justify-center gap-2">
                             <button
                               type="button"

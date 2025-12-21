@@ -3,12 +3,11 @@
  */
 export interface User {
   id: number;
-  username: string;
+  userName: string;
   ci: string;
   names: string;
   lastName: string;
   secondLastName: string;
   role: string;
   branchId: number;
-  state: boolean;
 }

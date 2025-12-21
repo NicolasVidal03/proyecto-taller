@@ -23,7 +23,6 @@ export const SuppliersPage: React.FC = () => {
   const [confirmDelete, setConfirmDelete] = useState<Supplier | null>(null);
   const [saving, setSaving] = useState(false);
   const [busyId, setBusyId] = useState<number | null>(null);
-  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('active');
   const [search, setSearch] = useState('');
 
   useEffect(() => {
@@ -33,8 +32,6 @@ export const SuppliersPage: React.FC = () => {
   /* ───────── Filtros ───────── */
   const filtered = useMemo(() => {
     let list = suppliers;
-    if (statusFilter === 'active') list = list.filter(s => s.state);
-    if (statusFilter === 'inactive') list = list.filter(s => !s.state);
     if (search.trim()) {
       const q = search.toLowerCase();
       list = list.filter(s =>
@@ -44,7 +41,7 @@ export const SuppliersPage: React.FC = () => {
       );
     }
     return list;
-  }, [suppliers, statusFilter, search]);
+  }, [suppliers, search]);
 
   /* ───────── Stats ───────── */
   const totalActive = suppliers.filter(s => s.state).length;
@@ -86,7 +83,6 @@ export const SuppliersPage: React.FC = () => {
     setSearch(
       ''
     );
-    setStatusFilter('active');
   };
 
   /* ───────── Render ───────── */
@@ -126,35 +122,7 @@ export const SuppliersPage: React.FC = () => {
                       Limpiar filtros
                     </button>
                   </div>
-                  <div className="flex flex-wrap gap-2 text-xs text-white/70">
-                    <button
-                      type="button"
-                      onClick={() => setStatusFilter('all')}
-                      className={`rounded-full px-3 py-1 font-semibold tracking-wide transition ${
-                        statusFilter === 'all' ? 'bg-lead-50/90 text-brand-700' : 'bg-white/10 hover:bg-white/20'
-                      }`}
-                    >
-                      Todos
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setStatusFilter('active')}
-                      className={`rounded-full px-3 py-1 font-semibold tracking-wide transition ${
-                        statusFilter === 'active' ? 'bg-lead-50/90 text-brand-700' : 'bg-white/10 hover:bg-white/20'
-                      }`}
-                    >
-                      Activos
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setStatusFilter('inactive')}
-                      className={`rounded-full px-3 py-1 font-semibold tracking-wide transition ${
-                        statusFilter === 'inactive' ? 'bg-lead-50/90 text-brand-700' : 'bg-white/10 hover:bg-white/20'
-                      }`}
-                    >
-                      Inactivos
-                    </button>
-                  </div>
+                  {/* status filter removed */}
                 </div>
               </div>
               <div className="relative">

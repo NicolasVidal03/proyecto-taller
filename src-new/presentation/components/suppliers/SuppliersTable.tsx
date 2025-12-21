@@ -30,7 +30,7 @@ const SuppliersTable: React.FC<SuppliersTableProps> = ({ suppliers, onEdit, onDe
             <th className="px-4 py-4 text-left font-semibold">Teléfono</th>
             <th className="px-4 py-4 text-left font-semibold">Dirección</th>
             <th className="px-4 py-4 text-left font-semibold">Estado</th>
-            <th className="w-40 px-4 py-4 text-left font-semibold">Acciones</th>
+            <th className="w-40 px-4 py-4 text-center align-middle font-semibold">Acciones</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-lead-200">
@@ -46,7 +46,7 @@ const SuppliersTable: React.FC<SuppliersTableProps> = ({ suppliers, onEdit, onDe
                   {sup.state ? 'Activo' : 'Inactivo'}
                 </span>
               </td>
-              <td className="px-4 py-3 text-center">
+              <td className="px-4 py-3 text-center align-middle">
                 <div className="flex items-center justify-center gap-2">
                   <button
                     type="button"

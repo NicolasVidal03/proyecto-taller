@@ -26,7 +26,6 @@ export const ProductsPage: React.FC = () => {
   const [confirmDelete, setConfirmDelete] = useState<Product | null>(null);
   const [saving, setSaving] = useState(false);
   const [busyId, setBusyId] = useState<number | null>(null);
-  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
   const [categoryFilter, setCategoryFilter] = useState<number | 'all'>('all');
   const [search, setSearch] = useState('');
 
@@ -38,8 +37,6 @@ export const ProductsPage: React.FC = () => {
   /* ───────── Filtros ───────── */
   const filtered = useMemo(() => {
     let list = products;
-    if (statusFilter === 'active') list = list.filter(p => p.state);
-    if (statusFilter === 'inactive') list = list.filter(p => !p.state);
     if (categoryFilter !== 'all') list = list.filter(p => p.categoryId === categoryFilter);
     if (search.trim()) {
       const q = search.toLowerCase();
@@ -49,7 +46,7 @@ export const ProductsPage: React.FC = () => {
       );
     }
     return list;
-  }, [products, statusFilter, categoryFilter, search]);
+  }, [products, categoryFilter, search]);
 
   /* ───────── Stats ───────── */
   const totalActive = products.filter(p => p.state).length;
@@ -147,15 +144,7 @@ export const ProductsPage: React.FC = () => {
               <option value="all">Todas las categorías</option>
               {categories.filter(c => c.state).map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value as 'all' | 'active' | 'inactive')}
-              className="input w-auto"
-            >
-              <option value="all">Todos los estados</option>
-              <option value="active">Activos</option>
-              <option value="inactive">Inactivos</option>
-            </select>
+            {/* status filter removed */}
           </div>
         </section>
 

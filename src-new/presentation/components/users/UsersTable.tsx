@@ -6,10 +6,12 @@ type UsersTableProps = {
   users: User[];
   onEdit: (user: User) => void;
   onDeactivate: (user: User) => void;
+  onResetPassword?: (user: User) => void;
+  showResetButton?: boolean;
   busyUserId?: number | null;
 };
 
-const UsersTable: React.FC<UsersTableProps> = ({ users, onEdit, onDeactivate, busyUserId }) => {
+const UsersTable: React.FC<UsersTableProps> = ({ users, onEdit, onDeactivate, onResetPassword, showResetButton, busyUserId }) => {
   if (!users.length) {
     return (
       <div className="rounded-md border bg-white p-6 text-center text-sm text-gray-600 shadow-sm">
@@ -30,7 +32,7 @@ const UsersTable: React.FC<UsersTableProps> = ({ users, onEdit, onDeactivate, bu
             <th className="px-4 py-4 text-left font-semibold">Rol</th>
             <th className="px-4 py-4 text-left font-semibold">Sucursal</th>
             <th className="px-4 py-4 text-left font-semibold">CI</th>
-            <th className="w-40 px-4 py-4 text-left font-semibold">Acciones</th>
+            <th className="w-40 px-4 py-4 text-center align-middle font-semibold">Acciones</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-lead-200">
@@ -38,15 +40,16 @@ const UsersTable: React.FC<UsersTableProps> = ({ users, onEdit, onDeactivate, bu
             const isProtected = user.role === 'super_admin';
             return (
               <tr key={user.id} className="transition-colors hover:bg-white">
-                <td className="px-4 py-3 font-medium text-brand-900">{user.username}</td>
+                <td className="px-4 py-3 font-medium text-brand-900">{user.userName}</td>
                 <td className="px-4 py-3 text-lead-600">
                   {user.names} {user.lastName} {user.secondLastName}
                 </td>
                 <td className="px-4 py-3 capitalize text-lead-600">{formatRole(user.role)}</td>
                 <td className="px-4 py-3 text-lead-600">{user.branchId ?? '—'}</td>
                 <td className="px-4 py-3 text-lead-600">{user.ci ?? '—'}</td>
-                <td className="px-4 py-3 text-center">
+                <td className="px-4 py-3 text-center align-middle">
                   <div className="flex items-center justify-center gap-2">
+                    
                     <button
                       type="button"
                       onClick={() => onEdit(user)}
@@ -59,10 +62,20 @@ const UsersTable: React.FC<UsersTableProps> = ({ users, onEdit, onDeactivate, bu
                       type="button"
                       onClick={() => onDeactivate(user)}
                       className="rounded bg-accent-100 px-3 py-1.5 font-medium text-accent-700 transition hover:bg-accent-200 disabled:opacity-50"
-                      disabled={isBusy(user.id) || !user.state || isProtected}
+                      disabled={isBusy(user.id) || isProtected}
                     >
                       Eliminar
                     </button>
+                    {showResetButton && onResetPassword ? (
+                      <button
+                        type="button"
+                        onClick={() => onResetPassword(user)}
+                        className="rounded bg-lead-200 px-3 py-1.5 font-medium text-lead-800 transition hover:bg-lead-300 disabled:opacity-50"
+                        disabled={isBusy(user.id) || isProtected}
+                      >
+                        Resetear
+                      </button>
+                    ) : null}
                   </div>
                 </td>
               </tr>
