@@ -5,3 +5,5 @@ export { CategoryService } from './CategoryService';
 export { ProductService } from './ProductService';
 export { SupplierService } from './SupplierService';
 export { ProductSupplierService } from './ProductSupplierService';
+export { BranchService } from './BranchService';
+export { CountryService } from './CountryService';

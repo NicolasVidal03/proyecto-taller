@@ -1,9 +1,11 @@
 import React from 'react';
 import { User } from '../../../domain/entities/User';
+import { BranchMap, getBranchName } from '../../../domain/entities/Branch';
 import { formatRole } from '../../utils/format';
 
 type UsersTableProps = {
   users: User[];
+  branchMap: BranchMap;
   onEdit: (user: User) => void;
   onDeactivate: (user: User) => void;
   onResetPassword?: (user: User) => void;
@@ -11,14 +13,16 @@ type UsersTableProps = {
   busyUserId?: number | null;
 };
 
-const UsersTable: React.FC<UsersTableProps> = ({ users, onEdit, onDeactivate, onResetPassword, showResetButton, busyUserId }) => {
-  if (!users.length) {
-    return (
-      <div className="rounded-md border bg-white p-6 text-center text-sm text-gray-600 shadow-sm">
-        No hay usuarios cargados todavía.
-      </div>
-    );
-  }
+const UsersTable: React.FC<UsersTableProps> = ({ 
+  users, 
+  branchMap,
+  onEdit, 
+  onDeactivate, 
+  onResetPassword, 
+  showResetButton, 
+  busyUserId 
+}) => {
+  const isEmpty = users.length === 0;
 
   const isBusy = (id: number) => busyUserId != null && busyUserId === id;
 
@@ -36,7 +40,13 @@ const UsersTable: React.FC<UsersTableProps> = ({ users, onEdit, onDeactivate, on
           </tr>
         </thead>
         <tbody className="divide-y divide-lead-200">
-          {users.map(user => {
+          {isEmpty ? (
+            <tr>
+              <td className="px-4 py-6 text-center text-sm text-lead-600" colSpan={6}>
+                No hay usuarios para mostrar.
+              </td>
+            </tr>
+          ) : users.map(user => {
             const isProtected = user.role === 'super_admin';
             return (
               <tr key={user.id} className="transition-colors hover:bg-white">
@@ -45,7 +55,11 @@ const UsersTable: React.FC<UsersTableProps> = ({ users, onEdit, onDeactivate, on
                   {user.names} {user.lastName} {user.secondLastName}
                 </td>
                 <td className="px-4 py-3 capitalize text-lead-600">{formatRole(user.role)}</td>
-                <td className="px-4 py-3 text-lead-600">{user.branchId ?? '—'}</td>
+                <td className="px-4 py-3 text-lead-600">
+                  <span className="inline-flex items-center rounded-full bg-brand-50 px-2.5 py-0.5 text-xs font-medium text-brand-700">
+                    {getBranchName(branchMap, user.branchId)}
+                  </span>
+                </td>
                 <td className="px-4 py-3 text-lead-600">{user.ci ?? '—'}</td>
                 <td className="px-4 py-3 text-center align-middle">
                   <div className="flex items-center justify-center gap-2">

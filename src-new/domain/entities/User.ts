@@ -9,5 +9,5 @@ export interface User {
   lastName: string;
   secondLastName: string;
   role: string;
-  branchId: number;
+  branchId: number | null;
 }

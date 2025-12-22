@@ -1,11 +1,15 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { useSuppliers } from '../hooks/useSuppliers';
+import { useCountries } from '../hooks/useCountries';
+import { useAuth } from '../providers/AuthProvider';
 import { Supplier } from '../../domain/entities/Supplier';
+import { CreateSupplierDTO, UpdateSupplierDTO } from '../../domain/ports/ISupplierRepository';
 import SuppliersTable from '../components/suppliers/SuppliersTable';
 import SupplierFormModal from '../components/suppliers/SupplierFormModal';
 import ConfirmDialog from '../components/shared/ConfirmDialog';
 import Loader from '../components/shared/Loader';
 import ErrorMessage from '../components/shared/ErrorMessage';
+
 
 export const SuppliersPage: React.FC = () => {
   const {
@@ -18,6 +22,15 @@ export const SuppliersPage: React.FC = () => {
     updateSupplierState,
   } = useSuppliers();
 
+  const {
+    countries,
+    countryMap,
+    fetchCountries,
+  } = useCountries();
+
+  const auth = useAuth();
+  const currentUserId = auth.user?.id;
+
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Supplier | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<Supplier | null>(null);
@@ -27,7 +40,8 @@ export const SuppliersPage: React.FC = () => {
 
   useEffect(() => {
     fetchSuppliers();
-  }, [fetchSuppliers]);
+    fetchCountries();
+  }, [fetchSuppliers, fetchCountries]);
 
   /* ───────── Filtros ───────── */
   const filtered = useMemo(() => {
@@ -37,15 +51,12 @@ export const SuppliersPage: React.FC = () => {
       list = list.filter(s =>
         s.name.toLowerCase().includes(q) ||
         (s.contactName ?? '').toLowerCase().includes(q) ||
-        (s.phone ?? '').toLowerCase().includes(q)
+        (s.phone ?? '').toLowerCase().includes(q) ||
+        (s.nit ?? '').toLowerCase().includes(q)
       );
     }
     return list;
   }, [suppliers, search]);
-
-  /* ───────── Stats ───────── */
-  const totalActive = suppliers.filter(s => s.state).length;
-  const totalInactive = suppliers.filter(s => !s.state).length;
 
   /* ───────── Handlers ───────── */
   const openCreate = () => { setEditing(null); setModalOpen(true); };
@@ -53,18 +64,19 @@ export const SuppliersPage: React.FC = () => {
   const closeModal = () => { setModalOpen(false); setEditing(null); };
 
   const handleSave = async (data: Partial<Supplier>) => {
-    setSaving(true);
-    try {
-      if (data.id) {
-        await updateSupplier(data.id, data);
-      } else {
-        await createSupplier(data as Omit<Supplier, 'id'>);
-      }
-      closeModal();
-    } finally {
-      setSaving(false);
+  setSaving(true);
+  try {
+    if (data.id) {
+      const { userId, ...updateData } = data;
+      await updateSupplier(data.id, updateData as UpdateSupplierDTO, currentUserId);
+    } else {
+      await createSupplier(data as CreateSupplierDTO, currentUserId);
     }
-  };
+    closeModal();
+  } finally {
+    setSaving(false);
+  }
+};
 
   const handleDeactivate = (sup: Supplier) => setConfirmDelete(sup);
 
@@ -72,7 +84,7 @@ export const SuppliersPage: React.FC = () => {
     if (!confirmDelete) return;
     setBusyId(confirmDelete.id);
     try {
-      await updateSupplierState(confirmDelete.id, false);
+      await updateSupplierState(confirmDelete.id, false, currentUserId);
     } finally {
       setBusyId(null);
       setConfirmDelete(null);
@@ -80,9 +92,7 @@ export const SuppliersPage: React.FC = () => {
   };
 
   const clearFilters = () => {
-    setSearch(
-      ''
-    );
+    setSearch('');
   };
 
   /* ───────── Render ───────── */
@@ -100,17 +110,12 @@ export const SuppliersPage: React.FC = () => {
             <div className="grid gap-10 px-8 py-10 md:px-12 lg:grid-cols-[2fr,1.2fr]">
               <div className="space-y-6">
                 <p className="text-xs uppercase tracking-[0.45em] text-white/70">Panel de Proveedores</p>
-                <h2 className="text-3xl font-semibold leading-tight md:text-4xl">
-                  Gestión de proveedores y suministros
-                </h2>
-                <p className="max-w-xl text-sm text-white/80 md:text-base">
-                  Administra la información de tus proveedores, contactos y estados para asegurar el abastecimiento continuo de tu inventario.
-                </p>
+                <h2 className="text-3xl font-semibold leading-tight md:text-4xl">Gestión de proveedores y suministros</h2>
                 <div className="space-y-3 rounded-2xl bg-white/10 p-4 backdrop-blur border border-white/10">
                   <div className="flex flex-col gap-3 md:flex-row">
                     <input
-                      className="input flex-1 bg-lead-50 text-lead-800 placeholder:text-lead-400 border-transparent focus:bg-white transition-colors shadow-sm"
-                      placeholder="Buscar por nombre, contacto o teléfono"
+                      className="input-plain flex-1"
+                      placeholder="Buscar por nombre, contacto, teléfono o NIT"
                       value={search}
                       onChange={event => setSearch(event.target.value)}
                     />
@@ -121,32 +126,6 @@ export const SuppliersPage: React.FC = () => {
                     >
                       Limpiar filtros
                     </button>
-                  </div>
-                  {/* status filter removed */}
-                </div>
-              </div>
-              <div className="relative">
-                <div className="absolute inset-0 rounded-[2rem] bg-white/10 blur-xl" />
-                <div className="relative space-y-5 rounded-[2rem] border border-white/20 bg-white/10 px-7 py-8 backdrop-blur">
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm font-medium uppercase tracking-[0.4em] text-white/70">Resumen</p>
-                    <button type="button" onClick={openCreate} className="btn-primary text-sm shadow-lg">
-                      Nuevo proveedor
-                    </button>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="rounded-2xl bg-gradient-to-br from-brand-900 to-brand-600 px-4 py-5 shadow-lg">
-                      <p className="text-xs uppercase tracking-wide text-white/80">Total</p>
-                      <p className="mt-2 text-3xl font-semibold text-white">{suppliers.length}</p>
-                    </div>
-                    <div className="rounded-2xl bg-gradient-to-br from-accent-500 to-accent-300 px-4 py-5 shadow-lg">
-                      <p className="text-xs uppercase tracking-wide text-white/80">Activos</p>
-                      <p className="mt-2 text-3xl font-semibold text-white">{totalActive}</p>
-                    </div>
-                    <div className="rounded-2xl bg-gradient-to-br from-slate-700 to-slate-500 px-4 py-5 shadow-lg col-span-2">
-                      <p className="text-xs uppercase tracking-wide text-white/80">Inactivos</p>
-                      <p className="mt-2 text-3xl font-semibold text-white">{totalInactive}</p>
-                    </div>
                   </div>
                 </div>
               </div>
@@ -169,20 +148,29 @@ export const SuppliersPage: React.FC = () => {
               {isLoading && <Loader />}
               {error && <ErrorMessage message={error} />}
               {!isLoading && !error && (
-                <SuppliersTable suppliers={filtered} onEdit={openEdit} onDeactivate={handleDeactivate} busyId={busyId} />
+                <SuppliersTable 
+                  suppliers={filtered} 
+                  countryMap={countryMap}
+                  onEdit={openEdit} 
+                  onDeactivate={handleDeactivate} 
+                  busyId={busyId} 
+                />
               )}
-              {!isLoading && !filtered.length && !error ? (
-                <p className="mt-4 rounded-lg border border-dashed border-lead-300 bg-lead-50 px-4 py-8 text-center text-sm text-lead-600">
-                  No se encontraron proveedores con los filtros actuales.
-                </p>
-              ) : null}
             </div>
           </section>
         </div>
       </div>
 
       {/* Modal */}
-      {modalOpen && <SupplierFormModal supplier={editing} onClose={closeModal} onSave={handleSave} saving={saving} />}
+      {modalOpen && (
+        <SupplierFormModal 
+          supplier={editing} 
+          countries={countries}
+          onClose={closeModal} 
+          onSave={handleSave} 
+          saving={saving} 
+        />
+      )}
 
       {/* Confirm */}
       {confirmDelete && (
@@ -198,3 +186,4 @@ export const SuppliersPage: React.FC = () => {
     </>
   );
 };
+

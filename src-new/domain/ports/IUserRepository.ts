@@ -1,5 +1,8 @@
 import { User } from '../entities/User';
 
+/**
+ * DTO para crear un nuevo usuario
+ */
 export interface CreateUserDTO {
   username: string;
   ci: string;
@@ -11,6 +14,9 @@ export interface CreateUserDTO {
   branchId: number;
 }
 
+/**
+ * DTO para actualizar un usuario existente
+ */
 export interface UpdateUserDTO {
   username?: string;
   ci?: string;
@@ -22,9 +28,14 @@ export interface UpdateUserDTO {
   branchId?: number;
 }
 
+/**
+ * Puerto del repositorio de usuarios
+ * Define el contrato que debe implementar cualquier adaptador de infraestructura
+ */
 export interface IUserRepository {
   getAll(): Promise<User[]>;
   getById(id: number): Promise<User>;
   create(data: CreateUserDTO): Promise<User>;
   update(id: number, data: UpdateUserDTO): Promise<User>;
+  updateState(id: number, state: boolean, currentUserId: number): Promise<void>;
 }

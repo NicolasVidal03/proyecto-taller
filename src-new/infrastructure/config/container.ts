@@ -1,13 +1,16 @@
 /**
  * Dependency Injection Container - Frontend
+ * Contenedor central de servicios con inyección de dependencias
  */
 import { 
   AuthService, 
   UserService, 
   CategoryService, 
   ProductService, 
-  SupplierService, 
-  ProductSupplierService 
+  SupplierService,
+  ProductSupplierService,
+  BranchService,
+  CountryService,
 } from '../../application';
 
 import {
@@ -17,17 +20,21 @@ import {
   HttpProductRepository,
   HttpSupplierRepository,
   HttpProductSupplierRepository,
+  HttpBranchRepository,
+  HttpCountryRepository,
 } from '../http/repositories';
 
-// Repositories
+// Repositories (Infraestructura)
 const authRepository = new HttpAuthRepository();
 const userRepository = new HttpUserRepository();
 const categoryRepository = new HttpCategoryRepository();
 const productRepository = new HttpProductRepository();
 const supplierRepository = new HttpSupplierRepository();
 const productSupplierRepository = new HttpProductSupplierRepository();
+const branchRepository = new HttpBranchRepository();
+const countryRepository = new HttpCountryRepository();
 
-// Services Container
+// Services Container (Aplicación)
 export const container = {
   auth: new AuthService(authRepository),
   users: new UserService(userRepository),
@@ -35,4 +42,7 @@ export const container = {
   products: new ProductService(productRepository),
   suppliers: new SupplierService(supplierRepository),
   productSuppliers: new ProductSupplierService(productSupplierRepository),
-};
+  branches: new BranchService(branchRepository),
+  countries: new CountryService(countryRepository),
+};// Tipo del contenedor para TypeScript
+export type Container = typeof container;

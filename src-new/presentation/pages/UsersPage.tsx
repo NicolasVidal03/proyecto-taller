@@ -1,15 +1,15 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useUsers } from '../hooks/useUsers';
+import { useBranches } from '../hooks/useBranches';
 import { useAuth } from '../providers/AuthProvider';
 import { User } from '../../domain/entities/User';
 import Loader from '../components/shared/Loader';
-import ErrorMessage from '../components/shared/ErrorMessage';
 import ConfirmDialog from '../components/shared/ConfirmDialog';
+import { ToastContainer, useToast } from '../components/shared/Toast';
 import UsersTable from '../components/users/UsersTable';
 import UserFormModal, { UserFormValues } from '../components/users/UserFormModal';
 
 type RoleFilter = 'all' | 'admin' | 'prevendedor' | 'transportista';
-// status filter (Todos/Activos/Inactivos) removed per request
 
 const ROLE_FILTERS: Array<{ value: RoleFilter; label: string }> = [
   { value: 'all', label: 'Todos' },
@@ -18,22 +18,31 @@ const ROLE_FILTERS: Array<{ value: RoleFilter; label: string }> = [
   { value: 'transportista', label: 'Transportistas' },
 ];
 
-// status filters removed
-
 export const UsersPage: React.FC = () => {
+  // Hooks de datos
   const {
     users,
-    isLoading: loading,
-    error,
+    isLoading: usersLoading,
+    error: usersError,
     fetchUsers,
     createUser,
     updateUser,
     updateUserState,
+    clearError: clearUsersError,
   } = useUsers();
 
-  const [mutationError, setMutationError] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [authInfo, setAuthInfo] = useState<{ email?: string | null; password?: string | null } | null>(null);
+  const {
+    branches,
+    branchMap,
+    isLoading: branchesLoading,
+    error: branchesError,
+    fetchBranches,
+  } = useBranches();
+
+  // Toast para feedback visual
+  const toast = useToast();
+
+  // Estados UI
   const [formOpen, setFormOpen] = useState(false);
   const [formMode, setFormMode] = useState<'create' | 'edit'>('create');
   const [editingUser, setEditingUser] = useState<User | null>(null);
@@ -47,15 +56,29 @@ export const UsersPage: React.FC = () => {
   const [busyUserId, setBusyUserId] = useState<number | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState<RoleFilter>('all');
-  // statusFilter removed
 
-  const loadUsers = useCallback(async () => {
-    await fetchUsers();
-  }, [fetchUsers]);
+  // Cargar datos al montar
+  const loadData = useCallback(async () => {
+    await Promise.all([fetchUsers(), fetchBranches()]);
+  }, [fetchUsers, fetchBranches]);
 
   useEffect(() => {
-    loadUsers();
-  }, [loadUsers]);
+    loadData();
+  }, [loadData]);
+
+  // Mostrar errores como toast
+  useEffect(() => {
+    if (usersError) {
+      toast.error(usersError.message);
+      clearUsersError();
+    }
+  }, [usersError, toast, clearUsersError]);
+
+  useEffect(() => {
+    if (branchesError) {
+      toast.error(`Error cargando sucursales: ${branchesError.message}`);
+    }
+  }, [branchesError, toast]);
 
   const auth = useAuth();
   const canResetPassword = auth.user?.role === 'admin' || auth.user?.role === 'super_admin';
@@ -94,18 +117,12 @@ export const UsersPage: React.FC = () => {
     setFormMode('create');
     setEditingUser(null);
     setFormOpen(true);
-    setMutationError(null);
-    setSuccessMessage(null);
-    setAuthInfo(null);
   };
 
   const openEditModal = (user: User) => {
     setFormMode('edit');
     setEditingUser(user);
     setFormOpen(true);
-    setMutationError(null);
-    setSuccessMessage(null);
-    setAuthInfo(null);
   };
 
   const closeForm = () => {
@@ -116,13 +133,10 @@ export const UsersPage: React.FC = () => {
 
   const handleSubmit = async (values: UserFormValues) => {
     setFormSubmitting(true);
-    setMutationError(null);
-    setSuccessMessage(null);
-    setAuthInfo(null);
     try {
       if (formMode === 'create') {
-        await createUser({
-          username: values.username,
+        const result = await createUser({
+          username: values.username!,
           ci: values.ci,
           password: values.password || '',
           names: values.names,
@@ -131,10 +145,13 @@ export const UsersPage: React.FC = () => {
           role: values.role,
           branchId: values.branchId,
         });
-        setSuccessMessage('Usuario creado correctamente.');
+        if (result) {
+          toast.success('Usuario creado correctamente');
+          setFormOpen(false);
+          setEditingUser(null);
+        }
       } else if (editingUser) {
-        await updateUser(editingUser.id, {
-          username: values.username,
+        const result = await updateUser(editingUser.id, {
           ci: values.ci,
           names: values.names,
           lastName: values.lastName,
@@ -143,15 +160,15 @@ export const UsersPage: React.FC = () => {
           branchId: values.branchId,
           password: values.password,
         });
-        setSuccessMessage('Usuario actualizado correctamente.');
+        if (result) {
+          toast.success('Usuario actualizado correctamente');
+          setFormOpen(false);
+          setEditingUser(null);
+        }
       }
-      setFormOpen(false);
-      setEditingUser(null);
-      await loadUsers();
     } catch (err: unknown) {
-      console.error('user submit error', err);
       const message = err instanceof Error ? err.message : 'No se pudo guardar el usuario';
-      setMutationError(message);
+      toast.error(message);
     } finally {
       setFormSubmitting(false);
     }
@@ -160,17 +177,11 @@ export const UsersPage: React.FC = () => {
   const openConfirm = (user: User) => {
     setTargetUser(user);
     setConfirmOpen(true);
-    setMutationError(null);
-    setSuccessMessage(null);
-    setAuthInfo(null);
   };
 
   const openResetConfirm = (user: User) => {
     setResetTargetUser(user);
     setResetConfirmOpen(true);
-    setMutationError(null);
-    setSuccessMessage(null);
-    setAuthInfo(null);
   };
 
   const closeConfirm = () => {
@@ -180,19 +191,19 @@ export const UsersPage: React.FC = () => {
   };
 
   const executeConfirm = async () => {
-    if (!targetUser) return;
+    if (!targetUser || !auth.user) return;
     setConfirmLoading(true);
     setBusyUserId(targetUser.id);
-    setMutationError(null);
     try {
-      await updateUserState(targetUser.id, false);
-      await loadUsers();
+      const success = await updateUserState(targetUser.id, false, auth.user.id);
+      if (success) {
+        toast.success(`Usuario "${targetUser.userName}" eliminado correctamente`);
+      }
       setConfirmOpen(false);
       setTargetUser(null);
     } catch (err: unknown) {
-      console.error('user confirm error', err);
       const message = err instanceof Error ? err.message : 'Acción no completada';
-      setMutationError(message);
+      toast.error(message);
     } finally {
       setConfirmLoading(false);
       setBusyUserId(null);
@@ -209,29 +220,21 @@ export const UsersPage: React.FC = () => {
     if (!resetTargetUser) return;
     setResetConfirmLoading(true);
     setBusyUserId(resetTargetUser.id);
-    setMutationError(null);
     try {
-      // NOTE: backend reset endpoint not yet implemented here — UI only.
-      // Simulate reset success and display message. Replace with API call if available.
+      // TODO: Implementar endpoint de reset de contraseña en backend
       await Promise.resolve();
-      setSuccessMessage(`Contraseña reseteada para ${resetTargetUser.userName}`);
+      toast.success(`Contraseña reseteada para ${resetTargetUser.userName}`);
       setResetConfirmOpen(false);
       setResetTargetUser(null);
-      await loadUsers();
     } catch (err: unknown) {
-      console.error('reset error', err);
       const message = err instanceof Error ? err.message : 'No se pudo resetear la contraseña';
-      setMutationError(message);
+      toast.error(message);
     } finally {
       setResetConfirmLoading(false);
       setBusyUserId(null);
     }
   };
 
-  const clearFilters = () => {
-    setSearchTerm('');
-    setRoleFilter('all');
-  };
 
   return (
     <>
@@ -253,7 +256,7 @@ export const UsersPage: React.FC = () => {
                 <div className="space-y-3 rounded-2xl bg-white/10 p-4 backdrop-blur border border-white/10">
                   <div className="flex flex-col gap-3 md:flex-row">
                     <input
-                      className="input flex-1 bg-lead-50 text-lead-800 placeholder:text-lead-400 border-transparent focus:bg-white transition-colors shadow-sm"
+                      className="input-plain flex-1"
                       placeholder="Buscar por nombre, rol o usuario"
                       value={searchTerm}
                       onChange={event => setSearchTerm(event.target.value)}
@@ -275,7 +278,6 @@ export const UsersPage: React.FC = () => {
                       </button>
                     ))}
                   </div>
-                  {/* status filter removed */}
                 </div>
               </div>
               <div className="relative">
@@ -311,36 +313,20 @@ export const UsersPage: React.FC = () => {
                   <h3 className="text-xl font-bold text-brand-900">Listado de usuarios</h3>
                   <p className="text-sm text-lead-500">{filteredUsers.length} usuario(s) coinciden con el filtro.</p>
                 </div>
-                <button type="button" className="btn-primary bg-accent-500 hover:bg-accent-600 border-transparent text-white shadow-md" onClick={openCreateModal}>
+                <button 
+                  type="button" 
+                  className="btn-primary bg-accent-500 hover:bg-accent-600 border-transparent text-white shadow-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2" 
+                  onClick={openCreateModal}
+                >
                   Crear usuario
                 </button>
               </div>
-              {error ? <ErrorMessage message={error} /> : null}
-              {mutationError ? (
-                <div className="mt-3">
-                  <ErrorMessage message={mutationError} />
-                </div>
-              ) : null}
-              {successMessage ? (
-                <div className="mt-3 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700 shadow-sm">
-                  <p className="font-medium">{successMessage}</p>
-                  {authInfo?.email ? (
-                    <p className="mt-2 text-xs">
-                      Correo Auth0: <span className="font-semibold">{authInfo.email}</span>
-                    </p>
-                  ) : null}
-                  {authInfo?.password ? (
-                    <p className="mt-1 text-xs">
-                      Contraseña temporal: <span className="font-semibold">{authInfo.password}</span>
-                    </p>
-                  ) : null}
-                </div>
-              ) : null}
-              {loading ? (
+              {usersLoading ? (
                 <Loader />
               ) : (
                 <UsersTable
                   users={filteredUsers}
+                  branchMap={branchMap}
                   onEdit={openEditModal}
                   onDeactivate={openConfirm}
                   onResetPassword={openResetConfirm}
@@ -348,11 +334,6 @@ export const UsersPage: React.FC = () => {
                   busyUserId={busyUserId}
                 />
               )}
-              {!loading && !filteredUsers.length && !error ? (
-                <p className="mt-4 rounded-lg border border-dashed border-lead-300 bg-lead-50 px-4 py-8 text-center text-sm text-lead-600">
-                  Ajusta los filtros o crea un nuevo usuario para comenzar.
-                </p>
-              ) : null}
             </div>
           </section>
         </div>
@@ -363,6 +344,8 @@ export const UsersPage: React.FC = () => {
         mode={formMode}
         initialUser={editingUser}
         submitting={formSubmitting}
+        branches={branches}
+        branchesLoading={branchesLoading}
         onClose={closeForm}
         onSubmit={handleSubmit}
       />
@@ -385,6 +368,9 @@ export const UsersPage: React.FC = () => {
         onCancel={closeResetConfirm}
         disabled={resetConfirmLoading}
       />
+
+      {/* Sistema de notificaciones Toast */}
+      <ToastContainer toasts={toast.toasts} onDismiss={toast.dismissToast} />
     </>
   );
 };

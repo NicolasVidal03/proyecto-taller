@@ -1,9 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../../providers/AuthProvider';
 import { User } from '../../../domain/entities/User';
+import { Branch } from '../../../domain/entities/Branch';
 
 export type UserFormValues = {
-  username: string;
+  username?: string;
   ci: string;
   names: string;
   lastName: string;
@@ -41,6 +42,8 @@ type UserFormModalProps = {
   mode: 'create' | 'edit';
   initialUser?: User | null;
   submitting: boolean;
+  branches: Branch[];
+  branchesLoading?: boolean;
   onClose: () => void;
   onSubmit: (values: UserFormValues) => void;
 };
@@ -58,7 +61,16 @@ const emptyForm: FormState = {
   confirmPassword: '',
 };
 
-const UserFormModal: React.FC<UserFormModalProps> = ({ open, mode, initialUser, submitting, onClose, onSubmit }) => {
+const UserFormModal: React.FC<UserFormModalProps> = ({ 
+  open, 
+  mode, 
+  initialUser, 
+  submitting, 
+  branches,
+  branchesLoading = false,
+  onClose, 
+  onSubmit 
+}) => {
   const [form, setForm] = useState<FormState>(emptyForm);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const auth = useAuth();
@@ -102,7 +114,7 @@ const UserFormModal: React.FC<UserFormModalProps> = ({ open, mode, initialUser, 
   const handleChange = (event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = event.target as HTMLInputElement;
     let nextValue = value;
-    // Force uppercase for name fields and CI extension
+   
     if (name === 'names' || name === 'lastName' || name === 'secondLastName') {
       // Allow only letters and spaces, convert to uppercase
       nextValue = value.replace(/[^A-Za-z\s]/g, '').toUpperCase();
@@ -120,40 +132,70 @@ const UserFormModal: React.FC<UserFormModalProps> = ({ open, mode, initialUser, 
 
   const validate = (): boolean => {
     const nextErrors: Record<string, string> = {};
-    if (!form.username.trim()) nextErrors.username = 'El usuario es obligatorio';
-    if (!form.ciMain.trim()) nextErrors.ciMain = 'La cédula (CI) es obligatoria';
-    // ciMain must be digits only and max 7
-    if (form.ciMain && !/^\d{1,7}$/.test(form.ciMain)) nextErrors.ciMain = 'CI inválida (solo hasta 7 dígitos)';
-    if (!form.names.trim()) nextErrors.names = 'El nombre es obligatorio';
-    if (!form.lastName.trim()) nextErrors.lastName = 'El apellido es obligatorio';
-    if (!form.branchId.trim()) nextErrors.branchId = 'La sucursal es obligatoria';
-    if (!form.secondLastName.trim()) nextErrors.secondLastName = 'El segundo apellido es obligatorio';
-    const branchNumber = Number(form.branchId);
-    if (form.branchId.trim() && Number.isNaN(branchNumber)) {
-      nextErrors.branchId = 'La sucursal debe ser numérica';
+
+    // Username validation (only for create)
+    if (mode === 'create' && !form.username.trim()) {
+      nextErrors.username = 'El usuario es obligatorio';
     }
-    if (!form.role) nextErrors.role = 'Selecciona un rol';
+
+    // CI validation
+    if (!form.ciMain.trim()) {
+      nextErrors.ciMain = 'La cédula (CI) es obligatoria';
+    } else if (!/^\d{1,7}$/.test(form.ciMain)) {
+      nextErrors.ciMain = 'CI inválida (solo hasta 7 dígitos)';
+    }
+
+    // Names validation
+    if (!form.names.trim()) {
+      nextErrors.names = 'El nombre es obligatorio';
+    } else if (!/^[A-Z\s]+$/.test(form.names)) {
+      nextErrors.names = 'El nombre sólo puede contener letras';
+    }
+
+    // Last names validation
+    if (!form.lastName.trim()) {
+      nextErrors.lastName = 'El apellido es obligatorio';
+    } else if (!/^[A-Z\s]+$/.test(form.lastName)) {
+      nextErrors.lastName = 'El apellido sólo puede contener letras';
+    }
+
+    // Second last name validation (optional, but if provided, must be letters)
+    if (form.secondLastName.trim() && !/^[A-Z\s]+$/.test(form.secondLastName)) {
+      nextErrors.secondLastName = 'El segundo apellido sólo puede contener letras';
+    }
+
+    // Branch validation
+    if (!form.branchId.trim()) {
+      nextErrors.branchId = 'La sucursal es obligatoria';
+    } else {
+      const branchNumber = Number(form.branchId);
+      if (Number.isNaN(branchNumber)) {
+        nextErrors.branchId = 'La sucursal debe ser numérica';
+      }
+    }
+
+    // Role validation
+    if (!form.role) {
+      nextErrors.role = 'Selecciona un rol';
+    }
+
+    // Password validation (only for create)
     if (mode === 'create' && !form.password.trim()) {
       nextErrors.password = 'La contraseña es obligatoria';
     }
-    if (mode === 'create') {
-      if (!form.confirmPassword.trim()) {
-        nextErrors.confirmPassword = 'Confirma la contraseña';
-      } else if (form.password.trim() !== form.confirmPassword.trim()) {
-        nextErrors.confirmPassword = 'Las contraseñas no coinciden';
-      }
-    }
-    // validate ciExt if provided: must be exactly one digit and one letter, e.g. '1B'
-    if (form.ciExt.trim()) {
-      const re = /^\d[a-zA-Z]$/;
-      if (!re.test(form.ciExt.trim())) nextErrors.ciExt = 'Formato de ext inválido (ej: 1B)';
+
+    // Confirm password validation (only for create)
+    if (mode === 'create' && !form.confirmPassword.trim()) {
+      nextErrors.confirmPassword = 'Confirma la contraseña';
+    } else if (mode === 'create' && form.password.trim() !== form.confirmPassword.trim()) {
+      nextErrors.confirmPassword = 'Las contraseñas no coinciden';
     }
 
-    // Names / last names must contain only letters and spaces
-    const nameRe = /^[A-Z\s]+$/;
-    if (form.names && !nameRe.test(form.names)) nextErrors.names = 'El nombre sólo puede contener letras';
-    if (form.lastName && !nameRe.test(form.lastName)) nextErrors.lastName = 'El apellido sólo puede contener letras';
-    if (form.secondLastName && !nameRe.test(form.secondLastName)) nextErrors.secondLastName = 'El segundo apellido sólo puede contener letras';
+    // CI extension validation (if provided)
+    if (form.ciExt.trim() && !/^\d[a-zA-Z]$/.test(form.ciExt.trim())) {
+      nextErrors.ciExt = 'Formato de ext inválido (ej: 1B)';
+    }
+
     setErrors(nextErrors);
     return Object.keys(nextErrors).length === 0;
   };
@@ -167,7 +209,7 @@ const UserFormModal: React.FC<UserFormModalProps> = ({ open, mode, initialUser, 
     const ext = form.ciExt.trim();
     const composedCi = ext ? `${main}-${ext}` : main;
     onSubmit({
-      username: form.username.trim(),
+      ...(mode === 'create' && { username: form.username.trim() }),
       ci: composedCi,
       names: form.names.trim(),
       lastName: form.lastName.trim(),
@@ -261,23 +303,48 @@ const UserFormModal: React.FC<UserFormModalProps> = ({ open, mode, initialUser, 
               onChange={handleChange}
               className={`mt-1 block w-full rounded-lg border px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500 ${errors.secondLastName ? 'border-red-500' : 'border-lead-300 bg-white'}`}
               placeholder="Fernández"
-                disabled={submitting || mode === 'edit'}
+              disabled={submitting}
             />
             {errors.secondLastName ? <p className="mt-1 text-xs text-red-600">{errors.secondLastName}</p> : null}
           </div>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div>
               <label htmlFor="branchId" className="block text-sm font-medium text-lead-700">Sucursal</label>
-              <input
-                id="branchId"
-                name="branchId"
-                value={form.branchId}
-                onChange={handleChange}
-                className={`mt-1 block w-full rounded-lg border px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500 ${errors.branchId ? 'border-red-500' : 'border-lead-300 bg-white'}`}
-                placeholder="1"
-                disabled={submitting}
-              />
+              <div className="relative">
+                <select
+                  id="branchId"
+                  name="branchId"
+                  value={form.branchId}
+                  onChange={handleChange}
+                  className={`mt-1 block w-full rounded-lg border px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500 appearance-none ${errors.branchId ? 'border-red-500' : 'border-lead-300 bg-white'} ${branchesLoading ? 'opacity-50' : ''}`}
+                  disabled={submitting || branchesLoading}
+                >
+                  <option value="">
+                    {branchesLoading ? 'Cargando sucursales...' : 'Seleccionar sucursal'}
+                  </option>
+                  {branches.map(branch => (
+                    <option key={branch.id} value={String(branch.id)}>
+                      {branch.name}
+                    </option>
+                  ))}
+                </select>
+                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 mt-1">
+                  {branchesLoading ? (
+                    <svg className="h-4 w-4 animate-spin text-lead-400" viewBox="0 0 24 24" fill="none">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                  ) : (
+                    <svg className="h-4 w-4 text-lead-400" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                    </svg>
+                  )}
+                </div>
+              </div>
               {errors.branchId ? <p className="mt-1 text-xs text-red-600">{errors.branchId}</p> : null}
+              {!branchesLoading && branches.length === 0 && (
+                <p className="mt-1 text-xs text-yellow-600">No hay sucursales disponibles</p>
+              )}
             </div>
             <div>
               <label htmlFor="role" className="block text-sm font-medium text-lead-700">Rol</label>
@@ -299,19 +366,21 @@ const UserFormModal: React.FC<UserFormModalProps> = ({ open, mode, initialUser, 
             </div>
           </div>
 
-          <div>
-            <label htmlFor="username" className="block text-sm font-medium text-lead-700">Usuario</label>
-            <input
-              id="username"
-              name="username"
-              value={form.username}
-              onChange={handleChange}
-              className={`mt-1 block w-full rounded-lg border px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500 ${errors.username ? 'border-red-500' : 'border-lead-300 bg-white'}`}
-              placeholder="usuario.unico"
-              disabled={submitting || mode === 'edit'}
-            />
-            {errors.username ? <p className="mt-1 text-xs text-red-600">{errors.username}</p> : null}
-          </div>
+          {mode === 'create' && (
+            <div>
+              <label htmlFor="username" className="block text-sm font-medium text-lead-700">Usuario</label>
+              <input
+                id="username"
+                name="username"
+                value={form.username}
+                onChange={handleChange}
+                className={`mt-1 block w-full rounded-lg border px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500 ${errors.username ? 'border-red-500' : 'border-lead-300 bg-white'}`}
+                placeholder="usuario.unico"
+                disabled={submitting}
+              />
+              {errors.username ? <p className="mt-1 text-xs text-red-600">{errors.username}</p> : null}
+            </div>
+          )}
           {mode === 'create' && (
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-lead-700">Contraseña</label>

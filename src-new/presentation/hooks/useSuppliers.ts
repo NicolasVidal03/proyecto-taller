@@ -9,9 +9,9 @@ export interface UseSuppliersReturn {
   error: string | null;
   fetchSuppliers: () => Promise<void>;
   fetchSupplierById: (id: number) => Promise<Supplier | null>;
-  createSupplier: (data: CreateSupplierDTO) => Promise<Supplier | null>;
-  updateSupplier: (id: number, data: UpdateSupplierDTO) => Promise<Supplier | null>;
-  updateSupplierState: (id: number, state: boolean) => Promise<boolean>;
+  createSupplier: (data: CreateSupplierDTO, userId?: number) => Promise<Supplier | null>;
+  updateSupplier: (id: number, data: UpdateSupplierDTO, userId?: number) => Promise<Supplier | null>;
+  updateSupplierState: (id: number, state: boolean, userId?: number) => Promise<boolean>;
   deleteSupplier: (id: number) => Promise<boolean>;
 }
 
@@ -43,11 +43,11 @@ export const useSuppliers = (): UseSuppliersReturn => {
     }
   }, []);
 
-  const createSupplier = useCallback(async (data: CreateSupplierDTO): Promise<Supplier | null> => {
+  const createSupplier = useCallback(async (data: CreateSupplierDTO, userId?: number): Promise<Supplier | null> => {
     setIsLoading(true);
     setError(null);
     try {
-      const newSupplier = await container.suppliers.create(data);
+      const newSupplier = await container.suppliers.create({ ...data, userId });
       setSuppliers(prev => [...prev, newSupplier]);
       return newSupplier;
     } catch (err: any) {
@@ -58,11 +58,11 @@ export const useSuppliers = (): UseSuppliersReturn => {
     }
   }, []);
 
-  const updateSupplier = useCallback(async (id: number, data: UpdateSupplierDTO): Promise<Supplier | null> => {
+  const updateSupplier = useCallback(async (id: number, data: UpdateSupplierDTO, userId?: number): Promise<Supplier | null> => {
     setIsLoading(true);
     setError(null);
     try {
-      const updated = await container.suppliers.update(id, data);
+      const updated = await container.suppliers.update(id, { ...data, userId });
       setSuppliers(prev => prev.map(s => (s.id === id ? updated : s)));
       return updated;
     } catch (err: any) {
@@ -73,12 +73,12 @@ export const useSuppliers = (): UseSuppliersReturn => {
     }
   }, []);
 
-  const updateSupplierState = useCallback(async (id: number, state: boolean): Promise<boolean> => {
+  const updateSupplierState = useCallback(async (id: number, state: boolean, userId?: number): Promise<boolean> => {
     setIsLoading(true);
     setError(null);
     try {
-      const updated = await container.suppliers.updateState(id, state);
-      setSuppliers(prev => prev.map(s => (s.id === id ? updated : s)));
+      await container.suppliers.updateState(id, state, userId);
+      setSuppliers(prev => prev.map(s => (s.id === id ? { ...s, state } : s)));
       return true;
     } catch (err: any) {
       setError(err?.message || 'Error al actualizar estado');
