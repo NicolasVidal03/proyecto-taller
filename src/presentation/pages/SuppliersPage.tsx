@@ -119,13 +119,6 @@ export const SuppliersPage: React.FC = () => {
                       value={search}
                       onChange={event => setSearch(event.target.value)}
                     />
-                    <button 
-                      type="button" 
-                      className="rounded-xl border border-white/30 bg-white/10 px-6 py-2 text-xs font-bold uppercase tracking-wide text-white backdrop-blur-sm transition hover:bg-white/20 hover:border-white/50" 
-                      onClick={clearFilters}
-                    >
-                      Limpiar filtros
-                    </button>
                   </div>
                 </div>
               </div>

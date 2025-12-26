@@ -14,7 +14,7 @@ const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const toast = useToast();
 
   const navItems: Array<{ label: string; to: string; disabled?: boolean; subItems?: Array<{ label: string; to: string }> }> = [
-    { label: 'Clientes', to: '#', disabled: true },
+    { label: 'Clientes', to: '/clients' },
     { 
       label: 'Inventario', 
       to: '/inventory',

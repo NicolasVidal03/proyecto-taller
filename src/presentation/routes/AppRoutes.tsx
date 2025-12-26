@@ -12,6 +12,10 @@ import {
   ProfilePage,
 } from '../pages';
 
+import { ClientsPage } from '../pages/ClientsPage';
+import { NewClientPage } from '../pages/NewClientPage';
+import { EditClientPage } from '../pages/EditClientPage';
+
 const LayoutWrapper: React.FC = () => (
   <AppLayout>
     <Outlet />
@@ -34,6 +38,9 @@ export const AppRoutes: React.FC = () => {
           <Route path="/inventory" element={<InventoryPage />} />
           <Route path="/users" element={<UsersPage />} />
           <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/clients" element={<ClientsPage />} />
+          <Route path="/clients/new" element={<NewClientPage />} />
+          <Route path="/clients/edit/:id" element={<EditClientPage />} />
         </Route>
       </Route>
 

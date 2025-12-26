@@ -13,6 +13,9 @@ import {
   CountryService,
 } from '../../application';
 
+import { ClientService } from '../../application/ClientService';
+import { AreaService } from '../../application/AreaService';
+
 import {
   HttpAuthRepository,
   HttpUserRepository,
@@ -24,6 +27,9 @@ import {
   HttpCountryRepository,
 } from '../http/repositories';
 
+import { HttpClientRepository } from '../http/repositories/HttpClientRepository';
+import { HttpAreaRepository } from '../http/repositories/HttpAreaRepository';
+
 // Repositories (Infraestructura)
 const authRepository = new HttpAuthRepository();
 const userRepository = new HttpUserRepository();
@@ -33,6 +39,8 @@ const supplierRepository = new HttpSupplierRepository();
 const productSupplierRepository = new HttpProductSupplierRepository();
 const branchRepository = new HttpBranchRepository();
 const countryRepository = new HttpCountryRepository();
+const clientRepository = new HttpClientRepository();
+const areaRepository = new HttpAreaRepository();
 
 // Services Container (Aplicación)
 export const container = {
@@ -44,5 +52,7 @@ export const container = {
   productSuppliers: new ProductSupplierService(productSupplierRepository),
   branches: new BranchService(branchRepository),
   countries: new CountryService(countryRepository),
+  clients: new ClientService(clientRepository),
+  areas: new AreaService(areaRepository),
 };// Tipo del contenedor para TypeScript
 export type Container = typeof container;
