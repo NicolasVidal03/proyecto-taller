@@ -1,175 +1,1054 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useProducts } from '../hooks/useProducts';
 import { useCategories } from '../hooks/useCategories';
+import { useBrands } from '../hooks/useBrands';
+import { usePresentations } from '../hooks/usePresentations';
+import { useColors } from '../hooks/useColors';
+import { useAuth } from '../providers/AuthProvider';
 import { Product } from '../../domain/entities/Product';
+import { Category } from '../../domain/entities/Category';
+import { Brand } from '../../domain/entities/Brand';
+import { Presentation } from '../../domain/entities/Presentation';
+import { Color } from '../../domain/entities/Color';
 import ProductsTable from '../components/products/ProductsTable';
-import ProductFormModal from '../components/products/ProductFormModal';
+import ProductFormModal, { ProductFormValues } from '../components/products/ProductFormModal';
+import ProductDetailsModal from '../components/products/ProductDetailsModal';
+import BrandsTable from '../components/brands/BrandsTable';
+import BrandFormModal, { BrandFormValues } from '../components/brands/BrandFormModal';
+import CategoriesTable from '../components/categories/CategoriesTable';
+import CategoryFormModal, { CategoryFormValues } from '../components/categories/CategoryFormModal';
+import PresentationsTable from '../components/presentations/PresentationsTable';
+import PresentationFormModal, { PresentationFormValues } from '../components/presentations/PresentationFormModal';
+import ColorsTable from '../components/colors/ColorsTable';
+import ColorFormModal, { ColorFormValues } from '../components/colors/ColorFormModal';
 import ConfirmDialog from '../components/shared/ConfirmDialog';
 import Loader from '../components/shared/Loader';
-import ErrorMessage from '../components/shared/ErrorMessage';
+import { ToastContainer, useToast } from '../components/shared/Toast';
+
+type ActiveSection = 'products' | 'brands' | 'categories' | 'presentations' | 'colors';
 
 export const ProductsPage: React.FC = () => {
+  // Hooks de datos
   const {
     products,
-    isLoading,
-    error,
+    isLoading: productsLoading,
+    error: productsError,
     fetchProducts,
     createProduct,
     updateProduct,
     updateProductState,
+    clearError: clearProductsError,
   } = useProducts();
 
-  const { categories, fetchCategories } = useCategories();
+  const {
+    categories,
+    categoryMap,
+    isLoading: categoriesLoading,
+    error: categoriesError,
+    fetchCategories,
+    createCategory,
+    updateCategory,
+    updateCategoryState,
+    clearError: clearCategoriesError,
+  } = useCategories();
 
-  const [modalOpen, setModalOpen] = useState(false);
-  const [editing, setEditing] = useState<Product | null>(null);
-  const [confirmDelete, setConfirmDelete] = useState<Product | null>(null);
-  const [saving, setSaving] = useState(false);
-  const [busyId, setBusyId] = useState<number | null>(null);
+  const {
+    brands,
+    brandMap,
+    isLoading: brandsLoading,
+    error: brandsError,
+    fetchBrands,
+    createBrand,
+    updateBrand,
+    updateBrandState,
+    clearError: clearBrandsError,
+  } = useBrands();
+
+  const {
+    presentations,
+    presentationMap,
+    isLoading: presentationsLoading,
+    error: presentationsError,
+    fetchPresentations,
+    createPresentation,
+    updatePresentation,
+    updatePresentationState,
+    clearError: clearPresentationsError,
+  } = usePresentations();
+
+  const {
+    colors,
+    colorMap,
+    isLoading: colorsLoading,
+    error: colorsError,
+    fetchColors,
+    createColor,
+    updateColor,
+    updateColorState,
+    clearError: clearColorsError,
+  } = useColors();
+
+  // Auth para obtener userId
+  const auth = useAuth();
+
+  // Toast para feedback visual
+  const toast = useToast();
+
+  // Estados UI generales
+  const [activeSection, setActiveSection] = useState<ActiveSection>('products');
+  const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<number | 'all'>('all');
-  const [search, setSearch] = useState('');
+
+  // Estados para Productos
+  const [productFormOpen, setProductFormOpen] = useState(false);
+  const [productFormMode, setProductFormMode] = useState<'create' | 'edit'>('create');
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [productSubmitting, setProductSubmitting] = useState(false);
+  const [productConfirmOpen, setProductConfirmOpen] = useState(false);
+  const [productConfirmLoading, setProductConfirmLoading] = useState(false);
+  const [targetProduct, setTargetProduct] = useState<Product | null>(null);
+  const [busyProductId, setBusyProductId] = useState<number | null>(null);
+  const [productDetailOpen, setProductDetailOpen] = useState(false);
+  const [selectedProductForView, setSelectedProductForView] = useState<Product | null>(null);
+
+  // Estados para Marcas
+  const [brandFormOpen, setBrandFormOpen] = useState(false);
+  const [brandFormMode, setBrandFormMode] = useState<'create' | 'edit'>('create');
+  const [editingBrand, setEditingBrand] = useState<Brand | null>(null);
+  const [brandSubmitting, setBrandSubmitting] = useState(false);
+  const [brandConfirmOpen, setBrandConfirmOpen] = useState(false);
+  const [brandConfirmLoading, setBrandConfirmLoading] = useState(false);
+  const [targetBrand, setTargetBrand] = useState<Brand | null>(null);
+  const [busyBrandId, setBusyBrandId] = useState<number | null>(null);
+
+  // Estados para Categorías
+  const [categoryFormOpen, setCategoryFormOpen] = useState(false);
+  const [categoryFormMode, setCategoryFormMode] = useState<'create' | 'edit'>('create');
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const [categorySubmitting, setCategorySubmitting] = useState(false);
+  const [categoryConfirmOpen, setCategoryConfirmOpen] = useState(false);
+  const [categoryConfirmLoading, setCategoryConfirmLoading] = useState(false);
+  const [targetCategory, setTargetCategory] = useState<Category | null>(null);
+  const [busyCategoryId, setBusyCategoryId] = useState<number | null>(null);
+
+  // Estados para Presentaciones
+  const [presentationFormOpen, setPresentationFormOpen] = useState(false);
+  const [presentationFormMode, setPresentationFormMode] = useState<'create' | 'edit'>('create');
+  const [editingPresentation, setEditingPresentation] = useState<Presentation | null>(null);
+  const [presentationSubmitting, setPresentationSubmitting] = useState(false);
+  const [presentationConfirmOpen, setPresentationConfirmOpen] = useState(false);
+  const [presentationConfirmLoading, setPresentationConfirmLoading] = useState(false);
+  const [targetPresentation, setTargetPresentation] = useState<Presentation | null>(null);
+  const [busyPresentationId, setBusyPresentationId] = useState<number | null>(null);
+
+  // Estados para Colores
+  const [colorFormOpen, setColorFormOpen] = useState(false);
+  const [colorFormMode, setColorFormMode] = useState<'create' | 'edit'>('create');
+  const [editingColor, setEditingColor] = useState<Color | null>(null);
+  const [colorSubmitting, setColorSubmitting] = useState(false);
+  const [colorConfirmOpen, setColorConfirmOpen] = useState(false);
+  const [colorConfirmLoading, setColorConfirmLoading] = useState(false);
+  const [targetColor, setTargetColor] = useState<Color | null>(null);
+  const [busyColorId, setBusyColorId] = useState<number | null>(null);
+
+  // Cargar datos al montar
+  const loadData = useCallback(async () => {
+    await Promise.all([fetchProducts(), fetchCategories(), fetchBrands(), fetchPresentations(), fetchColors()]);
+  }, [fetchProducts, fetchCategories, fetchBrands, fetchPresentations, fetchColors]);
 
   useEffect(() => {
-    fetchProducts();
-    fetchCategories();
-  }, [fetchProducts, fetchCategories]);
+    loadData();
+  }, [loadData]);
 
-  /* ───────── Filtros ───────── */
-  const filtered = useMemo(() => {
-    let list = products;
-    if (categoryFilter !== 'all') list = list.filter(p => p.categoryId === categoryFilter);
-    if (search.trim()) {
-      const q = search.toLowerCase();
-      list = list.filter(p =>
-        p.name.toLowerCase().includes(q) ||
-        (p.description ?? '').toLowerCase().includes(q)
-      );
+  // Mostrar errores como toast
+  useEffect(() => {
+    if (productsError) {
+      toast.error(productsError);
+      clearProductsError();
     }
-    return list;
-  }, [products, categoryFilter, search]);
+  }, [productsError, toast, clearProductsError]);
 
-  /* ───────── Stats ───────── */
-  const totalActive = products.filter(p => p.state).length;
-  const totalInactive = products.filter(p => !p.state).length;
-  const lowStock = products.filter(p => (p.stock ?? 0) <= 5 && p.state).length;
+  useEffect(() => {
+    if (categoriesError) {
+      toast.error(`Error cargando categorías: ${categoriesError}`);
+      clearCategoriesError();
+    }
+  }, [categoriesError, toast, clearCategoriesError]);
 
-  /* ───────── Handlers ───────── */
-  const openCreate = () => { setEditing(null); setModalOpen(true); };
-  const openEdit = (prod: Product) => { setEditing(prod); setModalOpen(true); };
-  const closeModal = () => { setModalOpen(false); setEditing(null); };
+  useEffect(() => {
+    if (brandsError) {
+      toast.error(`Error cargando marcas: ${brandsError}`);
+      clearBrandsError();
+    }
+  }, [brandsError, toast, clearBrandsError]);
 
-  const handleSave = async (data: Partial<Product>) => {
-    setSaving(true);
+  useEffect(() => {
+    if (presentationsError) {
+      toast.error(`Error cargando presentaciones: ${presentationsError}`);
+      clearPresentationsError();
+    }
+  }, [presentationsError, toast, clearPresentationsError]);
+
+  useEffect(() => {
+    if (colorsError) {
+      toast.error(`Error cargando colores: ${colorsError}`);
+      clearColorsError();
+    }
+  }, [colorsError, toast, clearColorsError]);
+
+  // Filtrado de productos
+  const filteredProducts = useMemo(() => {
+    const term = searchTerm.trim().toLowerCase();
+    return products.filter(product => {
+      const matchesSearch =
+        term.length === 0 ||
+        product.name.toLowerCase().includes(term) ||
+        (product.barcode ?? '').toLowerCase().includes(term) ||
+        (product.internalCode ?? '').toLowerCase().includes(term);
+      const matchesCategory = categoryFilter === 'all' || product.categoryId === categoryFilter;
+      return matchesSearch && matchesCategory;
+    });
+  }, [products, searchTerm, categoryFilter]);
+
+  // Stats
+  const stats = useMemo(() => {
+    const totalProducts = products.length;
+    const totalBrands = brands.length;
+    const totalCategories = categories.length;
+    const totalPresentations = presentations.length;
+    const totalColors = colors.length;
+    return {
+      cards: [
+        { label: 'Total Productos', value: totalProducts, accent: 'from-brand-900 to-brand-600' },
+      ],
+      breakdown: [
+        { label: 'Marcas', value: totalBrands },
+        { label: 'Categorías', value: totalCategories },
+        { label: 'Presentaciones', value: totalPresentations },
+        { label: 'Colores', value: totalColors },
+      ],
+    };
+  }, [products, brands, categories, presentations, colors]);
+
+  // ═══════════════════ HANDLERS PRODUCTOS ═══════════════════
+
+  const openProductCreateModal = () => {
+    setProductFormMode('create');
+    setEditingProduct(null);
+    setProductFormOpen(true);
+  };
+
+  const openProductEditModal = (product: Product) => {
+    setProductFormMode('edit');
+    setEditingProduct(product);
+    setProductFormOpen(true);
+  };
+
+  const openProductView = (product: Product) => {
+    setSelectedProductForView(product);
+    setProductDetailOpen(true);
+  };
+
+  const closeProductView = () => {
+    setSelectedProductForView(null);
+    setProductDetailOpen(false);
+  };
+
+  const closeProductForm = () => {
+    if (productSubmitting) return;
+    setProductFormOpen(false);
+    setEditingProduct(null);
+  };
+
+  const handleProductSubmit = async (values: ProductFormValues) => {
+    if (!auth.user) return;
+    setProductSubmitting(true);
     try {
-      if (data.id) {
-        await updateProduct(data.id, data);
-      } else {
-        await createProduct(data as Omit<Product, 'id'>);
+      if (productFormMode === 'create') {
+        const result = await createProduct({
+          name: values.name,
+          barcode: values.barcode,
+          internalCode: values.internalCode,
+          presentationId: values.presentationId,
+          colorId: values.colorId,
+          salePrice: values.salePrice,
+          imageFile: (values as any).imageFile,
+          categoryId: values.categoryId,
+          brandId: values.brandId,
+          userId: auth.user.id,
+        });
+        if (result) {
+          toast.success('Producto creado correctamente');
+          setProductFormOpen(false);
+        }
+      } else if (editingProduct) {
+        const result = await updateProduct(editingProduct.id, {
+          name: values.name,
+          barcode: values.barcode,
+          internalCode: values.internalCode,
+          presentationId: values.presentationId,
+          colorId: values.colorId,
+          salePrice: values.salePrice,
+          imageFile: (values as any).imageFile,
+          categoryId: values.categoryId,
+          brandId: values.brandId,
+        });
+        if (result) {
+          toast.success('Producto actualizado correctamente');
+          setProductFormOpen(false);
+          setEditingProduct(null);
+        }
       }
-      closeModal();
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'No se pudo guardar el producto';
+      toast.error(message);
     } finally {
-      setSaving(false);
+      setProductSubmitting(false);
     }
   };
 
-  const handleDeactivate = (prod: Product) => setConfirmDelete(prod);
+  const openProductConfirm = (product: Product) => {
+    setTargetProduct(product);
+    setProductConfirmOpen(true);
+  };
 
-  const confirmDeactivate = async () => {
-    if (!confirmDelete) return;
-    setBusyId(confirmDelete.id);
+  const closeProductConfirm = () => {
+    if (productConfirmLoading) return;
+    setProductConfirmOpen(false);
+    setTargetProduct(null);
+  };
+
+  const executeProductConfirm = async () => {
+    if (!targetProduct || !auth.user) return;
+    setProductConfirmLoading(true);
+    setBusyProductId(targetProduct.id);
     try {
-      await updateProductState(confirmDelete.id, false);
+      const success = await updateProductState(targetProduct.id, auth.user.id);
+      if (success) {
+        toast.success(`Producto "${targetProduct.name}" eliminado correctamente`);
+      }
+      setProductConfirmOpen(false);
+      setTargetProduct(null);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Acción no completada';
+      toast.error(message);
     } finally {
-      setBusyId(null);
-      setConfirmDelete(null);
+      setProductConfirmLoading(false);
+      setBusyProductId(null);
     }
   };
 
-  /* ───────── Render ───────── */
+  // ═══════════════════ HANDLERS MARCAS ═══════════════════
+
+  const openBrandCreateModal = () => {
+    setBrandFormMode('create');
+    setEditingBrand(null);
+    setBrandFormOpen(true);
+  };
+
+  const openBrandEditModal = (brand: Brand) => {
+    setBrandFormMode('edit');
+    setEditingBrand(brand);
+    setBrandFormOpen(true);
+  };
+
+  const closeBrandForm = () => {
+    if (brandSubmitting) return;
+    setBrandFormOpen(false);
+    setEditingBrand(null);
+  };
+
+  const handleBrandSubmit = async (values: BrandFormValues) => {
+    if (!auth.user) return;
+    setBrandSubmitting(true);
+    try {
+      if (brandFormMode === 'create') {
+        const result = await createBrand({ name: values.name, userId: auth.user.id });
+        if (result) {
+          toast.success('Marca creada correctamente');
+          setBrandFormOpen(false);
+        }
+      } else if (editingBrand) {
+        const result = await updateBrand(editingBrand.id, { name: values.name });
+        if (result) {
+          toast.success('Marca actualizada correctamente');
+          setBrandFormOpen(false);
+          setEditingBrand(null);
+        }
+      }
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'No se pudo guardar la marca';
+      toast.error(message);
+    } finally {
+      setBrandSubmitting(false);
+    }
+  };
+
+  const openBrandConfirm = (brand: Brand) => {
+    setTargetBrand(brand);
+    setBrandConfirmOpen(true);
+  };
+
+  const closeBrandConfirm = () => {
+    if (brandConfirmLoading) return;
+    setBrandConfirmOpen(false);
+    setTargetBrand(null);
+  };
+
+  const executeBrandConfirm = async () => {
+    if (!targetBrand || !auth.user) return;
+    setBrandConfirmLoading(true);
+    setBusyBrandId(targetBrand.id);
+    try {
+      const success = await updateBrandState(targetBrand.id, auth.user.id);
+      if (success) {
+        toast.success(`Marca "${targetBrand.name}" eliminada correctamente`);
+      }
+      setBrandConfirmOpen(false);
+      setTargetBrand(null);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Acción no completada';
+      toast.error(message);
+    } finally {
+      setBrandConfirmLoading(false);
+      setBusyBrandId(null);
+    }
+  };
+
+  // ═══════════════════ HANDLERS CATEGORÍAS ═══════════════════
+
+  const openCategoryCreateModal = () => {
+    setCategoryFormMode('create');
+    setEditingCategory(null);
+    setCategoryFormOpen(true);
+  };
+
+  const openCategoryEditModal = (category: Category) => {
+    setCategoryFormMode('edit');
+    setEditingCategory(category);
+    setCategoryFormOpen(true);
+  };
+
+  const closeCategoryForm = () => {
+    if (categorySubmitting) return;
+    setCategoryFormOpen(false);
+    setEditingCategory(null);
+  };
+
+  const handleCategorySubmit = async (values: CategoryFormValues) => {
+    if (!auth.user) return;
+    setCategorySubmitting(true);
+    try {
+      if (categoryFormMode === 'create') {
+        const result = await createCategory({ 
+          name: values.name, 
+          description: values.description,
+          userId: auth.user.id
+        });
+        if (result) {
+          toast.success('Categoría creada correctamente');
+          setCategoryFormOpen(false);
+        }
+      } else if (editingCategory) {
+        const result = await updateCategory(editingCategory.id, { 
+          name: values.name, 
+          description: values.description,
+          user_id: auth.user.id
+        });
+        if (result) {
+          toast.success('Categoría actualizada correctamente');
+          setCategoryFormOpen(false);
+          setEditingCategory(null);
+        }
+      }
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'No se pudo guardar la categoría';
+      toast.error(message);
+    } finally {
+      setCategorySubmitting(false);
+    }
+  };
+
+  const openCategoryConfirm = (category: Category) => {
+    setTargetCategory(category);
+    setCategoryConfirmOpen(true);
+  };
+
+  const closeCategoryConfirm = () => {
+    if (categoryConfirmLoading) return;
+    setCategoryConfirmOpen(false);
+    setTargetCategory(null);
+  };
+
+  const executeCategoryConfirm = async () => {
+    if (!targetCategory || !auth.user) return;
+    setCategoryConfirmLoading(true);
+    setBusyCategoryId(targetCategory.id);
+    try {
+      const success = await updateCategoryState(targetCategory.id, auth.user.id);
+      if (success) {
+        toast.success(`Categoría "${targetCategory.name}" eliminada correctamente`);
+      }
+      setCategoryConfirmOpen(false);
+      setTargetCategory(null);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Acción no completada';
+      toast.error(message);
+    } finally {
+      setCategoryConfirmLoading(false);
+      setBusyCategoryId(null);
+    }
+  };
+
+  // ═══════════════════ HANDLERS PRESENTACIONES ═══════════════════
+
+  const openPresentationCreateModal = () => {
+    setPresentationFormMode('create');
+    setEditingPresentation(null);
+    setPresentationFormOpen(true);
+  };
+
+  const openPresentationEditModal = (presentation: Presentation) => {
+    setPresentationFormMode('edit');
+    setEditingPresentation(presentation);
+    setPresentationFormOpen(true);
+  };
+
+  const closePresentationForm = () => {
+    if (presentationSubmitting) return;
+    setPresentationFormOpen(false);
+    setEditingPresentation(null);
+  };
+
+  const handlePresentationSubmit = async (values: PresentationFormValues) => {
+    if (!auth.user) return;
+    setPresentationSubmitting(true);
+    try {
+      if (presentationFormMode === 'create') {
+        const result = await createPresentation({ 
+          name: values.name, 
+          userId: auth.user.id
+        });
+        if (result) {
+          toast.success('Presentación creada correctamente');
+          setPresentationFormOpen(false);
+        }
+      } else if (editingPresentation) {
+        const result = await updatePresentation(editingPresentation.id, { 
+          name: values.name, 
+          user_id: auth.user.id
+        });
+        if (result) {
+          toast.success('Presentación actualizada correctamente');
+          setPresentationFormOpen(false);
+          setEditingPresentation(null);
+        }
+      }
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'No se pudo guardar la presentación';
+      toast.error(message);
+    } finally {
+      setPresentationSubmitting(false);
+    }
+  };
+
+  const openPresentationConfirm = (presentation: Presentation) => {
+    setTargetPresentation(presentation);
+    setPresentationConfirmOpen(true);
+  };
+
+  const closePresentationConfirm = () => {
+    if (presentationConfirmLoading) return;
+    setPresentationConfirmOpen(false);
+    setTargetPresentation(null);
+  };
+
+  const executePresentationConfirm = async () => {
+    if (!targetPresentation || !auth.user) return;
+    setPresentationConfirmLoading(true);
+    setBusyPresentationId(targetPresentation.id);
+    try {
+      const success = await updatePresentationState(targetPresentation.id, auth.user.id);
+      if (success) {
+        toast.success(`Presentación "${targetPresentation.name}" eliminada correctamente`);
+      }
+      setPresentationConfirmOpen(false);
+      setTargetPresentation(null);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Acción no completada';
+      toast.error(message);
+    } finally {
+      setPresentationConfirmLoading(false);
+      setBusyPresentationId(null);
+    }
+  };
+
+  // ═══════════════════ HANDLERS COLORES ═══════════════════
+
+  const openColorCreateModal = () => {
+    setColorFormMode('create');
+    setEditingColor(null);
+    setColorFormOpen(true);
+  };
+
+  const openColorEditModal = (color: Color) => {
+    setColorFormMode('edit');
+    setEditingColor(color);
+    setColorFormOpen(true);
+  };
+
+  const closeColorForm = () => {
+    if (colorSubmitting) return;
+    setColorFormOpen(false);
+    setEditingColor(null);
+  };
+
+  const handleColorSubmit = async (values: ColorFormValues) => {
+    if (!auth.user) return;
+    setColorSubmitting(true);
+    try {
+      if (colorFormMode === 'create') {
+        const result = await createColor({ 
+          name: values.name, 
+          userId: auth.user.id
+        });
+        if (result) {
+          toast.success('Color creado correctamente');
+          setColorFormOpen(false);
+        }
+      } else if (editingColor) {
+        const result = await updateColor(editingColor.id, { 
+          name: values.name, 
+          user_id: auth.user.id
+        });
+        if (result) {
+          toast.success('Color actualizado correctamente');
+          setColorFormOpen(false);
+          setEditingColor(null);
+        }
+      }
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'No se pudo guardar el color';
+      toast.error(message);
+    } finally {
+      setColorSubmitting(false);
+    }
+  };
+
+  const openColorConfirm = (color: Color) => {
+    setTargetColor(color);
+    setColorConfirmOpen(true);
+  };
+
+  const closeColorConfirm = () => {
+    if (colorConfirmLoading) return;
+    setColorConfirmOpen(false);
+    setTargetColor(null);
+  };
+
+  const executeColorConfirm = async () => {
+    if (!targetColor || !auth.user) return;
+    setColorConfirmLoading(true);
+    setBusyColorId(targetColor.id);
+    try {
+      const success = await updateColorState(targetColor.id, auth.user.id);
+      if (success) {
+        toast.success(`Color "${targetColor.name}" eliminado correctamente`);
+      }
+      setColorConfirmOpen(false);
+      setTargetColor(null);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Acción no completada';
+      toast.error(message);
+    } finally {
+      setColorConfirmLoading(false);
+      setBusyColorId(null);
+    }
+  };
+
+  // ═══════════════════ RENDER ═══════════════════
+
   return (
     <>
-      <div className="min-h-screen bg-gradient-to-br from-lead-100 via-white to-brand-50">
-        {/* Hero */}
-        <section className="relative overflow-hidden bg-gradient-to-r from-brand-600 to-brand-800 py-10 text-white shadow-lg">
-          <div className="absolute inset-0 opacity-10" style={{ backgroundSize: '30px 30px' }} />
-          <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-              <div>
-                <h1 className="text-3xl font-extrabold tracking-tight md:text-4xl">Productos</h1>
-                <p className="mt-1 text-brand-200">Gestión del catálogo de productos</p>
-              </div>
-              <button onClick={openCreate} className="btn-primary flex items-center gap-2 self-start md:self-auto">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
-                Nuevo Producto
-              </button>
-            </div>
-
-            {/* Stats */}
-            <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-4">
-              <div className="rounded-xl bg-white/10 p-4 backdrop-blur">
-                <p className="text-xs uppercase tracking-wide text-brand-200">Total</p>
-                <p className="text-2xl font-bold">{products.length}</p>
-              </div>
-              <div className="rounded-xl bg-white/10 p-4 backdrop-blur">
-                <p className="text-xs uppercase tracking-wide text-brand-200">Activos</p>
-                <p className="text-2xl font-bold">{totalActive}</p>
-              </div>
-              <div className="rounded-xl bg-white/10 p-4 backdrop-blur">
-                <p className="text-xs uppercase tracking-wide text-brand-200">Inactivos</p>
-                <p className="text-2xl font-bold">{totalInactive}</p>
-              </div>
-              <div className="rounded-xl bg-white/10 p-4 backdrop-blur">
-                <p className="text-xs uppercase tracking-wide text-brand-200">Stock Bajo</p>
-                <p className="text-2xl font-bold text-accent-300">{lowStock}</p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Filtros */}
-        <section className="mx-auto -mt-6 max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-wrap items-center gap-4 rounded-xl bg-white p-4 shadow-lg">
-            <input
-              type="text"
-              placeholder="Buscar producto..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="input flex-1 min-w-[200px]"
+      <div className="relative overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(17,93,216,0.12),transparent_60%),radial-gradient(circle_at_80%_0%,rgba(255,100,27,0.08),transparent_55%)]" />
+        <div className="relative space-y-10 px-6 py-8 lg:px-10 lg:py-12">
+          {/* Hero Section */}
+          <section className="relative overflow-hidden rounded-[2.5rem] bg-gradient-to-r from-brand-900 via-brand-700 to-brand-500 text-white shadow-2xl">
+            <div
+              className="absolute inset-0 opacity-30"
+              style={{ backgroundImage: 'linear-gradient(135deg, rgba(255,255,255,0.25) 0%, rgba(255,255,255,0) 45%)' }}
             />
-            <select
-              value={categoryFilter}
-              onChange={(e) => setCategoryFilter(e.target.value === 'all' ? 'all' : Number(e.target.value))}
-              className="input w-auto"
-            >
-              <option value="all">Todas las categorías</option>
-              {categories.filter(c => c.state).map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select>
-            {/* status filter removed */}
-          </div>
-        </section>
+            <div className="grid gap-10 px-8 py-10 md:px-12 lg:grid-cols-[2fr,1.2fr]">
+              <div className="space-y-6">
+                <p className="text-xs uppercase tracking-[0.45em] text-white/70">Panel de Productos</p>
+                <h2 className="text-3xl font-semibold leading-tight md:text-4xl">
+                  Gestiona tu catálogo de productos, marcas y categorías
+                </h2>
+                <div className="space-y-3 rounded-2xl bg-white/10 p-4 backdrop-blur border border-white/10">
+                  <div className="flex flex-col gap-3 md:flex-row">
+                    <input
+                      className="input-plain flex-1"
+                      placeholder="Buscar por nombre, código de barras o código interno"
+                      value={searchTerm}
+                      onChange={event => setSearchTerm(event.target.value)}
+                    />
+                  </div>
+                  {activeSection === 'products' && (
+                    <div className="flex flex-wrap gap-3">
+                      <select
+                        className="rounded-full px-4 py-2 text-sm font-semibold bg-white/10 text-white/90 border border-white/20 focus:outline-none"
+                        value={categoryFilter}
+                        onChange={(e) => setCategoryFilter(e.target.value === 'all' ? 'all' : Number(e.target.value))}
+                      >
+                        <option value="all" className="text-lead-900">Todas las categorías</option>
+                        {categories.filter(c => c.state).map(c => (
+                          <option key={c.id} value={c.id} className="text-lead-900">{c.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div className="relative">
+                <div className="absolute inset-0 rounded-[2rem] bg-white/10 blur-xl" />
+                <div className="relative space-y-5 rounded-[2rem] border border-white/20 bg-white/10 px-7 py-8 backdrop-blur">
+                  <div className="grid grid-cols-2 gap-4">
+                    {stats.cards.map(card => (
+                      <div key={card.label} className={`rounded-2xl bg-gradient-to-br ${card.accent} px-4 py-5 shadow-lg`}>
+                        <p className="text-xs uppercase tracking-wide text-white/80">{card.label}</p>
+                        <p className="mt-2 text-3xl font-semibold text-white">{card.value}</p>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="space-y-2 rounded-xl border border-white/20 bg-white/10 p-4 text-sm text-white/80">
+                    <p className="text-xs uppercase tracking-[0.35em] text-white/60">Catálogo</p>
+                    {stats.breakdown.map(item => (
+                      <div key={item.label} className="flex items-center justify-between">
+                        <span>{item.label}</span>
+                        <span className="font-semibold text-white">{item.value}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
 
-        {/* Tabla */}
-        <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-          {isLoading && <Loader />}
-          {error && <ErrorMessage message={error} />}
-          {!isLoading && !error && (
-            <ProductsTable products={filtered} onEdit={openEdit} onDeactivate={handleDeactivate} busyId={busyId} />
-          )}
-        </section>
+          {/* Selector de sección */}
+          <div className="flex flex-wrap gap-3">
+            <button
+              type="button"
+              className={`rounded-full px-4 py-2 text-sm font-semibold transition shadow ${
+                activeSection === 'products'
+                  ? 'bg-white text-brand-700 ring-2 ring-brand-200'
+                  : 'bg-white/70 text-lead-600 hover:bg-white'
+              }`}
+              onClick={() => setActiveSection('products')}
+            >
+              Productos
+            </button>
+            <button
+              type="button"
+              className={`rounded-full px-4 py-2 text-sm font-semibold transition shadow ${
+                activeSection === 'brands'
+                  ? 'bg-white text-brand-700 ring-2 ring-brand-200'
+                  : 'bg-white/70 text-lead-600 hover:bg-white'
+              }`}
+              onClick={() => setActiveSection('brands')}
+            >
+              Marcas
+            </button>
+            <button
+              type="button"
+              className={`rounded-full px-4 py-2 text-sm font-semibold transition shadow ${
+                activeSection === 'categories'
+                  ? 'bg-white text-brand-700 ring-2 ring-brand-200'
+                  : 'bg-white/70 text-lead-600 hover:bg-white'
+              }`}
+              onClick={() => setActiveSection('categories')}
+            >
+              Categorías
+            </button>
+            <button
+              type="button"
+              className={`rounded-full px-4 py-2 text-sm font-semibold transition shadow ${
+                activeSection === 'presentations'
+                  ? 'bg-white text-brand-700 ring-2 ring-brand-200'
+                  : 'bg-white/70 text-lead-600 hover:bg-white'
+              }`}
+              onClick={() => setActiveSection('presentations')}
+            >
+              Presentaciones
+            </button>
+            <button
+              type="button"
+              className={`rounded-full px-4 py-2 text-sm font-semibold transition shadow ${
+                activeSection === 'colors'
+                  ? 'bg-white text-brand-700 ring-2 ring-brand-200'
+                  : 'bg-white/70 text-lead-600 hover:bg-white'
+              }`}
+              onClick={() => setActiveSection('colors')}
+            >
+              Colores
+            </button>
+          </div>
+
+          {/* Main Content */}
+          <section className="grid gap-8 xl:grid-cols-[1fr]">
+            {activeSection === 'products' && (
+              <div className="card shadow-xl ring-1 ring-black/5">
+                <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between border-b border-lead-100 pb-4">
+                  <div>
+                    <h3 className="text-xl font-bold text-brand-900">Listado de productos</h3>
+                    <p className="text-sm text-lead-500">{filteredProducts.length} producto(s) coinciden con el filtro.</p>
+                  </div>
+                  <button 
+                    type="button" 
+                    className="btn-primary bg-accent-500 hover:bg-accent-600 border-transparent text-white shadow-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2" 
+                    onClick={openProductCreateModal}
+                  >
+                    Crear producto
+                  </button>
+                </div>
+                {productsLoading ? (
+                  <Loader />
+                ) : (
+                  <ProductsTable
+                    products={filteredProducts}
+                    categoryMap={categoryMap}
+                    brandMap={brandMap}
+                    onEdit={openProductEditModal}
+                    onDeactivate={openProductConfirm}
+                    onView={openProductView}
+                    busyId={busyProductId}
+                  />
+                )}
+              </div>
+            )}
+
+            {activeSection === 'brands' && (
+              <div className="card shadow-xl ring-1 ring-black/5">
+                <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between border-b border-lead-100 pb-4">
+                  <div>
+                    <h3 className="text-xl font-bold text-brand-900">Listado de marcas</h3>
+                    <p className="text-sm text-lead-500">{brands.length} marca(s) registradas.</p>
+                  </div>
+                  <button 
+                    type="button" 
+                    className="btn-primary bg-accent-500 hover:bg-accent-600 border-transparent text-white shadow-md flex items-center gap-2" 
+                    onClick={openBrandCreateModal}
+                  >
+                    Crear marca
+                  </button>
+                </div>
+                {brandsLoading ? (
+                  <Loader />
+                ) : (
+                  <BrandsTable
+                    brands={brands}
+                    onEdit={openBrandEditModal}
+                    onDelete={openBrandConfirm}
+                    busyBrandId={busyBrandId}
+                  />
+                )}
+              </div>
+            )}
+
+            {activeSection === 'categories' && (
+              <div className="card shadow-xl ring-1 ring-black/5">
+                <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between border-b border-lead-100 pb-4">
+                  <div>
+                    <h3 className="text-xl font-bold text-brand-900">Listado de categorías</h3>
+                    <p className="text-sm text-lead-500">{categories.length} categoría(s) registradas.</p>
+                  </div>
+                  <button 
+                    type="button" 
+                    className="btn-primary bg-accent-500 hover:bg-accent-600 border-transparent text-white shadow-md flex items-center gap-2" 
+                    onClick={openCategoryCreateModal}
+                  >
+                    Crear categoría
+                  </button>
+                </div>
+                {categoriesLoading ? (
+                  <Loader />
+                ) : (
+                  <CategoriesTable
+                    categories={categories}
+                    onEdit={openCategoryEditModal}
+                    onDeactivate={openCategoryConfirm}
+                    busyId={busyCategoryId}
+                  />
+                )}
+              </div>
+            )}
+
+            {activeSection === 'presentations' && (
+              <div className="card shadow-xl ring-1 ring-black/5">
+                <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between border-b border-lead-100 pb-4">
+                  <div>
+                    <h3 className="text-xl font-bold text-brand-900">Listado de presentaciones</h3>
+                    <p className="text-sm text-lead-500">{presentations.length} presentación(es) registradas.</p>
+                  </div>
+                  <button 
+                    type="button" 
+                    className="btn-primary bg-accent-500 hover:bg-accent-600 border-transparent text-white shadow-md flex items-center gap-2" 
+                    onClick={openPresentationCreateModal}
+                  >
+                    Crear presentación
+                  </button>
+                </div>
+                {presentationsLoading ? (
+                  <Loader />
+                ) : (
+                  <PresentationsTable
+                    presentations={presentations}
+                    onEdit={openPresentationEditModal}
+                    onDeactivate={openPresentationConfirm}
+                    busyId={busyPresentationId}
+                  />
+                )}
+              </div>
+            )}
+
+            {activeSection === 'colors' && (
+              <div className="card shadow-xl ring-1 ring-black/5">
+                <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between border-b border-lead-100 pb-4">
+                  <div>
+                    <h3 className="text-xl font-bold text-brand-900">Listado de colores</h3>
+                    <p className="text-sm text-lead-500">{colors.length} color(es) registrados.</p>
+                  </div>
+                  <button 
+                    type="button" 
+                    className="btn-primary bg-accent-500 hover:bg-accent-600 border-transparent text-white shadow-md flex items-center gap-2" 
+                    onClick={openColorCreateModal}
+                  >
+                    Crear color
+                  </button>
+                </div>
+                {colorsLoading ? (
+                  <Loader />
+                ) : (
+                  <ColorsTable
+                    colors={colors}
+                    onEdit={openColorEditModal}
+                    onDeactivate={openColorConfirm}
+                    busyId={busyColorId}
+                  />
+                )}
+              </div>
+            )}
+          </section>
+        </div>
       </div>
 
-      {/* Modal */}
-      {modalOpen && <ProductFormModal product={editing} categories={categories} onClose={closeModal} onSave={handleSave} saving={saving} />}
+      {/* Modales de Productos */}
+      <ProductFormModal
+        open={productFormOpen}
+        mode={productFormMode}
+        initialData={editingProduct}
+        categories={categories}
+        brands={brands}
+        presentations={presentations}
+        colors={colors}
+        submitting={productSubmitting}
+        onClose={closeProductForm}
+        onSubmit={handleProductSubmit}
+      />
 
-      {/* Confirm */}
-      {confirmDelete && (
-        <ConfirmDialog
-          title="Desactivar producto"
-          message={`¿Está seguro de desactivar el producto "${confirmDelete.name}"?`}
-          onConfirm={confirmDeactivate}
-          onCancel={() => setConfirmDelete(null)}
-        />
+      {/* Modal Ver producto */}
+      {productDetailOpen && (
+        <ProductDetailsModal product={selectedProductForView} onClose={closeProductView} />
       )}
+
+      {/* Modales de Marcas */}
+      <BrandFormModal
+        open={brandFormOpen}
+        mode={brandFormMode}
+        initialData={editingBrand}
+        submitting={brandSubmitting}
+        onClose={closeBrandForm}
+        onSubmit={handleBrandSubmit}
+      />
+
+      {/* Modales de Categorías */}
+      <CategoryFormModal
+        open={categoryFormOpen}
+        mode={categoryFormMode}
+        initialData={editingCategory}
+        submitting={categorySubmitting}
+        onClose={closeCategoryForm}
+        onSubmit={handleCategorySubmit}
+      />
+
+      {/* Modales de Presentaciones */}
+      <PresentationFormModal
+        open={presentationFormOpen}
+        mode={presentationFormMode}
+        initialData={editingPresentation}
+        submitting={presentationSubmitting}
+        onClose={closePresentationForm}
+        onSubmit={handlePresentationSubmit}
+      />
+
+      {/* Modales de Colores */}
+      <ColorFormModal
+        open={colorFormOpen}
+        mode={colorFormMode}
+        initialData={editingColor}
+        submitting={colorSubmitting}
+        onClose={closeColorForm}
+        onSubmit={handleColorSubmit}
+      />
+
+      {/* Diálogos de confirmación */}
+      <ConfirmDialog
+        open={productConfirmOpen}
+        title="Eliminar producto"
+        confirmLabel="Eliminar"
+        onConfirm={executeProductConfirm}
+        onCancel={closeProductConfirm}
+        disabled={productConfirmLoading}
+      />
+
+      <ConfirmDialog
+        open={brandConfirmOpen}
+        title="Eliminar marca"
+        confirmLabel="Eliminar"
+        onConfirm={executeBrandConfirm}
+        onCancel={closeBrandConfirm}
+        disabled={brandConfirmLoading}
+      />
+
+      <ConfirmDialog
+        open={categoryConfirmOpen}
+        title="Eliminar categoría"
+        confirmLabel="Eliminar"
+        onConfirm={executeCategoryConfirm}
+        onCancel={closeCategoryConfirm}
+        disabled={categoryConfirmLoading}
+      />
+
+      <ConfirmDialog
+        open={presentationConfirmOpen}
+        title="Eliminar presentación"
+        confirmLabel="Eliminar"
+        onConfirm={executePresentationConfirm}
+        onCancel={closePresentationConfirm}
+        disabled={presentationConfirmLoading}
+      />
+
+      <ConfirmDialog
+        open={colorConfirmOpen}
+        title="Eliminar color"
+        confirmLabel="Eliminar"
+        onConfirm={executeColorConfirm}
+        onCancel={closeColorConfirm}
+        disabled={colorConfirmLoading}
+      />
+
+      {/* Sistema de notificaciones Toast */}
+      <ToastContainer toasts={toast.toasts} onDismiss={toast.dismissToast} />
     </>
   );
 };

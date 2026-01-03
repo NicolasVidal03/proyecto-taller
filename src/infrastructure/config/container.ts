@@ -11,6 +11,10 @@ import {
   ProductSupplierService,
   BranchService,
   CountryService,
+  BrandService,
+  ProductBranchService,
+  PresentationService,
+  ColorService,
 } from '../../application';
 
 import { ClientService } from '../../application/ClientService';
@@ -25,6 +29,10 @@ import {
   HttpProductSupplierRepository,
   HttpBranchRepository,
   HttpCountryRepository,
+  HttpBrandRepository,
+  HttpProductBranchRepository,
+  HttpPresentationRepository,
+  HttpColorRepository,
 } from '../http/repositories';
 
 import { HttpClientRepository } from '../http/repositories/HttpClientRepository';
@@ -41,6 +49,10 @@ const branchRepository = new HttpBranchRepository();
 const countryRepository = new HttpCountryRepository();
 const clientRepository = new HttpClientRepository();
 const areaRepository = new HttpAreaRepository();
+const brandRepository = new HttpBrandRepository();
+const productBranchRepository = new HttpProductBranchRepository();
+const presentationRepository = new HttpPresentationRepository();
+const colorRepository = new HttpColorRepository();
 
 // Services Container (Aplicación)
 export const container = {
@@ -54,5 +66,9 @@ export const container = {
   countries: new CountryService(countryRepository),
   clients: new ClientService(clientRepository),
   areas: new AreaService(areaRepository),
-};// Tipo del contenedor para TypeScript
+  brands: new BrandService(brandRepository),
+  productBranches: new ProductBranchService(productBranchRepository),
+  presentations: new PresentationService(presentationRepository),
+  colors: new ColorService(colorRepository),
+};
 export type Container = typeof container;

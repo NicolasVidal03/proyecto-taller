@@ -7,3 +7,7 @@ export { SupplierService } from './SupplierService';
 export { ProductSupplierService } from './ProductSupplierService';
 export { BranchService } from './BranchService';
 export { CountryService } from './CountryService';
+export { BrandService } from './BrandService';
+export { ProductBranchService } from './ProductBranchService';
+export { PresentationService } from './PresentationService';
+export { ColorService } from './ColorService';

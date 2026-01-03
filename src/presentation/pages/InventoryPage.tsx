@@ -1,274 +1,571 @@
-import React, { useEffect, useState, useMemo } from 'react';
-import { useProductSuppliers } from '../hooks/useProductSuppliers';
-import { useProducts } from '../hooks/useProducts';
-import { useSuppliers } from '../hooks/useSuppliers';
-import { ProductSupplier } from '../../domain/entities/ProductSupplier';
-import { Product } from '../../domain/entities/Product';
-import { Supplier } from '../../domain/entities/Supplier';
-import ConfirmDialog from '../components/shared/ConfirmDialog';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useInventory } from '../hooks/useInventory';
+import { useBranches } from '../hooks/useBranches';
+import { useCategories } from '../hooks/useCategories';
+import { useBrands } from '../hooks/useBrands';
+import { useAuth } from '../providers/AuthProvider';
+import { ProductWithBranchInfo, BranchProductsFilters } from '../../domain/entities/ProductBranch';
 import Loader from '../components/shared/Loader';
-import ErrorMessage from '../components/shared/ErrorMessage';
+import { ToastContainer, useToast } from '../components/shared/Toast';
 
 export const InventoryPage: React.FC = () => {
-  const {
-    productSuppliers,
-    isLoading,
-    error,
-    fetchProductSuppliers,
-    createProductSupplier,
-    updateProductSupplier,
-    updateProductSupplierState,
-  } = useProductSuppliers();
+  const { inventory, pagination, isLoading, error, fetchInventory, setStock, clearError } = useInventory();
+  const { branches, fetchBranches, isLoading: branchesLoading } = useBranches();
+  const { categories, fetchCategories } = useCategories();
+  const { brands, fetchBrands } = useBrands();
+  const auth = useAuth();
+  const toast = useToast();
 
-  const { products, fetchProducts } = useProducts();
-  const { suppliers, fetchSuppliers } = useSuppliers();
-
-  const [modalOpen, setModalOpen] = useState(false);
-  const [editing, setEditing] = useState<ProductSupplier | null>(null);
-  const [confirmDelete, setConfirmDelete] = useState<ProductSupplier | null>(null);
+  // Estados de filtros
+  const [selectedBranchId, setSelectedBranchId] = useState<number | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [searchInput, setSearchInput] = useState(''); // Para debounce
+  const [stockFilter, setStockFilter] = useState<'all' | 'available'>('available');
+  const [categoryFilter, setCategoryFilter] = useState<number | 'all'>('all');
+  const [brandFilter, setBrandFilter] = useState<number | 'all'>('all');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  
+  // Modal para editar stock
+  const [editModal, setEditModal] = useState<{
+    open: boolean;
+    item: ProductWithBranchInfo | null;
+  }>({ open: false, item: null });
+  const [editHasStock, setEditHasStock] = useState(false);
+  const [editStockQty, setEditStockQty] = useState('');
   const [saving, setSaving] = useState(false);
-  const [busyId, setBusyId] = useState<number | null>(null);
-  const [search, setSearch] = useState('');
 
-  /* Form state */
-  const [productId, setProductId] = useState<number | ''>('');
-  const [supplierId, setSupplierId] = useState<number | ''>('');
-  const [agreedBuyPrice, setAgreedBuyPrice] = useState('');
-
+  // Cargar datos iniciales
   useEffect(() => {
-    fetchProductSuppliers();
-    fetchProducts();
-    fetchSuppliers();
-  }, [fetchProductSuppliers, fetchProducts, fetchSuppliers]);
+    fetchBranches();
+    fetchCategories();
+    fetchBrands();
+  }, [fetchBranches, fetchCategories, fetchBrands]);
 
-  /* Helpers */
-  const getProductName = (id: number): string => products.find(p => p.id === id)?.name ?? `#${id}`;
-  const getSupplierName = (id: number): string => suppliers.find(s => s.id === id)?.name ?? `#${id}`;
-
-  /* ───────── Filtros ───────── */
-  const filtered = useMemo(() => {
-    let list = productSuppliers;
-    if (search.trim()) {
-      const q = search.toLowerCase();
-      list = list.filter(ps =>
-        getProductName(ps.productId).toLowerCase().includes(q) ||
-        getSupplierName(ps.supplierId).toLowerCase().includes(q)
-      );
-    }
-    return list;
-  }, [productSuppliers, search, products, suppliers]);
-
-  /* ───────── Stats ───────── */
-  const totalActive = productSuppliers.filter(ps => ps.state).length;
-  const totalInactive = productSuppliers.filter(ps => !ps.state).length;
-
-  /* ───────── Modal Handlers ───────── */
-  const openCreate = () => {
-    setEditing(null);
-    setProductId('');
-    setSupplierId('');
-    setAgreedBuyPrice('');
-    setModalOpen(true);
-  };
-
-  const openEdit = (ps: ProductSupplier) => {
-    setEditing(ps);
-    setProductId(ps.productId);
-    setSupplierId(ps.supplierId);
-    setAgreedBuyPrice(ps.agreedBuyPrice?.toString() ?? '');
-    setModalOpen(true);
-  };
-
-  const closeModal = () => {
-    setModalOpen(false);
-    setEditing(null);
-  };
-
-  const handleSave = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (productId === '' || supplierId === '') return;
-    setSaving(true);
-    const data = {
-      productId: Number(productId),
-      supplierId: Number(supplierId),
-      agreedBuyPrice: parseFloat(agreedBuyPrice) || 0,
-      state: editing?.state ?? true,
-    };
-    try {
-      if (editing?.id) {
-        await updateProductSupplier(editing.id, data);
+  // Seleccionar la sucursal del usuario logueado por defecto
+  useEffect(() => {
+    if (branches.length > 0 && selectedBranchId === null) {
+      const userBranchId = auth.user?.branchId;
+      if (userBranchId && branches.find(b => b.id === userBranchId)) {
+        setSelectedBranchId(userBranchId);
       } else {
-        await createProductSupplier(data);
+        setSelectedBranchId(branches[0].id);
       }
-      closeModal();
+    }
+  }, [branches, selectedBranchId, auth.user]);
+
+  // Debounce para búsqueda
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setSearchTerm(searchInput);
+      setCurrentPage(1); // Reset al buscar
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchInput]);
+
+  // Construir filtros
+  const filters = useMemo((): BranchProductsFilters => ({
+    search: searchTerm || undefined,
+    page: currentPage,
+    limit: pageSize,
+    onlyAvailable: stockFilter === 'available',
+    categoryId: categoryFilter !== 'all' ? categoryFilter : undefined,
+    brandId: brandFilter !== 'all' ? brandFilter : undefined,
+  }), [searchTerm, currentPage, pageSize, stockFilter, categoryFilter, brandFilter]);
+
+  // Cargar inventario cuando cambian filtros o sucursal
+  useEffect(() => {
+    if (selectedBranchId) {
+      fetchInventory(selectedBranchId, filters);
+    }
+  }, [selectedBranchId, filters, fetchInventory]);
+
+  // Mostrar errores
+  useEffect(() => {
+    if (error) {
+      toast.error(error);
+      clearError();
+    }
+  }, [error, toast, clearError]);
+
+  // Estadísticas locales (de la página actual)
+  const stats = useMemo(() => {
+    const withStock = inventory.filter(i => i.branch.hasStock && (i.branch.stockQty ?? 0) > 0).length;
+    const lowStock = inventory.filter(i => i.branch.hasStock && (i.branch.stockQty ?? 0) > 0 && (i.branch.stockQty ?? 0) <= 5).length;
+    const noStock = inventory.filter(i => !i.branch.hasStock || (i.branch.stockQty ?? 0) === 0).length;
+    return { 
+      total: pagination.total, 
+      withStock, 
+      lowStock, 
+      noStock,
+      currentPageItems: inventory.length 
+    };
+  }, [inventory, pagination.total]);
+
+  // Handlers
+  const handleBranchChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setSelectedBranchId(Number(e.target.value));
+    setCurrentPage(1);
+  };
+
+  const handlePageChange = (newPage: number) => {
+    if (newPage >= 1 && newPage <= pagination.totalPages) {
+      setCurrentPage(newPage);
+    }
+  };
+
+  const handlePageSizeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setPageSize(Number(e.target.value));
+    setCurrentPage(1);
+  };
+
+  const openEditModal = (item: ProductWithBranchInfo) => {
+    setEditModal({ open: true, item });
+    setEditHasStock(item.branch.hasStock);
+    setEditStockQty(item.branch.stockQty?.toString() ?? '');
+  };
+
+  const closeEditModal = () => {
+    setEditModal({ open: false, item: null });
+  };
+
+  const handleSaveStock = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editModal.item || !selectedBranchId) return;
+    
+    setSaving(true);
+    try {
+      const result = await setStock(editModal.item.id, selectedBranchId, {
+        hasStock: editHasStock,
+        stockQty: editStockQty ? parseInt(editStockQty, 10) : null,
+      });
+      if (result) {
+        toast.success(result.deleted 
+          ? 'Producto marcado como no disponible en esta sucursal'
+          : 'Stock actualizado correctamente'
+        );
+        closeEditModal();
+      }
+    } catch (err: any) {
+      toast.error(err?.message || 'Error al actualizar stock');
     } finally {
       setSaving(false);
     }
   };
 
-  const handleDeactivate = (ps: ProductSupplier) => setConfirmDelete(ps);
-
-  const confirmDeactivate = async () => {
-    if (!confirmDelete) return;
-    setBusyId(confirmDelete.id);
-    try {
-      await updateProductSupplierState(confirmDelete.id, false);
-    } finally {
-      setBusyId(null);
-      setConfirmDelete(null);
-    }
+  const formatPrice = (price: Record<string, number> | undefined) => {
+    if (!price) return '—';
+    const entries = Object.entries(price);
+    if (entries.length === 0) return '—';
+    const [, value] = entries[0];
+    return `Bs. ${value.toFixed(2)}`;
   };
 
-  const formatPrice = (val: number | undefined) => (val !== undefined ? `Bs. ${val.toFixed(2)}` : '—');
+  const selectedBranch = branches.find(b => b.id === selectedBranchId);
 
-  /* ───────── Table Row ───────── */
-  const isBusy = (id: number) => busyId != null && busyId === id;
+  // Generar rango de páginas para mostrar
+  const pageNumbers = useMemo(() => {
+    const pages: number[] = [];
+    const maxVisible = 5;
+    let start = Math.max(1, currentPage - Math.floor(maxVisible / 2));
+    let end = Math.min(pagination.totalPages, start + maxVisible - 1);
+    
+    if (end - start + 1 < maxVisible) {
+      start = Math.max(1, end - maxVisible + 1);
+    }
+    
+    for (let i = start; i <= end; i++) {
+      pages.push(i);
+    }
+    return pages;
+  }, [currentPage, pagination.totalPages]);
 
-  /* ───────── Render ───────── */
   return (
     <>
-      <div className="min-h-screen bg-gradient-to-br from-lead-100 via-white to-brand-50">
-        {/* Hero */}
-        <section className="relative overflow-hidden bg-gradient-to-r from-brand-600 to-brand-800 py-10 text-white shadow-lg">
-          <div className="absolute inset-0 opacity-10" style={{ backgroundSize: '30px 30px' }} />
-          <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-              <div>
-                <h1 className="text-3xl font-extrabold tracking-tight md:text-4xl">Inventario</h1>
-                <p className="mt-1 text-brand-200">Relaciones Producto – Proveedor</p>
+      <div className="relative overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(17,93,216,0.12),transparent_60%),radial-gradient(circle_at_80%_0%,rgba(255,100,27,0.08),transparent_55%)]" />
+        <div className="relative space-y-10 px-6 py-8 lg:px-10 lg:py-12">
+          {/* Hero Section */}
+          <section className="relative overflow-hidden rounded-[2.5rem] bg-gradient-to-r from-brand-900 via-brand-700 to-brand-500 text-white shadow-2xl">
+            <div
+              className="absolute inset-0 opacity-30"
+              style={{ backgroundImage: 'linear-gradient(135deg, rgba(255,255,255,0.25) 0%, rgba(255,255,255,0) 45%)' }}
+            />
+            <div className="grid gap-10 px-8 py-10 md:px-12 lg:grid-cols-[2fr,1.2fr]">
+              <div className="space-y-6">
+                <p className="text-xs uppercase tracking-[0.45em] text-white/70">Control de Stock</p>
+                <h2 className="text-3xl font-semibold leading-tight md:text-4xl">
+                  Inventario por Sucursal
+                </h2>
+                <div className="space-y-3 rounded-2xl bg-white/10 p-4 backdrop-blur border border-white/10">
+                  {/* Primera fila: Sucursal y Búsqueda */}
+                  <div className="flex flex-col gap-3 md:flex-row">
+                    <div className="flex-1">
+                      <label className="block text-xs uppercase tracking-wide text-white/70 mb-1">Sucursal</label>
+                      <select
+                        className="w-full rounded-lg px-4 py-2.5 text-sm font-medium bg-white/20 text-white border border-white/20 focus:outline-none focus:ring-2 focus:ring-white/30"
+                        value={selectedBranchId ?? ''}
+                        onChange={handleBranchChange}
+                        disabled={branchesLoading}
+                      >
+                        {branches.map(branch => (
+                          <option key={branch.id} value={branch.id} className="text-lead-900">
+                            {branch.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="flex-1">
+                      <label className="block text-xs uppercase tracking-wide text-white/70 mb-1">Buscar</label>
+                      <input
+                        className="input-plain w-full"
+                        placeholder="Nombre, código de barras o código interno..."
+                        value={searchInput}
+                        onChange={e => setSearchInput(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                  
+                  {/* Segunda fila: Filtros de categoría y marca */}
+                  <div className="flex flex-col gap-3 md:flex-row">
+                    <div className="flex-1">
+                      <label className="block text-xs uppercase tracking-wide text-white/70 mb-1">Categoría</label>
+                      <select
+                        className="w-full rounded-lg px-4 py-2.5 text-sm font-medium bg-white/20 text-white border border-white/20 focus:outline-none focus:ring-2 focus:ring-white/30"
+                        value={categoryFilter}
+                        onChange={e => { setCategoryFilter(e.target.value === 'all' ? 'all' : Number(e.target.value)); setCurrentPage(1); }}
+                      >
+                        <option value="all" className="text-lead-900">Todas las categorías</option>
+                        {categories.filter(c => c.state).map(cat => (
+                          <option key={cat.id} value={cat.id} className="text-lead-900">{cat.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="flex-1">
+                      <label className="block text-xs uppercase tracking-wide text-white/70 mb-1">Marca</label>
+                      <select
+                        className="w-full rounded-lg px-4 py-2.5 text-sm font-medium bg-white/20 text-white border border-white/20 focus:outline-none focus:ring-2 focus:ring-white/30"
+                        value={brandFilter}
+                        onChange={e => { setBrandFilter(e.target.value === 'all' ? 'all' : Number(e.target.value)); setCurrentPage(1); }}
+                      >
+                        <option value="all" className="text-lead-900">Todas las marcas</option>
+                        {brands.filter(b => b.state).map(brand => (
+                          <option key={brand.id} value={brand.id} className="text-lead-900">{brand.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Tercera fila: Filtros de disponibilidad */}
+                  <div className="flex flex-wrap gap-3">
+                    {(['available', 'all'] as const).map(filter => (
+                      <button
+                        key={filter}
+                        type="button"
+                        onClick={() => { setStockFilter(filter); setCurrentPage(1); }}
+                        className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
+                          stockFilter === filter
+                            ? 'bg-lead-50 text-brand-700 shadow-lg'
+                            : 'bg-white/10 text-white/70 hover:bg-white/20'
+                        }`}
+                      >
+                        {filter === 'available' ? 'En Inventario' : 'Catálogo Completo'}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
-              <button onClick={openCreate} className="btn-primary flex items-center gap-2 self-start md:self-auto">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
-                Nueva Relación
+              <div className="relative">
+                <div className="absolute inset-0 rounded-[2rem] bg-white/10 blur-xl" />
+                <div className="relative space-y-5 rounded-[2rem] border border-white/20 bg-white/10 px-7 py-8 backdrop-blur">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="rounded-2xl bg-gradient-to-br from-brand-900 to-brand-600 px-4 py-5 shadow-lg">
+                      <p className="text-xs uppercase tracking-wide text-white/80">Total Productos</p>
+                      <p className="mt-2 text-3xl font-semibold text-white">{stats.total.toLocaleString()}</p>
+                    </div>
+                    <div className="rounded-2xl bg-gradient-to-br from-green-600 to-green-400 px-4 py-5 shadow-lg">
+                      <p className="text-xs uppercase tracking-wide text-white/80">En esta página</p>
+                      <p className="mt-2 text-3xl font-semibold text-white">{stats.currentPageItems}</p>
+                    </div>
+                  </div>
+                  <div className="space-y-2 rounded-xl border border-white/20 bg-white/10 p-4 text-sm text-white/80">
+                    <p className="text-xs uppercase tracking-[0.35em] text-white/60">Alertas de Stock (página actual)</p>
+                    <div className="flex items-center justify-between">
+                      <span>Con stock</span>
+                      <span className="font-semibold text-green-300">{stats.withStock}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span>Stock bajo (≤5)</span>
+                      <span className={`font-semibold ${stats.lowStock > 0 ? 'text-amber-300' : 'text-white'}`}>
+                        {stats.lowStock}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span>Sin stock</span>
+                      <span className={`font-semibold ${stats.noStock > 0 ? 'text-red-300' : 'text-white'}`}>
+                        {stats.noStock}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Tabla de inventario */}
+          <section className="grid gap-8 xl:grid-cols-[1fr]">
+            <div className="card shadow-xl ring-1 ring-black/5">
+              <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between border-b border-lead-100 pb-4">
+                <div>
+                  <h3 className="text-xl font-bold text-brand-900">
+                    Stock en {selectedBranch?.name ?? 'Sucursal'}
+                  </h3>
+                  <p className="text-sm text-lead-500">
+                    Mostrando {inventory.length} de {pagination.total.toLocaleString()} productos
+                    {pagination.totalPages > 1 && ` • Página ${pagination.page} de ${pagination.totalPages}`}
+                  </p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <label className="text-sm text-lead-600">Mostrar:</label>
+                  <select
+                    className="rounded-lg border border-lead-300 bg-white px-3 py-2 text-sm focus:border-brand-500 focus:ring-brand-500"
+                    value={pageSize}
+                    onChange={handlePageSizeChange}
+                  >
+                    <option value={10}>10</option>
+                    <option value={20}>20</option>
+                    <option value={30}>30</option>
+                    <option value={40}>40</option>
+                    <option value={50}>50</option>
+                  </select>
+                </div>
+              </div>
+
+              {isLoading || branchesLoading ? (
+                <Loader />
+              ) : inventory.length === 0 ? (
+                <div className="rounded-md border bg-white p-6 text-center text-sm text-gray-600 shadow-sm">
+                  {searchTerm || categoryFilter !== 'all' || brandFilter !== 'all' || stockFilter === 'available'
+                    ? 'No se encontraron productos con los filtros seleccionados.'
+                    : 'No hay productos en el inventario de esta sucursal.'}
+                </div>
+              ) : (
+                <>
+                  <div className="overflow-x-auto rounded-lg border border-lead-200 bg-lead-50 shadow-lg">
+                    <table className="min-w-full text-sm">
+                      <thead className="bg-brand-600 text-xs uppercase tracking-wider text-white">
+                        <tr>
+                          <th className="px-4 py-4 text-left font-semibold">Producto</th>
+                          <th className="px-4 py-4 text-left font-semibold">Categoría</th>
+                          <th className="px-4 py-4 text-left font-semibold">Marca</th>
+                          <th className="px-4 py-4 text-left font-semibold">Código</th>
+                          <th className="px-4 py-4 text-center font-semibold">Disponible</th>
+                          <th className="px-4 py-4 text-center font-semibold">Stock</th>
+                          <th className="px-4 py-4 text-left font-semibold">Precio</th>
+                          <th className="w-32 px-4 py-4 text-center font-semibold">Acciones</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-lead-200">
+                        {inventory.map(item => (
+                          <tr key={item.id} className="transition-colors hover:bg-white">
+                            <td className="px-4 py-3 font-medium text-brand-900">
+                              {item.name}
+                            </td>
+                            <td className="px-4 py-3 text-lead-600">
+                              {item.category.name}
+                            </td>
+                            <td className="px-4 py-3 text-lead-600">
+                              {item.brand.name}
+                            </td>
+                            <td className="px-4 py-3 text-lead-600 font-mono text-xs">
+                              {item.barcode || item.internalCode || '—'}
+                            </td>
+                            <td className="px-4 py-3 text-center">
+                              <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                                item.branch.hasStock 
+                                  ? 'bg-green-100 text-green-800' 
+                                  : 'bg-red-100 text-red-800'
+                              }`}>
+                                {item.branch.hasStock ? 'Sí' : 'No'}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 text-center">
+                              <span className={`font-semibold ${
+                                !item.branch.stockQty || item.branch.stockQty === 0
+                                  ? 'text-red-600'
+                                  : item.branch.stockQty <= 5
+                                  ? 'text-amber-600'
+                                  : 'text-green-600'
+                              }`}>
+                                {item.branch.stockQty ?? 0}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 text-lead-600">
+                              {formatPrice(item.salePrice)}
+                            </td>
+                            <td className="px-4 py-3 text-center">
+                              <button
+                                type="button"
+                                onClick={() => openEditModal(item)}
+                                className="rounded bg-brand-100 px-3 py-1.5 font-medium text-brand-700 transition hover:bg-brand-200"
+                              >
+                                Editar
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Paginación */}
+                  {pagination.totalPages > 1 && (
+                    <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+                      <p className="text-sm text-lead-500">
+                        Mostrando {((pagination.page - 1) * pagination.limit) + 1} a {Math.min(pagination.page * pagination.limit, pagination.total)} de {pagination.total.toLocaleString()} productos
+                      </p>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => handlePageChange(1)}
+                          disabled={currentPage === 1}
+                          className="rounded px-3 py-2 text-sm font-medium text-lead-700 hover:bg-lead-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          ««
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handlePageChange(currentPage - 1)}
+                          disabled={currentPage === 1}
+                          className="rounded px-3 py-2 text-sm font-medium text-lead-700 hover:bg-lead-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          «
+                        </button>
+                        
+                        {pageNumbers.map(pageNum => (
+                          <button
+                            key={pageNum}
+                            type="button"
+                            onClick={() => handlePageChange(pageNum)}
+                            className={`rounded px-3 py-2 text-sm font-medium transition ${
+                              pageNum === currentPage
+                                ? 'bg-brand-600 text-white'
+                                : 'text-lead-700 hover:bg-lead-100'
+                            }`}
+                          >
+                            {pageNum}
+                          </button>
+                        ))}
+                        
+                        <button
+                          type="button"
+                          onClick={() => handlePageChange(currentPage + 1)}
+                          disabled={currentPage === pagination.totalPages}
+                          className="rounded px-3 py-2 text-sm font-medium text-lead-700 hover:bg-lead-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          »
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handlePageChange(pagination.totalPages)}
+                          disabled={currentPage === pagination.totalPages}
+                          className="rounded px-3 py-2 text-sm font-medium text-lead-700 hover:bg-lead-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          »»
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          </section>
+        </div>
+      </div>
+
+      {/* Modal de edición de stock */}
+      {editModal.open && editModal.item && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-lead-900/60 backdrop-blur-sm overflow-y-auto">
+          <div className="mx-4 my-10 w-full max-w-md overflow-hidden rounded-xl bg-lead-50 shadow-2xl ring-1 ring-black/5">
+            <div className="flex items-center justify-between bg-brand-600 px-6 py-4 text-white">
+              <h3 className="text-lg font-semibold tracking-wide">Editar Stock</h3>
+              <button
+                onClick={closeEditModal}
+                className="rounded-full p-1 text-brand-100 hover:text-white hover:bg-brand-700 transition-colors"
+                disabled={saving}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                </svg>
               </button>
             </div>
 
-            {/* Stats */}
-            <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
-              <div className="rounded-xl bg-white/10 p-4 backdrop-blur">
-                <p className="text-xs uppercase tracking-wide text-brand-200">Total</p>
-                <p className="text-2xl font-bold">{productSuppliers.length}</p>
+            <form onSubmit={handleSaveStock} className="space-y-5 px-6 py-6">
+              <div className="rounded-lg bg-brand-50 p-3 border border-brand-100">
+                <p className="text-sm font-medium text-brand-900">{editModal.item.name}</p>
+                <div className="flex gap-4 mt-1 text-xs text-brand-600">
+                  <span>{editModal.item.category.name}</span>
+                  <span>•</span>
+                  <span>{editModal.item.brand.name}</span>
+                </div>
+                {(editModal.item.barcode || editModal.item.internalCode) && (
+                  <p className="text-xs text-brand-500 font-mono mt-1">
+                    {editModal.item.barcode || editModal.item.internalCode}
+                  </p>
+                )}
               </div>
-              <div className="rounded-xl bg-white/10 p-4 backdrop-blur">
-                <p className="text-xs uppercase tracking-wide text-brand-200">Activos</p>
-                <p className="text-2xl font-bold">{totalActive}</p>
-              </div>
-              <div className="rounded-xl bg-white/10 p-4 backdrop-blur">
-                <p className="text-xs uppercase tracking-wide text-brand-200">Inactivos</p>
-                <p className="text-2xl font-bold">{totalInactive}</p>
-              </div>
-            </div>
-          </div>
-        </section>
 
-        {/* Filtros */}
-        <section className="mx-auto -mt-6 max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-wrap items-center gap-4 rounded-xl bg-white p-4 shadow-lg">
-            <input
-              type="text"
-              placeholder="Buscar producto o proveedor..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="input flex-1 min-w-[200px]"
-            />
-            {/* status filter removed */}
-          </div>
-        </section>
-
-        {/* Tabla */}
-        <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-          {isLoading && <Loader />}
-          {error && <ErrorMessage message={error} />}
-          {!isLoading && !error && (
-            filtered.length === 0 ? (
-              <div className="rounded-md border bg-white p-6 text-center text-sm text-gray-600 shadow-sm">
-                No hay relaciones cargadas todavía.
+              <div>
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={editHasStock}
+                    onChange={(e) => setEditHasStock(e.target.checked)}
+                    className="h-5 w-5 rounded border-lead-300 text-brand-600 focus:ring-brand-500"
+                    disabled={saving}
+                  />
+                  <span className="text-sm font-medium text-lead-700">Tiene stock disponible en esta sucursal</span>
+                </label>
+                <p className="mt-1 ml-8 text-xs text-lead-500">
+                  {editHasStock 
+                    ? 'El producto está disponible para venta en esta sucursal.'
+                    : 'Desmarcar eliminará el registro de stock para esta sucursal.'}
+                </p>
               </div>
-            ) : (
-              <div className="overflow-x-auto rounded-lg border border-lead-200 bg-lead-50 shadow-lg">
-                <table className="min-w-full text-sm">
-                  <thead className="bg-brand-600 text-xs uppercase tracking-wider text-white">
-                    <tr>
-                      <th className="px-4 py-4 text-left font-semibold">ID</th>
-                      <th className="px-4 py-4 text-left font-semibold">Producto</th>
-                      <th className="px-4 py-4 text-left font-semibold">Proveedor</th>
-                      <th className="px-4 py-4 text-left font-semibold">Precio Acordado</th>
-                      <th className="px-4 py-4 text-left font-semibold">Estado</th>
-                      <th className="w-40 px-4 py-4 text-center align-middle font-semibold">Acciones</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-lead-200">
-                    {filtered.map(ps => (
-                      <tr key={ps.id} className="transition-colors hover:bg-white">
-                        <td className="px-4 py-3 font-medium text-brand-900">{ps.id}</td>
-                        <td className="px-4 py-3 text-lead-600">{getProductName(ps.productId)}</td>
-                        <td className="px-4 py-3 text-lead-600">{getSupplierName(ps.supplierId)}</td>
-                        <td className="px-4 py-3 text-lead-600">{formatPrice(ps.agreedBuyPrice)}</td>
-                        <td className="px-4 py-3">
-                          <span className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${ps.state ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                            {ps.state ? 'Activo' : 'Inactivo'}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 text-center align-middle">
-                          <div className="flex items-center justify-center gap-2">
-                            <button
-                              type="button"
-                              onClick={() => openEdit(ps)}
-                              className="rounded bg-brand-100 px-3 py-1.5 font-medium text-brand-700 transition hover:bg-brand-200 disabled:opacity-50"
-                              disabled={isBusy(ps.id)}
-                            >
-                              Editar
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleDeactivate(ps)}
-                              className="rounded bg-accent-100 px-3 py-1.5 font-medium text-accent-700 transition hover:bg-accent-200 disabled:opacity-50"
-                              disabled={isBusy(ps.id) || !ps.state}
-                            >
-                              Eliminar
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )
-          )}
-        </section>
-      </div>
 
-      {/* Modal */}
-      {modalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-          <div className="w-full max-w-lg rounded-xl bg-white p-8 shadow-2xl">
-            <h2 className="mb-6 text-xl font-bold text-brand-800">{editing ? 'Editar Relación' : 'Nueva Relación'}</h2>
-            <form onSubmit={handleSave} className="space-y-5">
-              <div className="grid gap-4 md:grid-cols-2">
+              {editHasStock && (
                 <div>
-                  <label htmlFor="productId" className="mb-1 block text-sm font-medium text-lead-700">Producto *</label>
-                  <select id="productId" value={productId} onChange={(e) => setProductId(Number(e.target.value) || '')} className="input w-full" required>
-                    <option value="">Seleccione</option>
-                    {products.filter(p => p.state).map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-                  </select>
+                  <label htmlFor="stockQty" className="block text-sm font-medium text-lead-700">
+                    Cantidad en Stock
+                  </label>
+                  <input
+                    type="number"
+                    id="stockQty"
+                    value={editStockQty}
+                    onChange={(e) => setEditStockQty(e.target.value)}
+                    className="mt-1 block w-full rounded-lg border border-lead-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500"
+                    placeholder="0"
+                    min="0"
+                    disabled={saving}
+                  />
                 </div>
-                <div>
-                  <label htmlFor="supplierId" className="mb-1 block text-sm font-medium text-lead-700">Proveedor *</label>
-                  <select id="supplierId" value={supplierId} onChange={(e) => setSupplierId(Number(e.target.value) || '')} className="input w-full" required>
-                    <option value="">Seleccione</option>
-                    {suppliers.filter(s => s.state).map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                  </select>
-                </div>
-                <div className="md:col-span-2">
-                  <label htmlFor="agreedBuyPrice" className="mb-1 block text-sm font-medium text-lead-700">Precio Acordado (Bs.)</label>
-                  <input type="number" id="agreedBuyPrice" value={agreedBuyPrice} onChange={(e) => setAgreedBuyPrice(e.target.value)} className="input w-full" step="0.01" min="0" />
-                </div>
-              </div>
-              <div className="flex justify-end gap-3 pt-4">
-                <button type="button" onClick={closeModal} className="btn-outline" disabled={saving}>Cancelar</button>
-                <button type="submit" className="btn-primary" disabled={saving || productId === '' || supplierId === ''}>
-                  {saving ? 'Guardando...' : editing ? 'Actualizar' : 'Crear'}
+              )}
+
+              <div className="flex justify-end gap-3 pt-4 border-t border-lead-100">
+                <button
+                  type="button"
+                  className="rounded bg-white px-4 py-2 text-sm font-medium text-lead-700 border border-lead-300 hover:bg-lead-100 transition-colors"
+                  onClick={closeEditModal}
+                  disabled={saving}
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="rounded bg-accent-500 px-4 py-2 text-sm font-medium text-white shadow-md hover:bg-accent-600 focus:outline-none focus:ring-2 focus:ring-accent-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                  disabled={saving}
+                >
+                  {saving ? 'Guardando...' : 'Guardar'}
                 </button>
               </div>
             </form>
@@ -276,15 +573,7 @@ export const InventoryPage: React.FC = () => {
         </div>
       )}
 
-      {/* Confirm */}
-      {confirmDelete && (
-        <ConfirmDialog
-          title="Desactivar relación"
-          message={`¿Está seguro de desactivar la relación entre "${getProductName(confirmDelete.productId)}" y "${getSupplierName(confirmDelete.supplierId)}"?`}
-          onConfirm={confirmDeactivate}
-          onCancel={() => setConfirmDelete(null)}
-        />
-      )}
+      <ToastContainer toasts={toast.toasts} onDismiss={toast.dismissToast} />
     </>
   );
 };

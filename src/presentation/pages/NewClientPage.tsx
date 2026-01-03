@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useClients } from '../hooks/useClients';
-import { useAreas } from '../hooks/useAreas';
+import { useAreasSimple } from '../hooks/useAreas';
 import ClientForm from '../components/clients/ClientForm';
 import { CreateClientDTO, UpdateClientDTO } from '../../domain/ports/IClientRepository';
 import { ToastContainer, useToast } from '../components/shared/Toast';
@@ -9,7 +9,7 @@ import { ToastContainer, useToast } from '../components/shared/Toast';
 export const NewClientPage: React.FC = () => {
   const navigate = useNavigate();
   const { createClient } = useClients();
-  const { areas, isLoading: areasLoading } = useAreas();
+  const { areas, isLoading: areasLoading } = useAreasSimple();
   const toast = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
 

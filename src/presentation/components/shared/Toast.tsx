@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 
 export type ToastType = 'success' | 'error' | 'warning' | 'info';
 
@@ -48,7 +48,6 @@ const Toast: React.FC<ToastProps> = ({ toast, onDismiss }) => {
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
-    // Trigger enter animation
     requestAnimationFrame(() => setIsVisible(true));
 
     const duration = toast.duration ?? 4000;
@@ -107,28 +106,28 @@ export const ToastContainer: React.FC<ToastContainerProps> = ({ toasts, onDismis
 export function useToast() {
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
-  const addToast = (type: ToastType, message: string, duration?: number) => {
+  const addToast = useCallback((type: ToastType, message: string, duration?: number) => {
     const id = `toast-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     setToasts(prev => [...prev, { id, type, message, duration }]);
-  };
+  }, []);
 
-  const dismissToast = (id: string) => {
+  const dismissToast = useCallback((id: string) => {
     setToasts(prev => prev.filter(t => t.id !== id));
-  };
+  }, []);
 
-  const success = (message: string, duration?: number) => addToast('success', message, duration);
-  const error = (message: string, duration?: number) => addToast('error', message, duration);
-  const warning = (message: string, duration?: number) => addToast('warning', message, duration);
-  const info = (message: string, duration?: number) => addToast('info', message, duration);
+  const success = useCallback((message: string, duration?: number) => addToast('success', message, duration), [addToast]);
+  const error = useCallback((message: string, duration?: number) => addToast('error', message, duration), [addToast]);
+  const warning = useCallback((message: string, duration?: number) => addToast('warning', message, duration), [addToast]);
+  const info = useCallback((message: string, duration?: number) => addToast('info', message, duration), [addToast]);
 
-  return {
+  return useMemo(() => ({
     toasts,
     dismissToast,
     success,
     error,
     warning,
     info,
-  };
+  }), [toasts, dismissToast, success, error, warning, info]);
 }
 
 export default Toast;

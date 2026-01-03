@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useClients } from '../hooks/useClients';
-import { useAreas } from '../hooks/useAreas';
+import { useAreasSimple } from '../hooks/useAreas';
 import ClientTable from '../components/clients/ClientTable';
 import ClientDetailsModal from '../components/clients/ClientDetailsModal';
 import ConfirmDialog from '../components/shared/ConfirmDialog';
@@ -22,7 +22,7 @@ const CLIENT_TYPE_FILTERS: Array<{ value: ClientTypeFilter; label: string }> = [
 export const ClientsPage: React.FC = () => {
   const navigate = useNavigate();
   const { clients, isLoading, error, total, currentPage, fetchClients, updateClientArea, deleteClient, clearError } = useClients();
-  const { areas, areaMap, isLoading: areasLoading } = useAreas();
+  const { areas, areaMap, isLoading: areasLoading } = useAreasSimple();
   const toast = useToast();
 
   const [page, setPage] = useState(1);

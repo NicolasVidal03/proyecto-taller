@@ -4,3 +4,5 @@ export * from './IProductRepository';
 export * from './ISupplierRepository';
 export * from './IProductSupplierRepository';
 export * from './IBranchRepository';
+export * from './IPresentationRepository';
+export * from './IColorRepository';

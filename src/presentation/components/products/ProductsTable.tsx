@@ -3,26 +3,25 @@ import { Product } from '../../../domain/entities/Product';
 
 type ProductsTableProps = {
   products: Product[];
+  categoryMap: Map<number, string>;
+  brandMap: Map<number, string>;
   onEdit: (product: Product) => void;
   onDeactivate: (product: Product) => void;
+  onView?: (product: Product) => void;
   busyId?: number | null;
 };
 
-const ProductsTable: React.FC<ProductsTableProps> = ({ products, onEdit, onDeactivate, busyId }) => {
-  if (!products.length) {
-    return (
-      <div className="rounded-md border bg-white p-6 text-center text-sm text-gray-600 shadow-sm">
-        No hay productos cargados todavía.
-      </div>
-    );
-  }
-
+const ProductsTable: React.FC<ProductsTableProps> = ({ 
+  products, 
+  categoryMap, 
+  brandMap,
+  onEdit, 
+  onDeactivate, 
+  onView,
+  busyId 
+}) => {
+  const isEmpty = products.length === 0;
   const isBusy = (id: number) => busyId != null && busyId === id;
-
-  const formatPrice = (price: number | undefined) => {
-    if (price === undefined) return '—';
-    return `Bs. ${price.toFixed(2)}`;
-  };
 
   return (
     <div className="overflow-x-auto rounded-lg border border-lead-200 bg-lead-50 shadow-lg">
@@ -31,51 +30,72 @@ const ProductsTable: React.FC<ProductsTableProps> = ({ products, onEdit, onDeact
           <tr>
             <th className="px-4 py-4 text-left font-semibold">ID</th>
             <th className="px-4 py-4 text-left font-semibold">Nombre</th>
-            <th className="px-4 py-4 text-left font-semibold">Descripción</th>
             <th className="px-4 py-4 text-left font-semibold">Categoría</th>
-            <th className="px-4 py-4 text-left font-semibold">Precio</th>
-            <th className="px-4 py-4 text-left font-semibold">Stock</th>
-            <th className="px-4 py-4 text-left font-semibold">Estado</th>
+            <th className="px-4 py-4 text-left font-semibold">Marca</th>
+            <th className="px-4 py-4 text-left font-semibold">Mayorista</th>
+            <th className="px-4 py-4 text-left font-semibold">Minorista</th>
+            <th className="px-4 py-4 text-left font-semibold">Regular</th>
             <th className="w-40 px-4 py-4 text-center align-middle font-semibold">Acciones</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-lead-200">
-          {products.map(prod => (
-            <tr key={prod.id} className="transition-colors hover:bg-white">
-              <td className="px-4 py-3 font-medium text-brand-900">{prod.id}</td>
-              <td className="px-4 py-3 text-lead-600">{prod.name}</td>
-              <td className="px-4 py-3 text-lead-600 max-w-xs truncate">{prod.description ?? '—'}</td>
-              <td className="px-4 py-3 text-lead-600">{prod.categoryId ?? '—'}</td>
-              <td className="px-4 py-3 text-lead-600">{formatPrice(prod.price)}</td>
-              <td className="px-4 py-3">
-                <span className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${
-                  (prod.stock ?? 0) <= 5 ? 'bg-red-100 text-red-700' :
-                  (prod.stock ?? 0) <= 20 ? 'bg-yellow-100 text-yellow-700' :
-                  'bg-green-100 text-green-700'
-                }`}>
-                  {prod.stock ?? 0}
-                </span>
+          {isEmpty ? (
+            <tr>
+              <td className="px-4 py-6 text-center text-sm text-lead-600" colSpan={8}>
+                No hay productos para mostrar.
               </td>
+            </tr>
+          ) : products.map(product => (
+            <tr key={product.id} className="transition-colors hover:bg-white">
+              <td className="px-4 py-3 font-medium text-brand-900">{product.id}</td>
               <td className="px-4 py-3">
-                <span className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${prod.state ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                  {prod.state ? 'Activo' : 'Inactivo'}
-                </span>
+                <div className="flex items-center gap-3">
+                  <div>
+                    <p className="font-medium text-lead-800">{product.name}</p>
+                    {product.presentationName && (
+                      <p className="text-xs text-lead-500">{product.presentationName}</p>
+                    )}
+                  </div>
+                </div>
               </td>
+              <td className="px-4 py-3 text-lead-600">
+                {product.categoryName || categoryMap.get(product.categoryId) || '—'}
+              </td>
+              <td className="px-4 py-3 text-lead-600">
+                {product.brandName || brandMap.get(product.brandId) || '—'}
+              </td>
+              <td className="px-4 py-3 text-lead-600 text-xs">
+                {product.salePrice?.mayorista ? Number(product.salePrice.mayorista).toFixed(2) : '—'}
+              </td>
+              <td className="px-4 py-3 text-lead-600 text-xs">
+                {product.salePrice?.minorista ? Number(product.salePrice.minorista).toFixed(2) : '—'}
+              </td>
+              <td className="px-4 py-3 text-lead-600 text-xs">
+                {product.salePrice?.regular ? Number(product.salePrice.regular).toFixed(2) : '—'}
+              </td>
+              {/* Estado removed: do not display product.state column */}
               <td className="px-4 py-3 text-center align-middle">
                 <div className="flex items-center justify-center gap-2">
                   <button
                     type="button"
-                    onClick={() => onEdit(prod)}
+                    onClick={() => onView && onView(product)}
+                    className="rounded bg-lead-200 px-3 py-1.5 font-medium text-lead-800 transition hover:bg-lead-300 disabled:opacity-50"
+                  >
+                    Ver
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onEdit(product)}
                     className="rounded bg-brand-100 px-3 py-1.5 font-medium text-brand-700 transition hover:bg-brand-200 disabled:opacity-50"
-                    disabled={isBusy(prod.id)}
+                    disabled={isBusy(product.id)}
                   >
                     Editar
                   </button>
                   <button
                     type="button"
-                    onClick={() => onDeactivate(prod)}
-                    className="rounded bg-accent-100 px-3 py-1.5 font-medium text-accent-700 transition hover:bg-accent-200 disabled:opacity-50"
-                    disabled={isBusy(prod.id) || !prod.state}
+                    onClick={() => onDeactivate(product)}
+                    className={`rounded px-3 py-1.5 font-medium transition disabled:opacity-50 bg-accent-100 text-accent-700 hover:bg-accent-200`}
+                    disabled={isBusy(product.id)}
                   >
                     Eliminar
                   </button>

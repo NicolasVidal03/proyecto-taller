@@ -20,8 +20,8 @@ export class CategoryService {
     return this.categoryRepo.update(id, data);
   }
 
-  async updateState(id: number, state: boolean): Promise<Category> {
-    return this.categoryRepo.update(id, { state } as any);
+  async updateState(id: number, userId: number): Promise<void> {
+    return this.categoryRepo.updateState(id, userId);
   }
 
   async delete(id: number): Promise<void> {

@@ -1,24 +1,36 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { Category } from '../../domain/entities/Category';
 import { CreateCategoryDTO, UpdateCategoryDTO } from '../../domain/ports/ICategoryRepository';
 import { container } from '../../infrastructure/config/container';
 
 export interface UseCategoriesReturn {
   categories: Category[];
+  categoryMap: Map<number, string>;
   isLoading: boolean;
   error: string | null;
   fetchCategories: () => Promise<void>;
   fetchCategoryById: (id: number) => Promise<Category | null>;
   createCategory: (data: CreateCategoryDTO) => Promise<Category | null>;
   updateCategory: (id: number, data: UpdateCategoryDTO) => Promise<Category | null>;
-  updateCategoryState: (id: number, state: boolean) => Promise<boolean>;
+  updateCategoryState: (id: number, userId: number) => Promise<boolean>;
   deleteCategory: (id: number) => Promise<boolean>;
+  clearError: () => void;
 }
 
 export const useCategories = (): UseCategoriesReturn => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const categoryMap = useMemo(() => {
+    const map = new Map<number, string>();
+    categories.forEach(c => map.set(c.id, c.name));
+    return map;
+  }, [categories]);
+
+  const clearError = useCallback(() => {
+    setError(null);
+  }, []);
 
   const fetchCategories = useCallback(async () => {
     setIsLoading(true);
@@ -73,12 +85,21 @@ export const useCategories = (): UseCategoriesReturn => {
     }
   }, []);
 
-  const updateCategoryState = useCallback(async (id: number, state: boolean): Promise<boolean> => {
+  const updateCategoryState = useCallback(async (id: number, userId: number): Promise<boolean> => {
     setIsLoading(true);
     setError(null);
     try {
-      const updated = await container.categories.updateState(id, state);
-      setCategories(prev => prev.map(c => (c.id === id ? updated : c)));
+      await container.categories.updateState(id, userId);
+      setCategories(prev => {
+        const found = prev.find(c => c.id === id);
+        if (!found) return prev;
+        if (found.state) {
+          // Deactivating -> remove from list
+          return prev.filter(c => c.id !== id);
+        }
+        // Activating -> mark as active
+        return prev.map(c => (c.id === id ? { ...c, state: true } : c));
+      });
       return true;
     } catch (err: any) {
       setError(err?.message || 'Error al actualizar estado');
@@ -105,6 +126,7 @@ export const useCategories = (): UseCategoriesReturn => {
 
   return {
     categories,
+    categoryMap,
     isLoading,
     error,
     fetchCategories,
@@ -113,5 +135,6 @@ export const useCategories = (): UseCategoriesReturn => {
     updateCategory,
     updateCategoryState,
     deleteCategory,
+    clearError,
   };
 };

@@ -44,7 +44,7 @@ export class HttpClientRepository implements IClientRepository {
   }
 
   async updateArea(id: number, data: UpdateClientAreaDTO): Promise<Client> {
-    const res = await http.patch(`/clients/${id}/area`, data);
+    const res = await http.patch(`/clients/${id}`, { areaId: data.areaId });
     return res.data;
   }
 

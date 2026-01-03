@@ -1,36 +1,69 @@
 import { useState, useCallback } from 'react';
 import { Product } from '../../domain/entities/Product';
-import { CreateProductDTO, UpdateProductDTO } from '../../domain/ports/IProductRepository';
+import { CreateProductDTO, UpdateProductDTO, ProductFilters } from '../../domain/ports/IProductRepository';
 import { container } from '../../infrastructure/config/container';
 
 export interface UseProductsReturn {
   products: Product[];
   isLoading: boolean;
   error: string | null;
-  fetchProducts: () => Promise<void>;
+  page: number;
+  hasMore: boolean;
+  fetchProducts: (filters?: ProductFilters) => Promise<void>;
+  loadMoreProducts: (filters?: ProductFilters) => Promise<void>;
+  resetProducts: () => void;
   fetchProductById: (id: number) => Promise<Product | null>;
   createProduct: (data: CreateProductDTO) => Promise<Product | null>;
   updateProduct: (id: number, data: UpdateProductDTO) => Promise<Product | null>;
-  updateProductState: (id: number, state: boolean) => Promise<boolean>;
+  updateProductState: (id: number, userId: number) => Promise<boolean>;
   deleteProduct: (id: number) => Promise<boolean>;
+  clearError: () => void;
 }
 
 export const useProducts = (): UseProductsReturn => {
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
 
-  const fetchProducts = useCallback(async () => {
+  const fetchProducts = useCallback(async (filters?: ProductFilters) => {
     setIsLoading(true);
     setError(null);
     try {
-      const data = await container.products.getAll();
-      setProducts(data);
+      const paginatedResult = await container.products.getAll({ ...filters, page: 1, limit: 10 });
+      setProducts(paginatedResult.data);
+      setPage(1);
+      setHasMore(paginatedResult.page < paginatedResult.totalPages);
     } catch (err: any) {
       setError(err?.message || 'Error al cargar productos');
     } finally {
       setIsLoading(false);
     }
+  }, []);
+
+  const loadMoreProducts = useCallback(async (filters?: ProductFilters) => {
+    if (isLoading || !hasMore) return;
+
+    setIsLoading(true);
+    setError(null);
+    const nextPage = page + 1;
+    try {
+      const paginatedResult = await container.products.getAll({ ...filters, page: nextPage, limit: 10 });
+      setProducts(prev => [...prev, ...paginatedResult.data]);
+      setPage(nextPage);
+      setHasMore(nextPage < paginatedResult.totalPages);
+    } catch (err: any) {
+      setError(err?.message || 'Error al cargar más productos');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [page, hasMore, isLoading]);
+
+  const resetProducts = useCallback(() => {
+    setProducts([]);
+    setPage(1);
+    setHasMore(true);
   }, []);
 
   const fetchProductById = useCallback(async (id: number): Promise<Product | null> => {
@@ -48,7 +81,7 @@ export const useProducts = (): UseProductsReturn => {
     setError(null);
     try {
       const newProduct = await container.products.create(data);
-      setProducts(prev => [...prev, newProduct]);
+      setProducts(prev => [newProduct, ...prev]);
       return newProduct;
     } catch (err: any) {
       setError(err?.message || 'Error al crear producto');
@@ -73,18 +106,25 @@ export const useProducts = (): UseProductsReturn => {
     }
   }, []);
 
-  const updateProductState = useCallback(async (id: number, state: boolean): Promise<boolean> => {
+  const updateProductState = useCallback(async (id: number, userId: number): Promise<boolean> => {
     setIsLoading(true);
     setError(null);
     try {
-      const updated = await container.products.updateState(id, state);
-      setProducts(prev => prev.map(p => (p.id === id ? updated : p)));
+      await container.products.updateState(id, userId);
+      setProducts(prev => {
+        const found = prev.find(p => p.id === id);
+        if (!found) return prev;
+        // If currently active -> user is deactivating -> remove from list
+        if (found.state) {
+          return prev.filter(p => p.id !== id);
+        }
+        // If currently inactive -> activation -> set state true
+        return prev.map(p => (p.id === id ? { ...p, state: true } : p));
+      });
       return true;
     } catch (err: any) {
       setError(err?.message || 'Error al actualizar estado');
       return false;
-    } finally {
-      setIsLoading(false);
     }
   }, []);
 
@@ -103,15 +143,24 @@ export const useProducts = (): UseProductsReturn => {
     }
   }, []);
 
+  const clearError = useCallback(() => {
+    setError(null);
+  }, []);
+
   return {
     products,
     isLoading,
     error,
+    page,
+    hasMore,
     fetchProducts,
+    loadMoreProducts,
+    resetProducts,
     fetchProductById,
     createProduct,
     updateProduct,
     updateProductState,
     deleteProduct,
+    clearError,
   };
 };

@@ -15,12 +15,16 @@ export class HttpCategoryRepository implements ICategoryRepository {
 
   async create(data: CreateCategoryDTO): Promise<Category> {
     const res = await http.post('/categories', data);
-    return res.data.category;
+    return res.data;
   }
 
   async update(id: number, data: UpdateCategoryDTO): Promise<Category> {
-    const res = await http.put(`/categories/${id}`, data);
-    return res.data.category;
+    const res = await http.patch(`/categories/${id}`, data);
+    return res.data;
+  }
+
+  async updateState(id: number, userId: number): Promise<void> {
+    await http.patch(`/categories/${id}/state`, { user_id: userId });
   }
 
   async delete(id: number): Promise<void> {

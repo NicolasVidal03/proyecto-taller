@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { CreateClientDTO, UpdateClientDTO } from '../../../domain/ports/IClientRepository';
 import { CLIENT_TYPES, BUSINESS_TYPES, Client } from '../../../domain/entities/Client';
 import { Area } from '../../../domain/entities/Area';
-import AreaSelect from './AreaSelect';
 
 interface ClientFormProps {
   areas: Area[];
@@ -293,13 +292,24 @@ const ClientForm: React.FC<ClientFormProps> = ({
           <label htmlFor="areaId" className="block text-sm font-medium text-lead-700">
             Área (opcional)
           </label>
-          <AreaSelect
-            areas={areas}
-            value={formData.areaId}
-            onChange={(areaId) => setFormData(prev => ({ ...prev, areaId }))}
+          <select
+            id="areaId"
+            name="areaId"
+            value={formData.areaId || ''}
+            onChange={(e) => {
+              const val = e.target.value;
+              setFormData(prev => ({ ...prev, areaId: val ? Number(val) : null }));
+            }}
+            className="mt-1 block w-full rounded-lg border border-lead-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500"
             disabled={isSubmitting}
-            placeholder="Sin asignar"
-          />
+          >
+            <option value="">Sin asignar</option>
+            {areas.map((area) => (
+              <option key={area.id} value={area.id}>
+                {area.name}
+              </option>
+            ))}
+          </select>
         </div>
 
         {/* Dirección (opcional) */}

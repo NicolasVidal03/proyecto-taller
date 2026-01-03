@@ -6,3 +6,7 @@ export { HttpSupplierRepository } from './HttpSupplierRepository';
 export { HttpProductSupplierRepository } from './HttpProductSupplierRepository';
 export { HttpBranchRepository } from './HttpBranchRepository';
 export { HttpCountryRepository } from './HttpCountryRepository';
+export { HttpBrandRepository } from './HttpBrandRepository';
+export { HttpProductBranchRepository } from './HttpProductBranchRepository';
+export { HttpPresentationRepository } from './HttpPresentationRepository';
+export { HttpColorRepository } from './HttpColorRepository';

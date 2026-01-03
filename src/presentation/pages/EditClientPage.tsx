@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { useClients } from '../hooks/useClients';
-import { useAreas } from '../hooks/useAreas';
+import { useAreasSimple } from '../hooks/useAreas';
 import ClientForm from '../components/clients/ClientForm';
 import { CreateClientDTO, UpdateClientDTO } from '../../domain/ports/IClientRepository';
 import { ToastContainer, useToast } from '../components/shared/Toast';
@@ -11,7 +11,7 @@ export const EditClientPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { clients, updateClient, fetchClients, isLoading: clientsLoading } = useClients();
-  const { areas, isLoading: areasLoading } = useAreas();
+  const { areas, isLoading: areasLoading } = useAreasSimple();
   const toast = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   

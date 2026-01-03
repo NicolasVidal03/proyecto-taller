@@ -1,11 +1,11 @@
 import { Product } from '../domain/entities/Product';
-import { IProductRepository, CreateProductDTO, UpdateProductDTO } from '../domain/ports/IProductRepository';
+import { IProductRepository, CreateProductDTO, UpdateProductDTO, ProductFilters, PaginatedProducts } from '../domain/ports/IProductRepository';
 
 export class ProductService {
   constructor(private productRepo: IProductRepository) {}
 
-  async getAll(): Promise<Product[]> {
-    return this.productRepo.getAll();
+  async getAll(filters?: ProductFilters): Promise<PaginatedProducts> {
+    return this.productRepo.getAll(filters);
   }
 
   async getById(id: number): Promise<Product> {
@@ -20,8 +20,8 @@ export class ProductService {
     return this.productRepo.update(id, data);
   }
 
-  async updateState(id: number, state: boolean): Promise<Product> {
-    return this.productRepo.update(id, { state } as any);
+  async updateState(id: number, userId: number): Promise<void> {
+    return this.productRepo.updateState(id, userId);
   }
 
   async delete(id: number): Promise<void> {

@@ -5,6 +5,45 @@ import UserDropdown from '../components/UserDropdown';
 import { useToast } from '../components/shared/Toast';
 import { http } from '../../infrastructure/http/httpClient';
 
+const ChangePasswordForm: React.FC<{ userId: number; onClose: () => void }> = ({ userId, onClose }) => {
+  const [password, setPassword] = useState('');
+  const [confirm, setConfirm] = useState('');
+  const [loading, setLoading] = useState(false);
+  const toast = useToast();
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!password || password !== confirm) return toast.error('Las contraseñas no coinciden');
+    setLoading(true);
+    try {
+      await http.patch(`/users/${userId}/password`, { password });
+      toast.success('Contraseña actualizada');
+      onClose();
+    } catch (err: any) {
+      toast.error(err?.message || 'Error actualizando contraseña');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <form onSubmit={submit} className="space-y-4">
+      <div>
+        <label className="block text-sm font-medium">Nueva contraseña</label>
+        <input value={password} onChange={e => setPassword(e.target.value)} type="password" className="mt-1 block w-full rounded-lg border px-3 py-2" />
+      </div>
+      <div>
+        <label className="block text-sm font-medium">Confirmar contraseña</label>
+        <input value={confirm} onChange={e => setConfirm(e.target.value)} type="password" className="mt-1 block w-full rounded-lg border px-3 py-2" />
+      </div>
+      <div className="flex justify-end gap-2">
+        <button type="button" onClick={onClose} className="px-4 py-2 rounded border">Cancelar</button>
+        <button type="submit" disabled={loading} className="px-4 py-2 rounded bg-accent-500 text-white">{loading ? 'Guardando...' : 'Guardar'}</button>
+      </div>
+    </form>
+  );
+};
+
 const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, logout } = useAuth();
   const location = useLocation();
@@ -13,61 +52,18 @@ const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [showChangePassword, setShowChangePassword] = useState(false);
   const toast = useToast();
 
-  const navItems: Array<{ label: string; to: string; disabled?: boolean; subItems?: Array<{ label: string; to: string }> }> = [
-    { label: 'Clientes', to: '/clients' },
-    { 
-      label: 'Inventario', 
-      to: '/inventory',
-      subItems: [
-        { label: 'Productos', to: '/products' },
-        { label: 'Categorías', to: '/categories' }, 
-      ]
-    },
-    { label: 'Proveedores', to: '/suppliers' },
-    { label: 'Usuarios', to: '/users' },
+  const navItems: Array<{ label: string; to: string; icon: string; disabled?: boolean; subItems?: Array<{ label: string; to: string }> }> = [
+    { label: 'Clientes', to: '/clients', icon: '👥' },
+    { label: 'Áreas', to: '/areas', icon: '🗺️' },
+    { label: 'Productos', to: '/products', icon: '📦' },
+    { label: 'Inventario', to: '/inventory', icon: '📊' },
+    { label: 'Proveedores', to: '/suppliers', icon: '🚚' },
+    { label: 'Usuarios', to: '/users', icon: '👤' },
   ];
 
   const handleLogout = async () => {
     await logout();
     navigate('/login');
-  };
-
-  const ChangePasswordForm: React.FC<{ userId: number; onClose: () => void }> = ({ userId, onClose }) => {
-    const [password, setPassword] = useState('');
-    const [confirm, setConfirm] = useState('');
-    const [loading, setLoading] = useState(false);
-
-    const submit = async (e: React.FormEvent) => {
-      e.preventDefault();
-      if (!password || password !== confirm) return toast.error('Las contraseñas no coinciden');
-      setLoading(true);
-      try {
-        await http.patch(`/users/${userId}/password`, { password });
-        toast.success('Contraseña actualizada');
-        onClose();
-      } catch (err: any) {
-        toast.error(err?.message || 'Error actualizando contraseña');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    return (
-      <form onSubmit={submit} className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium">Nueva contraseña</label>
-          <input value={password} onChange={e => setPassword(e.target.value)} type="password" className="mt-1 block w-full rounded-lg border px-3 py-2" />
-        </div>
-        <div>
-          <label className="block text-sm font-medium">Confirmar contraseña</label>
-          <input value={confirm} onChange={e => setConfirm(e.target.value)} type="password" className="mt-1 block w-full rounded-lg border px-3 py-2" />
-        </div>
-        <div className="flex justify-end gap-2">
-          <button type="button" onClick={onClose} className="px-4 py-2 rounded border">Cancelar</button>
-          <button type="submit" disabled={loading} className="px-4 py-2 rounded bg-accent-500 text-white">{loading ? 'Guardando...' : 'Guardar'}</button>
-        </div>
-      </form>
-    );
   };
 
   return (
@@ -103,8 +99,8 @@ const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
               {item.subItems ? (
                 <div className="space-y-1">
                   <div className={`flex items-center rounded-xl px-3 py-3.5 text-xs font-bold uppercase tracking-wider text-lead-200 transition-all duration-200 ${isHovered ? 'justify-start' : 'justify-center'}`}>
+                    {!isHovered && <span className="text-lg" title={item.label}>{item.icon}</span>}
                     <span className={`transition-all duration-300 ${isHovered ? 'opacity-100' : 'opacity-0 hidden'}`}>{item.label}</span>
-                    {!isHovered && <span className="text-lg" title={item.label}>📦</span>} {/* Icon placeholder for collapsed state */}
                   </div>
                   {item.subItems.map(sub => (
                     <NavLink
@@ -125,24 +121,24 @@ const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                 </div>
               ) : item.disabled ? (
                 <div
-                  className={`flex items-center rounded-xl px-3 py-3.5 text-xs font-bold uppercase tracking-wider text-white/30 cursor-not-allowed ${isHovered ? 'justify-start' : 'justify-center'}`}
+                  className={`flex items-center gap-3 rounded-xl px-3 py-3.5 text-xs font-bold uppercase tracking-wider text-white/30 cursor-not-allowed ${isHovered ? 'justify-start' : 'justify-center'}`}
                 >
-                  <span className={`truncate ${isHovered ? 'opacity-100' : 'opacity-0 w-0 hidden'}`}>{item.label}</span>
                   {!isHovered && <span className="text-lg" title={item.label}>🔒</span>}
+                  <span className={`truncate ${isHovered ? 'opacity-100' : 'opacity-0 w-0 hidden'}`}>{item.label}</span>
                 </div>
               ) : (
                 <NavLink
                   to={item.to}
                   className={({ isActive }) =>
-                    `flex items-center rounded-xl px-3 py-3.5 text-xs font-bold uppercase tracking-wider transition-all duration-200 ${
+                    `flex items-center gap-3 rounded-xl px-3 py-3.5 text-xs font-bold uppercase tracking-wider transition-all duration-200 ${
                       isActive || location.pathname.startsWith(item.to)
                         ? 'bg-accent-500 text-white shadow-lg shadow-accent-500/25 translate-x-1'
                         : 'text-lead-200 hover:bg-white/10 hover:text-white hover:translate-x-1'
                     } ${isHovered ? 'justify-start' : 'justify-center'}`
                   }
                 >
+                  <span className="text-lg shrink-0" title={item.label}>{item.icon}</span>
                   <span className={`truncate ${isHovered ? 'opacity-100' : 'opacity-0 w-0 hidden'}`}>{item.label}</span>
-                  {!isHovered && <span className="text-lg" title={item.label}>{item.label.charAt(0)}</span>}
                 </NavLink>
               )}
             </div>

@@ -28,11 +28,11 @@ export class AreaService {
       // Fallback con 5 áreas mock si el backend falla
       console.warn('Backend de áreas falló, usando fallback mock', error);
       const fallback: Area[] = [
-        { id: 1, name: 'Zona Norte', status: true },
-        { id: 2, name: 'Zona Sur', status: true },
-        { id: 3, name: 'Zona Este', status: true },
-        { id: 4, name: 'Zona Oeste', status: true },
-        { id: 5, name: 'Centro', status: true },
+        { id: 1, name: 'Zona Norte', state: true },
+        { id: 2, name: 'Zona Sur', state: true },
+        { id: 3, name: 'Zona Este', state: true },
+        { id: 4, name: 'Zona Oeste', state: true },
+        { id: 5, name: 'Centro', state: true },
       ];
       this.cache = fallback;
       this.cacheTime = now;

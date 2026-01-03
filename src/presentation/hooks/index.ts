@@ -17,3 +17,9 @@ export type { UseSuppliersReturn } from './useSuppliers';
 
 export { useProductSuppliers } from './useProductSuppliers';
 export type { UseProductSuppliersReturn } from './useProductSuppliers';
+
+export { usePresentations } from './usePresentations';
+export type { UsePresentationsReturn } from './usePresentations';
+
+export { useColors } from './useColors';
+export type { UseColorsReturn } from './useColors';

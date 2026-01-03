@@ -5,3 +5,7 @@ export type { Supplier } from './Supplier';
 export type { ProductSupplier } from './ProductSupplier';
 export type { Branch, BranchMap } from './Branch';
 export { createBranchMap, getBranchName } from './Branch';
+export type { Brand } from './Brand';
+export type { ProductBranch } from './ProductBranch';
+export type { Presentation } from './Presentation';
+export type { Color } from './Color';

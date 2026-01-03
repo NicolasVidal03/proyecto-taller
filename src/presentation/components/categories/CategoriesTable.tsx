@@ -11,8 +11,24 @@ type CategoriesTableProps = {
 const CategoriesTable: React.FC<CategoriesTableProps> = ({ categories, onEdit, onDeactivate, busyId }) => {
   if (!categories.length) {
     return (
-      <div className="rounded-md border bg-white p-6 text-center text-sm text-gray-600 shadow-sm">
-        No hay categorías cargadas todavía.
+      <div className="overflow-x-auto rounded-lg border border-lead-200 bg-lead-50 shadow-lg">
+        <table className="min-w-full text-sm">
+          <thead className="bg-brand-600 text-xs uppercase tracking-wider text-white">
+            <tr>
+              <th className="px-4 py-4 text-left font-semibold">ID</th>
+              <th className="px-4 py-4 text-left font-semibold">Nombre</th>
+              <th className="px-4 py-4 text-left font-semibold">Descripción</th>
+              <th className="w-40 px-4 py-4 text-center align-middle font-semibold">Acciones</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-lead-200">
+            <tr>
+                <td colSpan={4} className="px-4 py-8 text-center text-lead-500">
+                  No hay categorías registradas.
+                </td>
+              </tr>
+          </tbody>
+        </table>
       </div>
     );
   }
@@ -27,7 +43,6 @@ const CategoriesTable: React.FC<CategoriesTableProps> = ({ categories, onEdit, o
             <th className="px-4 py-4 text-left font-semibold">ID</th>
             <th className="px-4 py-4 text-left font-semibold">Nombre</th>
             <th className="px-4 py-4 text-left font-semibold">Descripción</th>
-            <th className="px-4 py-4 text-left font-semibold">Estado</th>
             <th className="w-40 px-4 py-4 text-center align-middle font-semibold">Acciones</th>
           </tr>
         </thead>
@@ -37,11 +52,7 @@ const CategoriesTable: React.FC<CategoriesTableProps> = ({ categories, onEdit, o
               <td className="px-4 py-3 font-medium text-brand-900">{cat.id}</td>
               <td className="px-4 py-3 text-lead-600">{cat.name}</td>
               <td className="px-4 py-3 text-lead-600">{cat.description ?? '—'}</td>
-              <td className="px-4 py-3">
-                <span className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${cat.state ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                  {cat.state ? 'Activo' : 'Inactivo'}
-                </span>
-              </td>
+              {/* Estado removed */}
               <td className="px-4 py-3 text-center align-middle">
                 <div className="flex items-center justify-center gap-2">
                   <button
