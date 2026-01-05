@@ -1,6 +1,6 @@
 import React from 'react';
 import { User } from '../../../domain/entities/User';
-import { BranchMap, getBranchName } from '../../../domain/entities/Branch';
+import { BranchMap, getBranchName } from '../../utils/branchHelpers';
 import { formatRole } from '../../utils/format';
 
 type UsersTableProps = {

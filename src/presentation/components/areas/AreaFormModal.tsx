@@ -1,10 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import AreaMap from './AreaMap';
-import {
-  Area,
-  AreaPoint,
-  isValidAreaPoints,
-} from '../../../domain/entities/Area';
+import { Area, AreaPoint } from '../../../domain/entities/Area';
+import { isValidAreaPoints } from '../../utils/areaHelpers';
 
 interface AreaFormModalProps {
   /** Si el modal está abierto */

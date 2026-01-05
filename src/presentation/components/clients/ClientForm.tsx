@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { CreateClientDTO, UpdateClientDTO } from '../../../domain/ports/IClientRepository';
-import { CLIENT_TYPES, BUSINESS_TYPES, Client } from '../../../domain/entities/Client';
+import { Client } from '../../../domain/entities/Client';
 import { Area } from '../../../domain/entities/Area';
+import { CLIENT_TYPES, BUSINESS_TYPES } from '../../utils/clientHelpers';
 
 interface ClientFormProps {
   areas: Area[];

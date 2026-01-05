@@ -6,3 +6,8 @@ export * from './IProductSupplierRepository';
 export * from './IBranchRepository';
 export * from './IPresentationRepository';
 export * from './IColorRepository';
+export * from './IAreaRepository';
+export * from './IClientRepository';
+export * from './IBrandRepository';
+export * from './ICountryRepository';
+export * from './IProductBranchRepository';

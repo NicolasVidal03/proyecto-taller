@@ -15,10 +15,9 @@ import {
   ProductBranchService,
   PresentationService,
   ColorService,
+  ClientService,
+  AreaService,
 } from '../../application';
-
-import { ClientService } from '../../application/ClientService';
-import { AreaService } from '../../application/AreaService';
 
 import {
   HttpAuthRepository,
@@ -33,10 +32,9 @@ import {
   HttpProductBranchRepository,
   HttpPresentationRepository,
   HttpColorRepository,
+  HttpClientRepository,
+  HttpAreaRepository,
 } from '../http/repositories';
-
-import { HttpClientRepository } from '../http/repositories/HttpClientRepository';
-import { HttpAreaRepository } from '../http/repositories/HttpAreaRepository';
 
 // Repositories (Infraestructura)
 const authRepository = new HttpAuthRepository();

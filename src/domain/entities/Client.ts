@@ -1,3 +1,7 @@
+/**
+ * Client Entity - Domain Layer (Frontend)
+ * Solo tipos e interfaces, sin lógica de negocio
+ */
 export interface Position {
   lat: number;
   lng: number;
@@ -20,17 +24,3 @@ export interface Client {
   status: boolean;
   pathImage?: string;
 }
-
-export const CLIENT_TYPES: Array<{ value: ClientType; label: string }> = [
-  { value: 'Mayorista', label: 'Mayorista' },
-  { value: 'Minorista', label: 'Minorista' },
-  { value: 'Regular', label: 'Regular' },
-  { value: 'Otro', label: 'Otro' },
-];
-
-export const BUSINESS_TYPES: Array<{ value: BusinessType; label: string }> = [
-  { value: 'Ferreteria', label: 'Ferretería' },
-  { value: 'Tienda', label: 'Tienda' },
-  { value: 'Institucion', label: 'Institución' },
-  { value: 'Otro', label: 'Otro' },
-];

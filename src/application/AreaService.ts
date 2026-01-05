@@ -1,5 +1,6 @@
 import { IAreaRepository, PaginatedAreas } from '../domain/ports/IAreaRepository';
-import { Area, AreaMap, createAreaMap } from '../domain/entities/Area';
+import { Area, AreaPoint } from '../domain/entities/Area';
+import { AreaMap, createAreaMap } from '../presentation/utils/areaHelpers';
 
 export class AreaService {
   private cache: Area[] | null = null;
@@ -40,9 +41,35 @@ export class AreaService {
     }
   }
 
+  /** Obtener todas las áreas sin cache (fuerza recarga) */
+  async getAllFresh(): Promise<Area[]> {
+    this.clearCache();
+    return this.getAllCached();
+  }
+
   async getAreaMap(): Promise<AreaMap> {
     const areas = await this.getAllCached();
     return createAreaMap(areas);
+  }
+
+  /** Crear un área nueva */
+  async create(name: string, area: AreaPoint[]): Promise<Area> {
+    const created = await this.repository.create(name, area);
+    this.clearCache(); // Limpiar cache para que se recarguen las áreas
+    return created;
+  }
+
+  /** Actualizar un área */
+  async update(id: number, patch: { name?: string; area?: AreaPoint[] }): Promise<Area> {
+    const updated = await this.repository.update(id, patch);
+    this.clearCache();
+    return updated;
+  }
+
+  /** Eliminar un área */
+  async delete(id: number): Promise<void> {
+    await this.repository.delete(id);
+    this.clearCache();
   }
 
   clearCache(): void {

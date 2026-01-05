@@ -11,7 +11,7 @@ export const EditClientPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { clients, updateClient, fetchClients, isLoading: clientsLoading } = useClients();
-  const { areas, isLoading: areasLoading } = useAreasSimple();
+  const { areas, isLoading: areasLoading, refreshAreas } = useAreasSimple();
   const toast = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   
@@ -24,7 +24,9 @@ export const EditClientPage: React.FC = () => {
     if (!clientToEdit && !clientsLoading) {
       fetchClients();
     }
-  }, [clientToEdit, clientsLoading, fetchClients]);
+    // Refrescar áreas para tener las más recientes
+    refreshAreas();
+  }, [clientToEdit, clientsLoading, fetchClients, refreshAreas]);
 
   const handleSubmit = async (data: CreateClientDTO | UpdateClientDTO) => {
     if (!clientId) return;

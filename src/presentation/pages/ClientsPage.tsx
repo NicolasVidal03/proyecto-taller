@@ -22,7 +22,7 @@ const CLIENT_TYPE_FILTERS: Array<{ value: ClientTypeFilter; label: string }> = [
 export const ClientsPage: React.FC = () => {
   const navigate = useNavigate();
   const { clients, isLoading, error, total, currentPage, fetchClients, updateClientArea, deleteClient, clearError } = useClients();
-  const { areas, areaMap, isLoading: areasLoading } = useAreasSimple();
+  const { areas, areaMap, isLoading: areasLoading, refreshAreas } = useAreasSimple();
   const toast = useToast();
 
   const [page, setPage] = useState(1);
@@ -34,7 +34,9 @@ export const ClientsPage: React.FC = () => {
 
   useEffect(() => {
     fetchClients();
-  }, [fetchClients]);
+    // Refrescar áreas para tener las más recientes
+    refreshAreas();
+  }, [fetchClients, refreshAreas]);
 
   useEffect(() => {
     if (error) {

@@ -1,5 +1,6 @@
 import { useState, useCallback, useMemo } from 'react';
-import { Branch, BranchMap, createBranchMap, getBranchName } from '../../domain/entities/Branch';
+import { Branch } from '../../domain/entities/Branch';
+import { BranchMap, createBranchMap, getBranchName } from '../utils/branchHelpers';
 import { CreateBranchDTO, UpdateBranchDTO } from '../../domain/ports/IBranchRepository';
 import { container } from '../../infrastructure/config/container';
 

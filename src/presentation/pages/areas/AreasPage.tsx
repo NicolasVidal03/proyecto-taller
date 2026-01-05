@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import AreaMap from '../../components/areas/AreaMap';
 import AreaTable from '../../components/areas/AreaTable';
 import AreaFormModal from '../../components/areas/AreaFormModal';
-import { useAreas } from '../../hooks/useAreasGeoJSON';
+import { useAreas } from '../../hooks/useAreas';
 import { Area, AreaPoint } from '../../../domain/entities/Area';
 import { ToastContainer, useToast } from '../../components/shared/Toast';
 
@@ -206,6 +206,8 @@ const AreasPage: React.FC = () => {
             areas={areas}
             selectedAreaId={selectedAreaId}
             onAreaClick={(area) => handleSelect(area)}
+            onAreaEdit={handleEdit}
+            onAreaDelete={handleDeleteClick}
             height="650px"
           />
         </section>

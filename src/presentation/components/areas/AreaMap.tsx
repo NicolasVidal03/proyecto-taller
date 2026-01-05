@@ -8,13 +8,14 @@ import {
   Area,
   AreaPoint,
   LeafletPolygonCoords,
+} from '../../../domain/entities/Area';
+import {
   leafletToApi,
   apiToLeaflet,
   getAreaColor,
-} from '../../../domain/entities/Area';
+} from '../../utils/areaHelpers';
 import {
   areaPointsToPoints,
-  pointsToAreaPoints,
   isPointInPolygon,
   closestPointOnPolygonEdge,
   distance,
@@ -58,6 +59,10 @@ interface AreaMapProps {
   onPolygonChange?: (polygon: AreaPoint[] | null) => void;
   /** Callback cuando se hace clic en un área */
   onAreaClick?: (area: Area) => void;
+  /** Callback para editar un área */
+  onAreaEdit?: (area: Area) => void;
+  /** Callback para eliminar un área */
+  onAreaDelete?: (area: Area) => void;
   /** Centro inicial del mapa [lat, lng] */
   center?: [number, number];
   /** Zoom inicial */
@@ -193,6 +198,8 @@ const AreaMap: React.FC<AreaMapProps> = ({
   initialPolygon,
   onPolygonChange,
   onAreaClick,
+  onAreaEdit,
+  onAreaDelete,
   center = [-17.3935, -66.1570], // Cochabamba, Bolivia
   zoom = 12,
   height = '500px',
@@ -545,6 +552,45 @@ const AreaMap: React.FC<AreaMapProps> = ({
 
       // Click solo en modo visualización
       if (!editMode) {
+        // Si hay callbacks de editar/eliminar, mostrar popup con opciones
+        if (onAreaEdit || onAreaDelete) {
+          const popupContent = document.createElement('div');
+          popupContent.className = 'area-popup-content';
+          popupContent.innerHTML = `
+            <div style="padding: 8px; min-width: 150px;">
+              <h4 style="margin: 0 0 8px 0; font-weight: bold; font-size: 14px; color: #1f2937;">${area.name}</h4>
+              <p style="margin: 0 0 12px 0; font-size: 12px; color: #6b7280;">${area.area?.length || 0} puntos</p>
+              <div style="display: flex; gap: 8px;">
+                ${onAreaEdit ? `<button id="edit-area-${area.id}" style="flex: 1; padding: 6px 12px; background: #3B82F6; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 500;">✏️ Editar</button>` : ''}
+                ${onAreaDelete ? `<button id="delete-area-${area.id}" style="flex: 1; padding: 6px 12px; background: #EF4444; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 500;">🗑️ Eliminar</button>` : ''}
+              </div>
+            </div>
+          `;
+          
+          polygon.bindPopup(popupContent, { 
+            closeButton: true,
+            className: 'area-popup'
+          });
+
+          polygon.on('popupopen', () => {
+            const editBtn = document.getElementById(`edit-area-${area.id}`);
+            const deleteBtn = document.getElementById(`delete-area-${area.id}`);
+            
+            if (editBtn && onAreaEdit) {
+              editBtn.onclick = () => {
+                polygon.closePopup();
+                onAreaEdit(area);
+              };
+            }
+            if (deleteBtn && onAreaDelete) {
+              deleteBtn.onclick = () => {
+                polygon.closePopup();
+                onAreaDelete(area);
+              };
+            }
+          });
+        }
+
         polygon.on('click', () => {
           onAreaClick?.(area);
         });
