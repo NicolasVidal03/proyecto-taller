@@ -24,7 +24,6 @@ export const EditClientPage: React.FC = () => {
     if (!clientToEdit && !clientsLoading) {
       fetchClients();
     }
-    // Refrescar áreas para tener las más recientes
     refreshAreas();
   }, [clientToEdit, clientsLoading, fetchClients, refreshAreas]);
 
@@ -80,7 +79,6 @@ export const EditClientPage: React.FC = () => {
       <div className="relative overflow-hidden min-h-screen">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(17,93,216,0.12),transparent_60%),radial-gradient(circle_at_80%_0%,rgba(255,100,27,0.08),transparent_55%)]" />
         <div className="relative space-y-6 px-6 py-8 lg:px-10 lg:py-12 max-w-5xl mx-auto">
-          {/* Header */}
           <div className="flex items-center gap-4 mb-6">
             <button
               onClick={handleCancel}
@@ -95,8 +93,6 @@ export const EditClientPage: React.FC = () => {
               <p className="text-sm text-lead-500">Modifique los datos del cliente</p>
             </div>
           </div>
-
-          {/* Form Card */}
           <div className="card shadow-xl ring-1 ring-black/5">
             <div className="mb-6 border-b border-lead-100 pb-4">
               <h2 className="text-lg font-bold text-brand-900">Información del cliente</h2>

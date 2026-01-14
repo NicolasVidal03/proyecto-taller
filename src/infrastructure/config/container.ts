@@ -1,7 +1,4 @@
-/**
- * Dependency Injection Container - Frontend
- * Contenedor central de servicios con inyección de dependencias
- */
+
 import { 
   AuthService, 
   UserService, 
@@ -17,6 +14,7 @@ import {
   ColorService,
   ClientService,
   AreaService,
+  RouteService,
 } from '../../application';
 
 import {
@@ -34,9 +32,9 @@ import {
   HttpColorRepository,
   HttpClientRepository,
   HttpAreaRepository,
+  HttpRouteRepository,
 } from '../http/repositories';
 
-// Repositories (Infraestructura)
 const authRepository = new HttpAuthRepository();
 const userRepository = new HttpUserRepository();
 const categoryRepository = new HttpCategoryRepository();
@@ -51,8 +49,9 @@ const brandRepository = new HttpBrandRepository();
 const productBranchRepository = new HttpProductBranchRepository();
 const presentationRepository = new HttpPresentationRepository();
 const colorRepository = new HttpColorRepository();
+const routeRepository = new HttpRouteRepository();
 
-// Services Container (Aplicación)
+
 export const container = {
   auth: new AuthService(authRepository),
   users: new UserService(userRepository),
@@ -68,5 +67,6 @@ export const container = {
   productBranches: new ProductBranchService(productBranchRepository),
   presentations: new PresentationService(presentationRepository),
   colors: new ColorService(colorRepository),
+  routes: new RouteService(routeRepository),
 };
 export type Container = typeof container;

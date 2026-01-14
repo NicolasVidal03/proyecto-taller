@@ -89,7 +89,6 @@ const SupplierFormModal: React.FC<SupplierFormModalProps> = ({ supplier, countri
                 value={nit}
                 onChange={(e) => setNit(e.target.value)}
                 className={`mt-1 block w-full rounded-lg border px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500 ${errors.nit ? 'border-red-500' : 'border-lead-300 bg-white'}`}
-                placeholder="Ej: 123456789"
                 disabled={saving}
               />
               {errors.nit ? <p className="mt-1 text-xs text-red-600">{errors.nit}</p> : null}
@@ -103,7 +102,6 @@ const SupplierFormModal: React.FC<SupplierFormModalProps> = ({ supplier, countri
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 className={`mt-1 block w-full rounded-lg border px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500 ${errors.name ? 'border-red-500' : 'border-lead-300 bg-white'}`}
-                placeholder="Ej: Distribuidora XYZ"
                 disabled={saving}
               />
               {errors.name ? <p className="mt-1 text-xs text-red-600">{errors.name}</p> : null}
@@ -118,7 +116,7 @@ const SupplierFormModal: React.FC<SupplierFormModalProps> = ({ supplier, countri
                 className={`mt-1 block w-full rounded-lg border px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500 ${errors.countryId ? 'border-red-500' : 'border-lead-300 bg-white'}`}
                 disabled={saving}
               >
-                <option value="">Seleccionar país</option>
+                <option value="">—</option>
                 {countries.map(c => (
                   <option key={c.id} value={c.id}>{c.name}</option>
                 ))}
@@ -134,7 +132,6 @@ const SupplierFormModal: React.FC<SupplierFormModalProps> = ({ supplier, countri
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 className="mt-1 block w-full rounded-lg border-lead-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500"
-                placeholder="Ej: +591 70000000"
                 disabled={saving}
               />
             </div>
@@ -147,7 +144,6 @@ const SupplierFormModal: React.FC<SupplierFormModalProps> = ({ supplier, countri
                 value={contactName}
                 onChange={(e) => setContactName(e.target.value)}
                 className="mt-1 block w-full rounded-lg border-lead-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500"
-                placeholder="Nombre del contacto"
                 disabled={saving}
               />
             </div>
@@ -160,7 +156,6 @@ const SupplierFormModal: React.FC<SupplierFormModalProps> = ({ supplier, countri
                 onChange={(e) => setAddress(e.target.value)}
                 className="mt-1 block w-full resize-none rounded-lg border-lead-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500"
                 rows={2}
-                placeholder="Dirección del proveedor"
                 disabled={saving}
               />
             </div>

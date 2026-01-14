@@ -39,4 +39,5 @@ export interface IUserRepository {
   update(id: number, data: UpdateUserDTO): Promise<User>;
   updateState(id: number, state: boolean, currentUserId: number): Promise<void>;
   resetPassword(id: number): Promise<void>;
+  updatePassword(id: number, newPassword: string): Promise<void>;
 }

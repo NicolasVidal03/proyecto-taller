@@ -14,7 +14,8 @@ import {
 import { ClientsPage } from '../pages/ClientsPage';
 import { NewClientPage } from '../pages/NewClientPage';
 import { EditClientPage } from '../pages/EditClientPage';
-import AreasPage from '../pages/areas/AreasPage';
+import AreasPage from '../pages/AreasPage';
+import RoutesPage from '../pages/RoutesPage';
 
 const LayoutWrapper: React.FC = () => (
   <AppLayout>
@@ -25,10 +26,7 @@ const LayoutWrapper: React.FC = () => (
 export const AppRoutes: React.FC = () => {
   return (
     <Routes>
-      {/* Public routes */}
       <Route path="/login" element={<LoginPage />} />
-
-      {/* Protected routes con layout */}
       <Route element={<ProtectedRoute />}>
         <Route element={<LayoutWrapper />}>
           <Route path="/" element={<Navigate to="/users" replace />} />
@@ -41,10 +39,9 @@ export const AppRoutes: React.FC = () => {
           <Route path="/clients/new" element={<NewClientPage />} />
           <Route path="/clients/edit/:id" element={<EditClientPage />} />
           <Route path="/areas" element={<AreasPage />} />
+          <Route path="/routes" element={<RoutesPage />} />
         </Route>
       </Route>
-
-      {/* Fallback */}
       <Route path="*" element={<Navigate to="/users" replace />} />
     </Routes>
   );

@@ -3,28 +3,15 @@ import { Area } from '../../../domain/entities/Area';
 import { getAreaColor } from '../../utils/areaHelpers';
 
 interface AreaTableProps {
-  /** Lista de áreas */
+
   areas: Area[];
-  /** Si está cargando */
   loading?: boolean;
-  /** Área actualmente seleccionada (para highlight) */
   selectedAreaId?: number | null;
-  /** Callback al seleccionar un área */
   onSelect?: (area: Area) => void;
-  /** Callback al editar */
   onEdit?: (area: Area) => void;
-  /** Callback al eliminar */
   onDelete?: (area: Area) => void;
 }
 
-/**
- * Tabla de Áreas Geográficas
- * 
- * Muestra la lista de áreas con opciones para:
- * - Seleccionar (zoom en mapa)
- * - Editar
- * - Eliminar
- */
 const AreaTable: React.FC<AreaTableProps> = ({
   areas,
   loading = false,

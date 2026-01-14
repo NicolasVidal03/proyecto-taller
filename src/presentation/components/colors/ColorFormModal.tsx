@@ -70,7 +70,7 @@ const ColorFormModal: React.FC<ColorFormModalProps> = ({
         <form onSubmit={handleSubmit} className="space-y-5 px-6 py-6">
           <div>
             <label htmlFor="name" className="block text-sm font-medium text-lead-700">
-              Nombre del Color
+              Nombre del Color *
             </label>
             <input
               type="text"
@@ -83,7 +83,6 @@ const ColorFormModal: React.FC<ColorFormModalProps> = ({
               className={`mt-1 block w-full rounded-lg border px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500 ${
                 error ? 'border-red-500' : 'border-lead-300 bg-white'
               }`}
-              placeholder="Ej: Rojo, Azul, Negro..."
               disabled={submitting}
             />
             {error && (

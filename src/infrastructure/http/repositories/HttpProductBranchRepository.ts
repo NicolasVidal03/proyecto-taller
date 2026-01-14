@@ -7,7 +7,6 @@ export class HttpProductBranchRepository implements IProductBranchRepository {
    * @deprecated Usar getByBranchPaginated para grandes volúmenes
    */
   async getByBranch(branchId: number): Promise<ProductBranch[]> {
-    // Ahora el endpoint devuelve paginado, convertimos para compatibilidad
     const response = await http.get<PaginatedBranchProducts>(`/branches/${branchId}/products?limit=100`);
     return response.data.data.map(item => ({
       productId: item.id,
@@ -20,10 +19,6 @@ export class HttpProductBranchRepository implements IProductBranchRepository {
     }));
   }
 
-  /**
-   * Obtiene productos paginados con filtros para una sucursal.
-   * Optimizado para grandes volúmenes (~30.000 productos).
-   */
   async getByBranchPaginated(branchId: number, filters?: BranchProductsFilters): Promise<PaginatedBranchProducts> {
     const params = new URLSearchParams();
     

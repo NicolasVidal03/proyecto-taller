@@ -4,33 +4,16 @@ import { Area, AreaPoint } from '../../../domain/entities/Area';
 import { isValidAreaPoints } from '../../utils/areaHelpers';
 
 interface AreaFormModalProps {
-  /** Si el modal está abierto */
   open: boolean;
-  /** Modo: crear o editar */
   mode: 'create' | 'edit';
-  /** Área a editar (solo en modo edit) */
   initialData?: Area | null;
-  /** Si se está enviando el formulario */
   submitting?: boolean;
-  /** Áreas existentes (para validación de solapamiento) */
   existingAreas?: Area[];
-  /** Callback al cerrar */
   onClose: () => void;
-  /** Callback al guardar */
   onSubmit: (data: { name: string; area: AreaPoint[] }) => void;
 }
 
-/**
- * Modal para crear o editar un Área Geográfica
- * 
- * Características:
- * - Input para nombre del área
- * - Mapa interactivo con herramientas de dibujo
- * - Validación de polígono (mínimo 3 puntos, sin límite máximo)
- * - Detección de solapamiento con áreas existentes
- * - Snap-to-edge automático
- * - Z-index elevado para estar sobre todo
- */
+
 const AreaFormModal: React.FC<AreaFormModalProps> = ({
   open,
   mode,
@@ -45,7 +28,6 @@ const AreaFormModal: React.FC<AreaFormModalProps> = ({
   const [errors, setErrors] = useState<{ name?: string; polygon?: string }>({});
   const [overlapWarning, setOverlapWarning] = useState<string | null>(null);
 
-  // Reset al abrir/cambiar modo
   useEffect(() => {
     if (open) {
       if (mode === 'edit' && initialData) {
@@ -60,21 +42,17 @@ const AreaFormModal: React.FC<AreaFormModalProps> = ({
     }
   }, [open, mode, initialData]);
 
-  // Manejar cambio de polígono
   const handlePolygonChange = useCallback((points: AreaPoint[] | null) => {
     setAreaPoints(points);
-    // Limpiar error de polígono si se dibujó correctamente
     if (points && points.length >= 3) {
       setErrors(prev => ({ ...prev, polygon: undefined }));
     }
   }, []);
 
-  // Manejar error de solapamiento
   const handleOverlapError = useCallback((areaName: string) => {
     setOverlapWarning(`El polígono se solapa con "${areaName}"`);
   }, []);
 
-  // Limpiar warning de solapamiento
   const handleOverlapResolved = useCallback(() => {
     setOverlapWarning(null);
   }, []);
@@ -108,7 +86,6 @@ const AreaFormModal: React.FC<AreaFormModalProps> = ({
     onSubmit({ name: name.trim(), area: areaPoints });
   };
 
-  // Cerrar con Escape
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && open && !submitting) {
@@ -122,23 +99,20 @@ const AreaFormModal: React.FC<AreaFormModalProps> = ({
   if (!open) return null;
 
   return (
-    // Z-INDEX MUY ALTO para asegurar que esté sobre todo
     <div 
       className="fixed inset-0 flex items-center justify-center p-4"
       style={{ zIndex: 99999 }}
     >
-      {/* Overlay oscuro */}
       <div 
         className="absolute inset-0 bg-black/70 backdrop-blur-sm"
         onClick={!submitting ? onClose : undefined}
       />
       
-      {/* Modal Container */}
+      
       <div 
         className="relative bg-white rounded-2xl shadow-2xl w-full max-w-6xl max-h-[95vh] overflow-hidden flex flex-col"
         style={{ zIndex: 100000 }}
       >
-        {/* Header */}
         <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between bg-gradient-to-r from-brand-50 to-white">
           <div className="flex items-center gap-4">
             <div className="p-3 bg-brand-100 rounded-xl">
@@ -168,10 +142,9 @@ const AreaFormModal: React.FC<AreaFormModalProps> = ({
           </button>
         </div>
 
-        {/* Formulario */}
+  
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto">
           <div className="p-6 space-y-6">
-            {/* Input Nombre */}
             <div className="max-w-xl">
               <label htmlFor="area-name" className="block text-sm font-semibold text-gray-700 mb-2">
                 📝 Nombre del Área <span className="text-red-500">*</span>
@@ -223,7 +196,6 @@ const AreaFormModal: React.FC<AreaFormModalProps> = ({
                   </ul>
                 </div>
 
-                {/* Mapa con áreas existentes para referencia */}
                 <AreaMap
                   editMode
                   areas={existingAreas}
@@ -236,9 +208,8 @@ const AreaFormModal: React.FC<AreaFormModalProps> = ({
                   height="450px"
                 />
 
-                {/* Mensajes de estado */}
                 <div className="space-y-2">
-                  {/* Error de polígono */}
+                  
                   {errors.polygon && (
                     <div className="flex items-center gap-2 p-3 bg-red-50 rounded-lg text-sm text-red-700 border border-red-200">
                       <svg className="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">

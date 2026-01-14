@@ -20,8 +20,8 @@ export class AreaService {
     }
 
     try {
-      // Cargar todas las áreas (primeras 100 para cachear)
-      const result = await this.repository.getAll(1, 100);
+     
+      const result = await this.repository.getAll(1, 10);
       this.cache = result.data;
       this.cacheTime = now;
       return this.cache;

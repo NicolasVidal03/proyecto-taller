@@ -22,7 +22,7 @@ const ROLE_FILTERS: Array<{ value: RoleFilter; label: string }> = [
 ];
 
 export const UsersPage: React.FC = () => {
-  // Hooks de datos
+  
   const {
     users,
     isLoading: usersLoading,
@@ -46,26 +46,30 @@ export const UsersPage: React.FC = () => {
     updateBranchState,
   } = useBranches();
 
-  // Toast para feedback visual
   const toast = useToast();
 
-  // Estados UI
+  
   const [formOpen, setFormOpen] = useState(false);
   const [formMode, setFormMode] = useState<'create' | 'edit'>('create');
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [formSubmitting, setFormSubmitting] = useState(false);
+
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [confirmLoading, setConfirmLoading] = useState(false);
   const [targetUser, setTargetUser] = useState<User | null>(null);
+
   const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
   const [resetConfirmLoading, setResetConfirmLoading] = useState(false);
   const [resetTargetUser, setResetTargetUser] = useState<User | null>(null);
+
   const [busyUserId, setBusyUserId] = useState<number | null>(null);
+
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState<RoleFilter>('all');
+  
   const [activeSection, setActiveSection] = useState<'users' | 'branches'>('users');
 
-  // Estado para sucursales
+  
   const [branchFormOpen, setBranchFormOpen] = useState(false);
   const [branchFormMode, setBranchFormMode] = useState<'create' | 'edit'>('create');
   const [editingBranch, setEditingBranch] = useState<Branch | null>(null);
@@ -74,7 +78,7 @@ export const UsersPage: React.FC = () => {
   const [branchConfirmLoading, setBranchConfirmLoading] = useState(false);
   const [targetBranch, setTargetBranch] = useState<Branch | null>(null);
 
-  // Cargar datos al montar
+  
   const loadData = useCallback(async () => {
     await Promise.all([fetchUsers(), fetchBranches()]);
   }, [fetchUsers, fetchBranches]);
@@ -83,7 +87,7 @@ export const UsersPage: React.FC = () => {
     loadData();
   }, [loadData]);
 
-  // Mostrar errores como toast
+  
   useEffect(() => {
     if (usersError) {
       toast.error(usersError.message);
@@ -98,11 +102,11 @@ export const UsersPage: React.FC = () => {
   }, [branchesError, toast]);
 
   const auth = useAuth();
-  const canResetPassword = auth.user?.role === 'admin' || auth.user?.role === 'super_admin';
+  //const canResetPassword = auth.user?.role === 'administrador' || auth.user?.role === 'super_admin';
 
   const filteredUsers = useMemo(() => {
     const term = searchTerm.trim().toLowerCase();
-    return users.filter(user => {
+    const filtered = users.filter(user => {
       const matchesSearch =
         term.length === 0 ||
         user.userName.toLowerCase().includes(term) ||
@@ -111,11 +115,17 @@ export const UsersPage: React.FC = () => {
       const matchesRole = roleFilter === 'all' || user.role === roleFilter;
       return matchesSearch && matchesRole;
     });
+    // Ordenar alfabéticamente por username
+    return filtered.sort((a, b) => a.userName.localeCompare(b.userName));
   }, [roleFilter, searchTerm, users]);
+
+  const sortedBranches = useMemo(() => {
+    return [...branches].sort((a, b) => a.name.localeCompare(b.name));
+  }, [branches]);
 
   const stats = useMemo(() => {
     const total = users.length;
-    const admins = users.filter(user => user.role === 'admin').length;
+    const admins = users.filter(user => user.role === 'administrador').length;
     const sellers = users.filter(user => user.role === 'prevendedor').length;
     const drivers = users.filter(user => user.role === 'transportista').length;
     return {
@@ -333,7 +343,7 @@ export const UsersPage: React.FC = () => {
       <div className="relative overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(17,93,216,0.12),transparent_60%),radial-gradient(circle_at_80%_0%,rgba(255,100,27,0.08),transparent_55%)]" />
         <div className="relative space-y-10 px-6 py-8 lg:px-10 lg:py-12">
-          {/* Hero Section */}
+          
           <section className="relative overflow-hidden rounded-[2.5rem] bg-gradient-to-r from-brand-900 via-brand-700 to-brand-500 text-white shadow-2xl">
             <div
               className="absolute inset-0 opacity-30"
@@ -397,7 +407,6 @@ export const UsersPage: React.FC = () => {
             </div>
           </section>
 
-          {/* Selector de sección */}
           <div className="flex flex-wrap gap-3">
             <button
               type="button"
@@ -423,7 +432,6 @@ export const UsersPage: React.FC = () => {
             </button>
           </div>
 
-          {/* Main Content */}
           <section className="grid gap-8 xl:grid-cols-[1fr]">
             {activeSection === 'users' ? (
               <div className="card shadow-xl ring-1 ring-black/5">
@@ -473,7 +481,7 @@ export const UsersPage: React.FC = () => {
                   <Loader />
                 ) : (
                   <BranchesTable
-                    branches={branches}
+                    branches={sortedBranches}
                     onEdit={openBranchEditModal}
                     onDelete={openBranchConfirm}
                   />
@@ -532,7 +540,6 @@ export const UsersPage: React.FC = () => {
         disabled={branchConfirmLoading}
       />
 
-      {/* Sistema de notificaciones Toast */}
       <ToastContainer toasts={toast.toasts} onDismiss={toast.dismissToast} />
     </>
   );

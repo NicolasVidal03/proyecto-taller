@@ -13,3 +13,4 @@ export { PresentationService } from './PresentationService';
 export { ColorService } from './ColorService';
 export { ClientService } from './ClientService';
 export { AreaService } from './AreaService';
+export { RouteService } from './RouteService';

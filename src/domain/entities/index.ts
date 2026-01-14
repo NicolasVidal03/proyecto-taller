@@ -11,3 +11,4 @@ export type { Color } from './Color';
 export type { Area, AreaPoint, LeafletLatLng, LeafletPolygonCoords } from './Area';
 export type { Client, Position, ClientType, BusinessType } from './Client';
 export type { Country } from './Country';
+export type { Route } from './Route';

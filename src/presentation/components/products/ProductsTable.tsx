@@ -5,6 +5,8 @@ type ProductsTableProps = {
   products: Product[];
   categoryMap: Map<number, string>;
   brandMap: Map<number, string>;
+  presentationMap: Map<number, string>;
+  colorMap: Map<number, string>;
   onEdit: (product: Product) => void;
   onDeactivate: (product: Product) => void;
   onView?: (product: Product) => void;
@@ -15,6 +17,8 @@ const ProductsTable: React.FC<ProductsTableProps> = ({
   products, 
   categoryMap, 
   brandMap,
+  presentationMap,
+  colorMap,
   onEdit, 
   onDeactivate, 
   onView,
@@ -28,7 +32,6 @@ const ProductsTable: React.FC<ProductsTableProps> = ({
       <table className="min-w-full text-sm">
         <thead className="bg-brand-600 text-xs uppercase tracking-wider text-white">
           <tr>
-            <th className="px-4 py-4 text-left font-semibold">ID</th>
             <th className="px-4 py-4 text-left font-semibold">Nombre</th>
             <th className="px-4 py-4 text-left font-semibold">Categoría</th>
             <th className="px-4 py-4 text-left font-semibold">Marca</th>
@@ -41,19 +44,20 @@ const ProductsTable: React.FC<ProductsTableProps> = ({
         <tbody className="divide-y divide-lead-200">
           {isEmpty ? (
             <tr>
-              <td className="px-4 py-6 text-center text-sm text-lead-600" colSpan={8}>
+              <td className="px-4 py-6 text-center text-sm text-lead-600" colSpan={7}>
                 No hay productos para mostrar.
               </td>
             </tr>
           ) : products.map(product => (
             <tr key={product.id} className="transition-colors hover:bg-white">
-              <td className="px-4 py-3 font-medium text-brand-900">{product.id}</td>
               <td className="px-4 py-3">
                 <div className="flex items-center gap-3">
                   <div>
                     <p className="font-medium text-lead-800">{product.name}</p>
-                    {product.presentationName && (
-                      <p className="text-xs text-lead-500">{product.presentationName}</p>
+                    {(product.presentationName || (product.presentationId && presentationMap.get(product.presentationId))) && (
+                      <p className="text-xs text-lead-500">
+                        {product.presentationName || (product.presentationId ? presentationMap.get(product.presentationId) : '')}
+                      </p>
                     )}
                   </div>
                 </div>

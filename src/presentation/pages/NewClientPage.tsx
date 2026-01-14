@@ -13,7 +13,6 @@ export const NewClientPage: React.FC = () => {
   const toast = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Refrescar áreas al montar para tener las más recientes
   useEffect(() => {
     refreshAreas();
   }, [refreshAreas]);
@@ -21,7 +20,6 @@ export const NewClientPage: React.FC = () => {
   const handleSubmit = async (data: CreateClientDTO | UpdateClientDTO) => {
     setIsSubmitting(true);
     try {
-      // Este formulario es para creación; forzamos el tipo a CreateClientDTO
       const payload = data as CreateClientDTO;
       const newClient = await createClient(payload);
       if (newClient) {

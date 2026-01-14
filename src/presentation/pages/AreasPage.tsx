@@ -1,14 +1,11 @@
 import React, { useState } from 'react';
-import AreaMap from '../../components/areas/AreaMap';
-import AreaTable from '../../components/areas/AreaTable';
-import AreaFormModal from '../../components/areas/AreaFormModal';
-import { useAreas } from '../../hooks/useAreas';
-import { Area, AreaPoint } from '../../../domain/entities/Area';
-import { ToastContainer, useToast } from '../../components/shared/Toast';
+import AreaMap from '../components/areas/AreaMap';
+import AreaTable from '../components/areas/AreaTable';
+import AreaFormModal from '../components/areas/AreaFormModal';
+import { useAreas } from '../hooks/useAreas';
+import { Area, AreaPoint } from '../../domain/entities/Area';
+import { ToastContainer, useToast } from '../components/shared/Toast';
 
-/**
- * Página Principal del Módulo de Áreas Geográficas
- */
 const AreasPage: React.FC = () => {
   const {
     areas,
@@ -22,46 +19,38 @@ const AreasPage: React.FC = () => {
 
   const toast = useToast();
 
-  // Estado del modal
   const [modalOpen, setModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
+
   const [editingArea, setEditingArea] = useState<Area | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  // Área seleccionada para highlight en mapa
   const [selectedAreaId, setSelectedAreaId] = useState<number | null>(null);
-
-  // Confirmar eliminación
   const [deleteConfirm, setDeleteConfirm] = useState<Area | null>(null);
 
-  // Abrir modal para crear
   const handleCreate = () => {
     setModalMode('create');
     setEditingArea(null);
     setModalOpen(true);
   };
 
-  // Abrir modal para editar
   const handleEdit = (area: Area) => {
     setModalMode('edit');
     setEditingArea(area);
     setModalOpen(true);
   };
 
-  // Seleccionar área (zoom en mapa)
   const handleSelect = (area: Area) => {
     setSelectedAreaId(area.id != null && area.id === selectedAreaId ? null : (area.id ?? null));
   };
 
-  // Confirmar eliminación
   const handleDeleteClick = (area: Area) => {
     setDeleteConfirm(area);
   };
 
-  // Ejecutar eliminación
   const handleDeleteConfirm = async () => {
     if (!deleteConfirm || !deleteConfirm.id) return;
-    
+
     try {
       await deleteArea(deleteConfirm.id);
       setDeleteConfirm(null);
@@ -75,7 +64,6 @@ const AreasPage: React.FC = () => {
     }
   };
 
-  // Guardar área (crear o actualizar)
   const handleSubmit = async (data: { name: string; area: AreaPoint[] }) => {
     setSubmitting(true);
     try {
@@ -95,28 +83,20 @@ const AreasPage: React.FC = () => {
     }
   };
 
-  // Encontrar área seleccionada
   const selectedArea = areas.find(a => a.id === selectedAreaId);
-
-  // Calcular estadísticas
   const totalPoints = areas.reduce((sum, a) => sum + (a.area?.length || 0), 0);
 
   return (
     <div className="relative overflow-hidden min-h-screen bg-gray-50/50">
-      {/* Background Gradients */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(17,93,216,0.08),transparent_60%),radial-gradient(circle_at_80%_0%,rgba(255,100,27,0.05),transparent_55%)] pointer-events-none" />
-      
       <div className="relative space-y-8 px-6 py-8 lg:px-10 lg:py-12">
-        
-        {/* Hero Section (Blue) - Resumen y Lista */}
         <section className="relative overflow-hidden rounded-[2.5rem] bg-gradient-to-r from-brand-900 via-brand-700 to-brand-500 text-white shadow-2xl">
           <div
             className="absolute inset-0 opacity-30 pointer-events-none"
             style={{ backgroundImage: 'linear-gradient(135deg, rgba(255,255,255,0.25) 0%, rgba(255,255,255,0) 45%)' }}
           />
-          
+
           <div className="relative z-10 grid gap-8 px-8 py-10 lg:grid-cols-[1.2fr,1fr] xl:grid-cols-[1.5fr,1fr] items-start">
-            {/* Left Column: Title & Stats */}
             <div className="space-y-8">
               <div>
                 <p className="text-xs uppercase tracking-[0.45em] text-white/70 mb-2">Gestión de Territorio</p>
@@ -127,7 +107,6 @@ const AreasPage: React.FC = () => {
                   Define y gestiona las zonas de cobertura para tus prevendedores y rutas de distribución.
                 </p>
               </div>
-
               <div className="flex flex-wrap gap-4">
                 <button
                   onClick={handleCreate}
@@ -139,8 +118,6 @@ const AreasPage: React.FC = () => {
                   Nueva Área
                 </button>
               </div>
-
-              {/* Stats Cards */}
               <div className="grid grid-cols-2 gap-4 max-w-md">
                 <div className="rounded-2xl bg-white/10 border border-white/20 px-5 py-4 backdrop-blur-sm">
                   <p className="text-xs uppercase tracking-wide text-white/70">Total Áreas</p>
@@ -152,8 +129,6 @@ const AreasPage: React.FC = () => {
                 </div>
               </div>
             </div>
-
-            {/* Right Column: Area List (Embedded Card) */}
             <div className="relative">
               <div className="absolute inset-0 bg-emerald-500/30 blur-xl rounded-full transform translate-y-4" />
               <div className="relative bg-gradient-to-br from-emerald-600 to-emerald-500 rounded-2xl shadow-xl overflow-hidden border border-emerald-400/30 p-1">
@@ -172,7 +147,6 @@ const AreasPage: React.FC = () => {
           </div>
         </section>
 
-        {/* Error Alert */}
         {error && (
           <div className="p-4 bg-red-50 border border-red-200 rounded-xl flex items-start gap-3 animate-fade-in">
             <svg className="w-5 h-5 text-red-600 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -189,8 +163,6 @@ const AreasPage: React.FC = () => {
             </button>
           </div>
         )}
-
-        {/* Map Section (Full Width) */}
         <section className="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-200 bg-gray-50 flex items-center justify-between">
             <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
@@ -212,8 +184,6 @@ const AreasPage: React.FC = () => {
           />
         </section>
       </div>
-
-      {/* Modal Crear/Editar */}
       <AreaFormModal
         open={modalOpen}
         mode={modalMode}
@@ -223,14 +193,12 @@ const AreasPage: React.FC = () => {
         onClose={() => setModalOpen(false)}
         onSubmit={handleSubmit}
       />
-
-      {/* Modal Confirmar Eliminación */}
       {deleteConfirm && (
-        <div 
+        <div
           className="fixed inset-0 flex items-center justify-center p-4"
           style={{ zIndex: 99999 }}
         >
-          <div 
+          <div
             className="absolute inset-0 bg-black/70 backdrop-blur-sm"
             onClick={() => setDeleteConfirm(null)}
           />

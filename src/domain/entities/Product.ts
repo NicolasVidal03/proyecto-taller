@@ -22,11 +22,9 @@ export interface Product {
   userId?: number;
   createdAt?: string;
   updatedAt?: string;
-  // Datos de relaciones para lectura
   categoryName?: string;
   brandName?: string;
   presentationName?: string;
   colorName?: string;
-  // Ruta pública hacia la imagen (ej: /images/products/1.jpg)
   pathImage?: string | null;
 }

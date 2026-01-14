@@ -8,6 +8,7 @@ export class HttpProductRepository implements IProductRepository {
     if (filters?.categoryId) params.append('categoryId', String(filters.categoryId));
     if (filters?.brandId) params.append('brandId', String(filters.brandId));
     if (filters?.state !== undefined) params.append('state', String(filters.state));
+    if (filters?.search) params.append('search', filters.search);
     if (filters?.page) params.append('page', String(filters.page));
     if (filters?.limit) params.append('limit', String(filters.limit));
     
@@ -23,7 +24,6 @@ export class HttpProductRepository implements IProductRepository {
   }
 
   async create(data: CreateProductDTO): Promise<Product> {
-    // If an image file is present, send multipart/form-data
     if ((data as any).imageFile) {
       const formData = createFormData(data as any);
       const res = await http.post('/products', formData, {

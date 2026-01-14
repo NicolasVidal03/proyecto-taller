@@ -4,14 +4,6 @@ import { AreaMap as AreaMapType, createAreaMap } from '../utils/areaHelpers';
 import { container } from '../../infrastructure/config/container';
 import { areaPolygonsOverlap } from '../../domain/utils/geometry';
 
-// ══════════════════════════════════════════════════════════════════════════════
-// HOOK SIMPLE (con cache) - Para formularios/selects
-// ══════════════════════════════════════════════════════════════════════════════
-
-/**
- * Hook simple para áreas con cache.
- * Ideal para selección de áreas en formularios.
- */
 export const useAreasSimple = () => {
   const [areas, setAreas] = useState<Area[]>([]);
   const [areaMap, setAreaMap] = useState<AreaMapType>({});
@@ -50,10 +42,6 @@ export const useAreasSimple = () => {
   return { areas, areaMap, isLoading, fetchAreas, refreshAreas };
 };
 
-// ══════════════════════════════════════════════════════════════════════════════
-// HOOK COMPLETO (CRUD) - Para gestión de áreas
-// ══════════════════════════════════════════════════════════════════════════════
-
 interface OverlapResult {
   overlaps: boolean;
   overlappingAreaName?: string;
@@ -73,10 +61,6 @@ interface UseAreasReturn {
   checkOverlap: (polygon: AreaPoint[], excludeId?: number) => OverlapResult;
 }
 
-/**
- * Hook completo para gestión de Áreas (CRUD + validaciones).
- * Maneja el estado de las áreas y proporciona métodos para crear, actualizar y eliminar.
- */
 export function useAreas(): UseAreasReturn {
   const [areas, setAreas] = useState<Area[]>([]);
   const [selectedArea, setSelectedArea] = useState<Area | null>(null);
@@ -87,7 +71,7 @@ export function useAreas(): UseAreasReturn {
     setLoading(true);
     setError(null);
     try {
-      // Usar getAllFresh para siempre tener datos actualizados en la gestión de áreas
+
       const allAreas = await container.areas.getAllFresh();
       setAreas(allAreas);
     } catch (err: any) {
@@ -106,7 +90,6 @@ export function useAreas(): UseAreasReturn {
     setError(null);
     try {
       const created = await container.areas.create(name, area);
-      // Actualizar estado local inmediatamente
       setAreas(prev => [...prev, created]);
       return created;
     } catch (err: any) {

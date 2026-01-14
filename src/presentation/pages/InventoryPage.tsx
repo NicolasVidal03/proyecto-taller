@@ -1,32 +1,31 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useInventory } from '../hooks/useInventory';
 import { useBranches } from '../hooks/useBranches';
 import { useCategories } from '../hooks/useCategories';
 import { useBrands } from '../hooks/useBrands';
+import { useDebounce } from '../hooks/useDebounce';
 import { useAuth } from '../providers/AuthProvider';
-import { ProductWithBranchInfo, BranchProductsFilters } from '../../domain/entities/ProductBranch';
+import { ProductWithBranchInfo } from '../../domain/entities/ProductBranch';
 import Loader from '../components/shared/Loader';
+import Pagination from '../components/shared/Pagination';
 import { ToastContainer, useToast } from '../components/shared/Toast';
 
 export const InventoryPage: React.FC = () => {
-  const { inventory, pagination, isLoading, error, fetchInventory, setStock, clearError } = useInventory();
+  const { inventory, pagination, isLoading, error, goToPage, applyFilters, setStock, clearError } = useInventory();
   const { branches, fetchBranches, isLoading: branchesLoading } = useBranches();
   const { categories, fetchCategories } = useCategories();
   const { brands, fetchBrands } = useBrands();
   const auth = useAuth();
   const toast = useToast();
 
-  // Estados de filtros
   const [selectedBranchId, setSelectedBranchId] = useState<number | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [searchInput, setSearchInput] = useState(''); // Para debounce
+  const [searchInput, setSearchInput] = useState('');
   const [stockFilter, setStockFilter] = useState<'all' | 'available'>('available');
   const [categoryFilter, setCategoryFilter] = useState<number | 'all'>('all');
   const [brandFilter, setBrandFilter] = useState<number | 'all'>('all');
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
   
-  // Modal para editar stock
+  const debouncedSearch = useDebounce(searchInput, 500);
+  
   const [editModal, setEditModal] = useState<{
     open: boolean;
     item: ProductWithBranchInfo | null;
@@ -35,14 +34,12 @@ export const InventoryPage: React.FC = () => {
   const [editStockQty, setEditStockQty] = useState('');
   const [saving, setSaving] = useState(false);
 
-  // Cargar datos iniciales
   useEffect(() => {
     fetchBranches();
     fetchCategories();
     fetchBrands();
   }, [fetchBranches, fetchCategories, fetchBrands]);
 
-  // Seleccionar la sucursal del usuario logueado por defecto
   useEffect(() => {
     if (branches.length > 0 && selectedBranchId === null) {
       const userBranchId = auth.user?.branchId;
@@ -54,33 +51,17 @@ export const InventoryPage: React.FC = () => {
     }
   }, [branches, selectedBranchId, auth.user]);
 
-  // Debounce para búsqueda
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setSearchTerm(searchInput);
-      setCurrentPage(1); // Reset al buscar
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [searchInput]);
-
-  // Construir filtros
-  const filters = useMemo((): BranchProductsFilters => ({
-    search: searchTerm || undefined,
-    page: currentPage,
-    limit: pageSize,
-    onlyAvailable: stockFilter === 'available',
-    categoryId: categoryFilter !== 'all' ? categoryFilter : undefined,
-    brandId: brandFilter !== 'all' ? brandFilter : undefined,
-  }), [searchTerm, currentPage, pageSize, stockFilter, categoryFilter, brandFilter]);
-
-  // Cargar inventario cuando cambian filtros o sucursal
   useEffect(() => {
     if (selectedBranchId) {
-      fetchInventory(selectedBranchId, filters);
+      applyFilters(selectedBranchId, {
+        search: debouncedSearch || undefined,
+        onlyAvailable: stockFilter === 'available',
+        categoryId: categoryFilter !== 'all' ? categoryFilter : undefined,
+        brandId: brandFilter !== 'all' ? brandFilter : undefined,
+      });
     }
-  }, [selectedBranchId, filters, fetchInventory]);
+  }, [selectedBranchId, debouncedSearch, stockFilter, categoryFilter, brandFilter, applyFilters]);
 
-  // Mostrar errores
   useEffect(() => {
     if (error) {
       toast.error(error);
@@ -88,35 +69,8 @@ export const InventoryPage: React.FC = () => {
     }
   }, [error, toast, clearError]);
 
-  // Estadísticas locales (de la página actual)
-  const stats = useMemo(() => {
-    const withStock = inventory.filter(i => i.branch.hasStock && (i.branch.stockQty ?? 0) > 0).length;
-    const lowStock = inventory.filter(i => i.branch.hasStock && (i.branch.stockQty ?? 0) > 0 && (i.branch.stockQty ?? 0) <= 5).length;
-    const noStock = inventory.filter(i => !i.branch.hasStock || (i.branch.stockQty ?? 0) === 0).length;
-    return { 
-      total: pagination.total, 
-      withStock, 
-      lowStock, 
-      noStock,
-      currentPageItems: inventory.length 
-    };
-  }, [inventory, pagination.total]);
-
-  // Handlers
   const handleBranchChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setSelectedBranchId(Number(e.target.value));
-    setCurrentPage(1);
-  };
-
-  const handlePageChange = (newPage: number) => {
-    if (newPage >= 1 && newPage <= pagination.totalPages) {
-      setCurrentPage(newPage);
-    }
-  };
-
-  const handlePageSizeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setPageSize(Number(e.target.value));
-    setCurrentPage(1);
   };
 
   const openEditModal = (item: ProductWithBranchInfo) => {
@@ -133,6 +87,9 @@ export const InventoryPage: React.FC = () => {
     e.preventDefault();
     if (!editModal.item || !selectedBranchId) return;
     
+    const previousHasStock = editModal.item.branch.hasStock;
+    const newHasStock = editHasStock;
+    
     setSaving(true);
     try {
       const result = await setStock(editModal.item.id, selectedBranchId, {
@@ -145,6 +102,16 @@ export const InventoryPage: React.FC = () => {
           : 'Stock actualizado correctamente'
         );
         closeEditModal();
+        
+        // Si el estado cambió, refrescar la vista para aplicar filtros del backend
+        if (previousHasStock !== newHasStock) {
+          await applyFilters(selectedBranchId, {
+            search: debouncedSearch || undefined,
+            onlyAvailable: stockFilter === 'available',
+            categoryId: categoryFilter !== 'all' ? categoryFilter : undefined,
+            brandId: brandFilter !== 'all' ? brandFilter : undefined,
+          });
+        }
       }
     } catch (err: any) {
       toast.error(err?.message || 'Error al actualizar stock');
@@ -163,29 +130,11 @@ export const InventoryPage: React.FC = () => {
 
   const selectedBranch = branches.find(b => b.id === selectedBranchId);
 
-  // Generar rango de páginas para mostrar
-  const pageNumbers = useMemo(() => {
-    const pages: number[] = [];
-    const maxVisible = 5;
-    let start = Math.max(1, currentPage - Math.floor(maxVisible / 2));
-    let end = Math.min(pagination.totalPages, start + maxVisible - 1);
-    
-    if (end - start + 1 < maxVisible) {
-      start = Math.max(1, end - maxVisible + 1);
-    }
-    
-    for (let i = start; i <= end; i++) {
-      pages.push(i);
-    }
-    return pages;
-  }, [currentPage, pagination.totalPages]);
-
   return (
     <>
       <div className="relative overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(17,93,216,0.12),transparent_60%),radial-gradient(circle_at_80%_0%,rgba(255,100,27,0.08),transparent_55%)]" />
         <div className="relative space-y-10 px-6 py-8 lg:px-10 lg:py-12">
-          {/* Hero Section */}
           <section className="relative overflow-hidden rounded-[2.5rem] bg-gradient-to-r from-brand-900 via-brand-700 to-brand-500 text-white shadow-2xl">
             <div
               className="absolute inset-0 opacity-30"
@@ -198,7 +147,6 @@ export const InventoryPage: React.FC = () => {
                   Inventario por Sucursal
                 </h2>
                 <div className="space-y-3 rounded-2xl bg-white/10 p-4 backdrop-blur border border-white/10">
-                  {/* Primera fila: Sucursal y Búsqueda */}
                   <div className="flex flex-col gap-3 md:flex-row">
                     <div className="flex-1">
                       <label className="block text-xs uppercase tracking-wide text-white/70 mb-1">Sucursal</label>
@@ -226,14 +174,13 @@ export const InventoryPage: React.FC = () => {
                     </div>
                   </div>
                   
-                  {/* Segunda fila: Filtros de categoría y marca */}
                   <div className="flex flex-col gap-3 md:flex-row">
                     <div className="flex-1">
                       <label className="block text-xs uppercase tracking-wide text-white/70 mb-1">Categoría</label>
                       <select
                         className="w-full rounded-lg px-4 py-2.5 text-sm font-medium bg-white/20 text-white border border-white/20 focus:outline-none focus:ring-2 focus:ring-white/30"
                         value={categoryFilter}
-                        onChange={e => { setCategoryFilter(e.target.value === 'all' ? 'all' : Number(e.target.value)); setCurrentPage(1); }}
+                        onChange={e => setCategoryFilter(e.target.value === 'all' ? 'all' : Number(e.target.value))}
                       >
                         <option value="all" className="text-lead-900">Todas las categorías</option>
                         {categories.filter(c => c.state).map(cat => (
@@ -246,7 +193,7 @@ export const InventoryPage: React.FC = () => {
                       <select
                         className="w-full rounded-lg px-4 py-2.5 text-sm font-medium bg-white/20 text-white border border-white/20 focus:outline-none focus:ring-2 focus:ring-white/30"
                         value={brandFilter}
-                        onChange={e => { setBrandFilter(e.target.value === 'all' ? 'all' : Number(e.target.value)); setCurrentPage(1); }}
+                        onChange={e => setBrandFilter(e.target.value === 'all' ? 'all' : Number(e.target.value))}
                       >
                         <option value="all" className="text-lead-900">Todas las marcas</option>
                         {brands.filter(b => b.state).map(brand => (
@@ -256,13 +203,12 @@ export const InventoryPage: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Tercera fila: Filtros de disponibilidad */}
                   <div className="flex flex-wrap gap-3">
                     {(['available', 'all'] as const).map(filter => (
                       <button
                         key={filter}
                         type="button"
-                        onClick={() => { setStockFilter(filter); setCurrentPage(1); }}
+                        onClick={() => setStockFilter(filter)}
                         className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
                           stockFilter === filter
                             ? 'bg-lead-50 text-brand-700 shadow-lg'
@@ -277,42 +223,16 @@ export const InventoryPage: React.FC = () => {
               </div>
               <div className="relative">
                 <div className="absolute inset-0 rounded-[2rem] bg-white/10 blur-xl" />
-                <div className="relative space-y-5 rounded-[2rem] border border-white/20 bg-white/10 px-7 py-8 backdrop-blur">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="rounded-2xl bg-gradient-to-br from-brand-900 to-brand-600 px-4 py-5 shadow-lg">
-                      <p className="text-xs uppercase tracking-wide text-white/80">Total Productos</p>
-                      <p className="mt-2 text-3xl font-semibold text-white">{stats.total.toLocaleString()}</p>
-                    </div>
-                    <div className="rounded-2xl bg-gradient-to-br from-green-600 to-green-400 px-4 py-5 shadow-lg">
-                      <p className="text-xs uppercase tracking-wide text-white/80">En esta página</p>
-                      <p className="mt-2 text-3xl font-semibold text-white">{stats.currentPageItems}</p>
-                    </div>
-                  </div>
-                  <div className="space-y-2 rounded-xl border border-white/20 bg-white/10 p-4 text-sm text-white/80">
-                    <p className="text-xs uppercase tracking-[0.35em] text-white/60">Alertas de Stock (página actual)</p>
-                    <div className="flex items-center justify-between">
-                      <span>Con stock</span>
-                      <span className="font-semibold text-green-300">{stats.withStock}</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span>Stock bajo (≤5)</span>
-                      <span className={`font-semibold ${stats.lowStock > 0 ? 'text-amber-300' : 'text-white'}`}>
-                        {stats.lowStock}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span>Sin stock</span>
-                      <span className={`font-semibold ${stats.noStock > 0 ? 'text-red-300' : 'text-white'}`}>
-                        {stats.noStock}
-                      </span>
-                    </div>
+                <div className="relative flex items-center justify-center rounded-[2rem] border border-white/20 bg-white/10 px-7 py-8 backdrop-blur">
+                  <div className="rounded-2xl bg-gradient-to-br from-brand-900 to-brand-600 px-8 py-6 shadow-lg text-center w-full">
+                    <p className="text-xs uppercase tracking-wide text-white/80">Total Productos</p>
+                    <p className="mt-2 text-4xl font-semibold text-white">{pagination.total.toLocaleString()}</p>
                   </div>
                 </div>
               </div>
             </div>
           </section>
 
-          {/* Tabla de inventario */}
           <section className="grid gap-8 xl:grid-cols-[1fr]">
             <div className="card shadow-xl ring-1 ring-black/5">
               <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between border-b border-lead-100 pb-4">
@@ -321,31 +241,17 @@ export const InventoryPage: React.FC = () => {
                     Stock en {selectedBranch?.name ?? 'Sucursal'}
                   </h3>
                   <p className="text-sm text-lead-500">
-                    Mostrando {inventory.length} de {pagination.total.toLocaleString()} productos
-                    {pagination.totalPages > 1 && ` • Página ${pagination.page} de ${pagination.totalPages}`}
+                    {pagination.totalPages > 0 && `Página ${pagination.page} de ${pagination.totalPages} • `}
+                    {pagination.total.toLocaleString()} productos total
                   </p>
-                </div>
-                <div className="flex items-center gap-3">
-                  <label className="text-sm text-lead-600">Mostrar:</label>
-                  <select
-                    className="rounded-lg border border-lead-300 bg-white px-3 py-2 text-sm focus:border-brand-500 focus:ring-brand-500"
-                    value={pageSize}
-                    onChange={handlePageSizeChange}
-                  >
-                    <option value={10}>10</option>
-                    <option value={20}>20</option>
-                    <option value={30}>30</option>
-                    <option value={40}>40</option>
-                    <option value={50}>50</option>
-                  </select>
                 </div>
               </div>
 
-              {isLoading || branchesLoading ? (
+              {isLoading && inventory.length === 0 ? (
                 <Loader />
               ) : inventory.length === 0 ? (
                 <div className="rounded-md border bg-white p-6 text-center text-sm text-gray-600 shadow-sm">
-                  {searchTerm || categoryFilter !== 'all' || brandFilter !== 'all' || stockFilter === 'available'
+                  {debouncedSearch || categoryFilter !== 'all' || brandFilter !== 'all' || stockFilter === 'available'
                     ? 'No se encontraron productos con los filtros seleccionados.'
                     : 'No hay productos en el inventario de esta sucursal.'}
                 </div>
@@ -418,62 +324,16 @@ export const InventoryPage: React.FC = () => {
                     </table>
                   </div>
 
-                  {/* Paginación */}
-                  {pagination.totalPages > 1 && (
-                    <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-                      <p className="text-sm text-lead-500">
-                        Mostrando {((pagination.page - 1) * pagination.limit) + 1} a {Math.min(pagination.page * pagination.limit, pagination.total)} de {pagination.total.toLocaleString()} productos
-                      </p>
-                      <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => handlePageChange(1)}
-                          disabled={currentPage === 1}
-                          className="rounded px-3 py-2 text-sm font-medium text-lead-700 hover:bg-lead-100 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          ««
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handlePageChange(currentPage - 1)}
-                          disabled={currentPage === 1}
-                          className="rounded px-3 py-2 text-sm font-medium text-lead-700 hover:bg-lead-100 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          «
-                        </button>
-                        
-                        {pageNumbers.map(pageNum => (
-                          <button
-                            key={pageNum}
-                            type="button"
-                            onClick={() => handlePageChange(pageNum)}
-                            className={`rounded px-3 py-2 text-sm font-medium transition ${
-                              pageNum === currentPage
-                                ? 'bg-brand-600 text-white'
-                                : 'text-lead-700 hover:bg-lead-100'
-                            }`}
-                          >
-                            {pageNum}
-                          </button>
-                        ))}
-                        
-                        <button
-                          type="button"
-                          onClick={() => handlePageChange(currentPage + 1)}
-                          disabled={currentPage === pagination.totalPages}
-                          className="rounded px-3 py-2 text-sm font-medium text-lead-700 hover:bg-lead-100 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          »
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handlePageChange(pagination.totalPages)}
-                          disabled={currentPage === pagination.totalPages}
-                          className="rounded px-3 py-2 text-sm font-medium text-lead-700 hover:bg-lead-100 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          »»
-                        </button>
-                      </div>
+                  {pagination.totalPages > 0 && (
+                    <div className="mt-6">
+                      <Pagination
+                        currentPage={pagination.page}
+                        totalPages={pagination.totalPages}
+                        totalItems={pagination.total}
+                        itemsPerPage={pagination.limit}
+                        onPageChange={goToPage}
+                        isLoading={isLoading}
+                      />
                     </div>
                   )}
                 </>
@@ -483,7 +343,6 @@ export const InventoryPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Modal de edición de stock */}
       {editModal.open && editModal.item && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-lead-900/60 backdrop-blur-sm overflow-y-auto">
           <div className="mx-4 my-10 w-full max-w-md overflow-hidden rounded-xl bg-lead-50 shadow-2xl ring-1 ring-black/5">

@@ -19,7 +19,6 @@ const SuppliersTable: React.FC<SuppliersTableProps> = ({ suppliers, countryMap, 
       <table className="min-w-full text-sm">
         <thead className="bg-brand-600 text-xs uppercase tracking-wider text-white">
           <tr>
-            <th className="px-4 py-4 text-left font-semibold">ID</th>
             <th className="px-4 py-4 text-left font-semibold">NIT</th>
             <th className="px-4 py-4 text-left font-semibold">Nombre</th>
             <th className="px-4 py-4 text-left font-semibold">Teléfono</th>
@@ -32,15 +31,14 @@ const SuppliersTable: React.FC<SuppliersTableProps> = ({ suppliers, countryMap, 
         <tbody className="divide-y divide-lead-200">
           {isEmpty ? (
             <tr>
-              <td className="px-4 py-6 text-center text-sm text-lead-600" colSpan={8}>
+              <td className="px-4 py-6 text-center text-sm text-lead-600" colSpan={7}>
                 No hay proveedores para mostrar.
               </td>
             </tr>
           ) : suppliers.map(sup => (
             <tr key={sup.id} className="transition-colors hover:bg-white">
-              <td className="px-4 py-3 font-medium text-brand-900">{sup.id}</td>
               <td className="px-4 py-3 text-lead-600">{sup.nit ?? '—'}</td>
-              <td className="px-4 py-3 text-lead-600">{sup.name}</td>
+              <td className="px-4 py-3 font-medium text-brand-900">{sup.name}</td>
               <td className="px-4 py-3 text-lead-600">{sup.phone ?? '—'}</td>
               <td className="px-4 py-3 text-lead-600">
                 <span className="inline-flex items-center rounded-full bg-brand-50 px-2.5 py-0.5 text-xs font-medium text-brand-700">

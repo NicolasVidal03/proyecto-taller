@@ -3,7 +3,7 @@ import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../providers/AuthProvider';
 import UserDropdown from '../components/UserDropdown';
 import { useToast } from '../components/shared/Toast';
-import { http } from '../../infrastructure/http/httpClient';
+import { container } from '../../infrastructure/config/container';
 
 const ChangePasswordForm: React.FC<{ userId: number; onClose: () => void }> = ({ userId, onClose }) => {
   const [password, setPassword] = useState('');
@@ -16,7 +16,7 @@ const ChangePasswordForm: React.FC<{ userId: number; onClose: () => void }> = ({
     if (!password || password !== confirm) return toast.error('Las contraseñas no coinciden');
     setLoading(true);
     try {
-      await http.patch(`/users/${userId}/password`, { password });
+      await container.users.updatePassword(userId, password);
       toast.success('Contraseña actualizada');
       onClose();
     } catch (err: any) {
@@ -55,6 +55,7 @@ const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const navItems: Array<{ label: string; to: string; icon: string; disabled?: boolean; subItems?: Array<{ label: string; to: string }> }> = [
     { label: 'Clientes', to: '/clients', icon: '👥' },
     { label: 'Áreas', to: '/areas', icon: '🗺️' },
+    { label: 'Rutas', to: '/routes', icon: '🛤️' },
     { label: 'Productos', to: '/products', icon: '📦' },
     { label: 'Inventario', to: '/inventory', icon: '📊' },
     { label: 'Proveedores', to: '/suppliers', icon: '🚚' },
@@ -68,7 +69,6 @@ const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
   return (
     <div className="flex min-h-screen bg-lead-200 text-lead-800 font-sans">
-      {/* Sidebar Container - Fixed width when collapsed, expands on hover */}
       <div 
         className={`fixed inset-y-0 left-0 z-30 flex flex-col bg-gradient-to-b from-brand-900 via-brand-800 to-brand-900 text-white shadow-2xl transition-all duration-300 ease-in-out ${
           isHovered ? 'w-64' : 'w-20'
@@ -76,7 +76,6 @@ const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
-        {/* User Profile Section */}
         <div
           onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
           className={`cursor-pointer flex items-center gap-3 border-b border-white/10 px-4 py-8 transition-all duration-300 ${isHovered ? 'justify-start' : 'justify-center'}`}
@@ -92,7 +91,6 @@ const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           </div>
         </div>
 
-        {/* Navigation */}
         <nav className="flex-1 space-y-2 px-3 py-8 text-sm font-medium overflow-y-auto overflow-x-hidden">
           {navItems.map(item => (
             <div key={item.label}>
@@ -145,13 +143,11 @@ const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           ))}
         </nav>
 
-        {/* Footer */}
         <div className={`border-t border-white/10 px-4 py-6 transition-all duration-300 ${isHovered ? 'opacity-100' : 'opacity-0'}`}>
           <p className="text-[0.6rem] uppercase tracking-[0.3em] text-brand-400/60 text-center whitespace-nowrap">SICME ELECTRIK v1.0</p>
         </div>
       </div>
 
-      {/* Main Content Wrapper - Pushed by collapsed sidebar width */}
       <div className={`flex flex-1 flex-col relative z-10 transition-all duration-300 ${isHovered ? 'ml-64' : 'ml-20'}`}>
         <header className="sticky top-0 z-40 flex items-center justify-between bg-lead-100 px-6 py-4 shadow-sm lg:px-10 border-b border-lead-300">
           <div>
@@ -167,9 +163,7 @@ const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                 <p className="text-[0.65rem] uppercase tracking-wider text-lead-400 font-semibold">{user.role?.replace(/_/g, ' ')}</p>
               </div>
             ) : null}
-            {/* User dropdown handles logout, view profile and change password */}
             <div className="hidden md:block">
-              {/* We'll lazy-load the dropdown in the layout to keep logic centralized */}
               <React.Suspense fallback={<div className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-100 text-brand-700 font-bold border border-brand-200">{user?.names ? user.names.charAt(0) : 'S'}</div>}>
                 <UserDropdown
                   user={user ?? null}
@@ -184,7 +178,6 @@ const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             </div>
           </div>
         </header>
-        {/* Change password modal (simple) */}
         {showChangePassword && user && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-lead-900/60 backdrop-blur-sm">
             <div className="mx-4 w-full max-w-md overflow-hidden rounded-xl bg-lead-50 shadow-2xl ring-1 ring-black/5">

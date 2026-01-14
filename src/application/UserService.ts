@@ -26,4 +26,8 @@ export class UserService {
   async resetPassword(id: number): Promise<void> {
     return this.userRepo.resetPassword(id);
   }
+
+  async updatePassword(id: number, newPassword: string): Promise<void> {
+    return this.userRepo.updatePassword(id, newPassword);
+  }
 }
