@@ -1,5 +1,3 @@
-export { useAuth } from '../providers/AuthProvider';
-
 export { useUsers } from './useUsers';
 export type { UseUsersReturn, UserError } from './useUsers';
 

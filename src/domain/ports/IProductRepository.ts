@@ -30,6 +30,7 @@ export interface ProductFilters {
   categoryId?: number;
   brandId?: number;
   state?: boolean;
+  search?: string;  // Búsqueda por nombre, barcode o código interno
   page?: number;
   limit?: number;
 }

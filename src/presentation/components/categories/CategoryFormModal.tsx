@@ -75,7 +75,7 @@ const CategoryFormModal: React.FC<CategoryFormModalProps> = ({
         <form onSubmit={handleSubmit} className="space-y-5 px-6 py-6">
           <div>
             <label htmlFor="name" className="block text-sm font-medium text-lead-700">
-              Nombre de la Categoría
+              Nombre de la Categoría *
             </label>
             <input
               type="text"
@@ -88,7 +88,6 @@ const CategoryFormModal: React.FC<CategoryFormModalProps> = ({
               className={`mt-1 block w-full rounded-lg border px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500 ${
                 error ? 'border-red-500' : 'border-lead-300 bg-white'
               }`}
-              placeholder="Ej: Electrónica, Cables, Audio..."
               disabled={submitting}
             />
             {error && (
@@ -106,7 +105,6 @@ const CategoryFormModal: React.FC<CategoryFormModalProps> = ({
               onChange={(e) => setDescription(e.target.value)}
               className="mt-1 block w-full rounded-lg border border-lead-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500 resize-none"
               rows={3}
-              placeholder="Descripción de la categoría (opcional)"
               disabled={submitting}
             />
           </div>

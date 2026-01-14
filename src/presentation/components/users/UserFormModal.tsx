@@ -90,7 +90,6 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
     const letter2 = cleanLast2.charAt(0) || '';
     const ci = `${ciMainValue}${ciExtValue}`.replace(/[^0-9a-zA-Z]/g, '');
     if (letter1 && letter2) return `${letter1}${letter2}${ci}`;
-   
     const fallback = cleanLast1.slice(0, 2);
     if (!fallback && !ci) return '';
     return `${fallback}${ci}`;
@@ -137,15 +136,12 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
     let nextValue = value;
    
     if (name === 'names' || name === 'lastName' || name === 'secondLastName') {
-      // Allow only letters and spaces, convert to uppercase
       nextValue = value.replace(/[^A-Za-z\s]/g, '').toUpperCase();
     }
     if (name === 'ciMain') {
-      // Allow only digits and limit to 7 characters
-      nextValue = value.replace(/\D/g, '').slice(0, 7);
+      nextValue = value.replace(/\D/g, '').slice(0, 9);
     }
     if (name === 'ciExt') {
-      // Allow only digit(s) and letters, limit to 2 chars (one digit + one letter)
       nextValue = value.replace(/[^0-9a-zA-Z]/g, '').slice(0, 2).toUpperCase();
     }
     if (name === 'username') {
@@ -166,41 +162,29 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
 
   const validate = (): boolean => {
     const nextErrors: Record<string, string> = {};
-
-    // Username validation (only for create)
     if (mode === 'create' && !form.username.trim()) {
       nextErrors.username = 'El usuario es obligatorio';
     }
-
-    // CI validation
     if (!form.ciMain.trim()) {
       nextErrors.ciMain = 'La cédula (CI) es obligatoria';
-    } else if (!/^\d{1,7}$/.test(form.ciMain)) {
-      nextErrors.ciMain = 'CI inválida (solo hasta 7 dígitos)';
+    } else if (!/^\d{1,9}$/.test(form.ciMain)) {
+      nextErrors.ciMain = 'CI inválida (solo hasta 9 dígitos)';
     }
-
-    // Names validation
     if (!form.names.trim()) {
       nextErrors.names = 'El nombre es obligatorio';
     } else if (!/^[A-Z\s]+$/.test(form.names)) {
       nextErrors.names = 'El nombre sólo puede contener letras';
     }
-
-    // Last names validation
     if (!form.lastName.trim()) {
       nextErrors.lastName = 'El apellido es obligatorio';
     } else if (!/^[A-Z\s]+$/.test(form.lastName)) {
       nextErrors.lastName = 'El apellido sólo puede contener letras';
     }
-
-    // Second last name validation (required)
     if (!form.secondLastName.trim()) {
       nextErrors.secondLastName = 'El segundo apellido es obligatorio';
     } else if (!/^[A-Z\s]+$/.test(form.secondLastName)) {
       nextErrors.secondLastName = 'El segundo apellido sólo puede contener letras';
     }
-
-    // Branch validation
     if (!form.branchId.trim()) {
       nextErrors.branchId = 'La sucursal es obligatoria';
     } else {
@@ -209,25 +193,17 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
         nextErrors.branchId = 'La sucursal debe ser numérica';
       }
     }
-
-    // Role validation
     if (!form.role) {
       nextErrors.role = 'Selecciona un rol';
     }
-
-    // Password validation (only for create)
     if (mode === 'create' && !form.password.trim()) {
       nextErrors.password = 'La contraseña es obligatoria';
     }
-
-    // Confirm password validation (only for create)
     if (mode === 'create' && !form.confirmPassword.trim()) {
       nextErrors.confirmPassword = 'Confirma la contraseña';
     } else if (mode === 'create' && form.password.trim() !== form.confirmPassword.trim()) {
       nextErrors.confirmPassword = 'Las contraseñas no coinciden';
     }
-
-    // CI extension validation (if provided)
     if (form.ciExt.trim() && !/^\d[a-zA-Z]$/.test(form.ciExt.trim())) {
       nextErrors.ciExt = 'Formato de ext inválido (ej: 1B)';
     }
@@ -240,7 +216,6 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
     event.preventDefault();
     if (!validate()) return;
     const branchNumber = Number(form.branchId);
-    // compose CI: main + optional '-' + ext
     const main = form.ciMain.trim();
     const ext = form.ciExt.trim();
     const composedCi = ext ? `${main}-${ext}` : main;
@@ -273,14 +248,14 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
           <div>
             <div className="grid grid-cols-3 gap-3 items-end">
               <div className="col-span-2">
-                <label htmlFor="ciMain" className="block text-sm font-medium text-lead-700">Cédula (CI)</label>
+                <label htmlFor="ciMain" className="block text-sm font-medium text-lead-700">Cédula (CI) *</label>
                 <input
                   id="ciMain"
                   name="ciMain"
                   value={form.ciMain}
                   onChange={handleChange}
                   className={`mt-1 block w-full rounded-lg border px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500 ${errors.ciMain ? 'border-red-500' : 'border-lead-300 bg-white'}`}
-                  placeholder="876543"
+                  placeholder="876543789"
                   disabled={submitting}
                 />
               </div>
@@ -292,7 +267,7 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
                   value={form.ciExt}
                   onChange={handleChange}
                   className={`mt-1 block w-full rounded-lg border px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500 ${errors.ciExt ? 'border-red-500' : 'border-lead-300 bg-white'}`}
-                  placeholder="1b"
+                  placeholder="1B"
                   disabled={submitting}
                 />
               </div>
@@ -304,48 +279,48 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
           </div>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div>
-              <label htmlFor="names" className="block text-sm font-medium text-lead-700">Nombres</label>
+              <label htmlFor="names" className="block text-sm font-medium text-lead-700">Nombres *</label>
               <input
                 id="names"
                 name="names"
                 value={form.names}
                 onChange={handleChange}
                 className={`mt-1 block w-full rounded-lg border px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500 ${errors.names ? 'border-red-500' : 'border-lead-300 bg-white'}`}
-                placeholder="Juan Carlos"
+                placeholder="JUAN CARLOS"
                 disabled={submitting}
               />
               {errors.names ? <p className="mt-1 text-xs text-red-600">{errors.names}</p> : null}
             </div>
             <div>
-              <label htmlFor="lastName" className="block text-sm font-medium text-lead-700">Primer Apellido</label>
+              <label htmlFor="lastName" className="block text-sm font-medium text-lead-700">Primer Apellido *</label>
               <input
                 id="lastName"
                 name="lastName"
                 value={form.lastName}
                 onChange={handleChange}
                 className={`mt-1 block w-full rounded-lg border px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500 ${errors.lastName ? 'border-red-500' : 'border-lead-300 bg-white'}`}
-                placeholder="Pérez"
+                placeholder="PEREZ"
                 disabled={submitting}
               />
               {errors.lastName ? <p className="mt-1 text-xs text-red-600">{errors.lastName}</p> : null}
             </div>
           </div>
           <div>
-            <label htmlFor="secondLastName" className="block text-sm font-medium text-lead-700">Segundo Apellido</label>
+            <label htmlFor="secondLastName" className="block text-sm font-medium text-lead-700">Segundo Apellido *</label>
             <input
               id="secondLastName"
               name="secondLastName"
               value={form.secondLastName}
               onChange={handleChange}
               className={`mt-1 block w-full rounded-lg border px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500 ${errors.secondLastName ? 'border-red-500' : 'border-lead-300 bg-white'}`}
-              placeholder="Fernández"
+              placeholder="FERNANDEZ"
               disabled={submitting}
             />
             {errors.secondLastName ? <p className="mt-1 text-xs text-red-600">{errors.secondLastName}</p> : null}
           </div>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div>
-              <label htmlFor="branchId" className="block text-sm font-medium text-lead-700">Sucursal</label>
+              <label htmlFor="branchId" className="block text-sm font-medium text-lead-700">Sucursal *</label>
               <div className="relative">
                 <select
                   id="branchId"
@@ -383,7 +358,7 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
               )}
             </div>
             <div>
-              <label htmlFor="role" className="block text-sm font-medium text-lead-700">Rol</label>
+              <label htmlFor="role" className="block text-sm font-medium text-lead-700">Rol *</label>
               <select
                 id="role"
                 name="role"
@@ -404,7 +379,7 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
 
           {mode === 'create' && (
             <div>
-              <label htmlFor="username" className="block text-sm font-medium text-lead-700">Usuario</label>
+              <label htmlFor="username" className="block text-sm font-medium text-lead-700">Usuario *</label>
               <input
                 id="username"
                 name="username"
@@ -419,7 +394,7 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
           )}
           {mode === 'create' && (
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-lead-700">Contraseña</label>
+              <label htmlFor="password" className="block text-sm font-medium text-lead-700">Contraseña *</label>
               <input
                 id="password"
                 name="password"
@@ -436,7 +411,7 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
 
           {mode === 'create' && (
             <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-lead-700">Confirmar contraseña</label>
+              <label htmlFor="confirmPassword" className="block text-sm font-medium text-lead-700">Confirmar contraseña *</label>
               <input
                 id="confirmPassword"
                 name="confirmPassword"

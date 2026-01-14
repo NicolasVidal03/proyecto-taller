@@ -47,7 +47,7 @@ export const LoginPage: React.FC = () => {
 
   return (
     <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-gradient-to-br from-brand-600 via-brand-800 to-brand-900 px-6 py-16 text-white sm:px-10">
-      {/* Background decorations */}
+     
       <div
         className="absolute inset-0 opacity-20"
         style={{
@@ -122,10 +122,6 @@ export const LoginPage: React.FC = () => {
               {submitting ? 'Validando...' : 'Ingresar'}
             </button>
           </form>
-
-          <p className="text-center text-[0.7rem] text-white/50">
-            Sistema de Gestión de Inventario
-          </p>
         </div>
       </div>
     </div>

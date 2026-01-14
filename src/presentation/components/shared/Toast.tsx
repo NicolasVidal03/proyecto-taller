@@ -102,7 +102,6 @@ export const ToastContainer: React.FC<ToastContainerProps> = ({ toasts, onDismis
   );
 };
 
-// Hook para manejar toasts
 export function useToast() {
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 

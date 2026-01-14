@@ -1,20 +1,16 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { User } from '../../domain/entities/User';
-import { useToast } from './shared/Toast';
 
 type Props = {
   user: User | null;
-  onViewProfile?: () => void;
-  onChangePassword?: () => void;
+  onViewProfile: () => void;
+  onChangePassword: () => void;
   onLogout: () => void;
 };
 
 const UserDropdown: React.FC<Props> = ({ user, onViewProfile, onChangePassword, onLogout }) => {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement | null>(null);
-  const navigate = useNavigate();
-  const toast = useToast();
 
   useEffect(() => {
     const onDoc = (e: MouseEvent) => {
@@ -28,23 +24,17 @@ const UserDropdown: React.FC<Props> = ({ user, onViewProfile, onChangePassword, 
 
   const handleView = () => {
     setOpen(false);
-    if (onViewProfile) return onViewProfile();
-    navigate('/profile');
+    onViewProfile();
   };
 
   const handleChangePassword = () => {
     setOpen(false);
-    if (onChangePassword) return onChangePassword();
-    navigate('/change-password');
+    onChangePassword();
   };
 
-  const handleLogout = async () => {
+  const handleLogout = () => {
     setOpen(false);
-    try {
-      await onLogout();
-    } catch (err) {
-      toast.error('Error cerrando sesión');
-    }
+    onLogout();
   };
 
   return (

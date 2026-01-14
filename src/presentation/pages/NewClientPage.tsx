@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useClients } from '../hooks/useClients';
 import { useAreasSimple } from '../hooks/useAreas';
@@ -9,14 +9,17 @@ import { ToastContainer, useToast } from '../components/shared/Toast';
 export const NewClientPage: React.FC = () => {
   const navigate = useNavigate();
   const { createClient } = useClients();
-  const { areas, isLoading: areasLoading } = useAreasSimple();
+  const { areas, isLoading: areasLoading, refreshAreas } = useAreasSimple();
   const toast = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    refreshAreas();
+  }, [refreshAreas]);
 
   const handleSubmit = async (data: CreateClientDTO | UpdateClientDTO) => {
     setIsSubmitting(true);
     try {
-      // Este formulario es para creación; forzamos el tipo a CreateClientDTO
       const payload = data as CreateClientDTO;
       const newClient = await createClient(payload);
       if (newClient) {

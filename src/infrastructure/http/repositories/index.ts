@@ -10,3 +10,6 @@ export { HttpBrandRepository } from './HttpBrandRepository';
 export { HttpProductBranchRepository } from './HttpProductBranchRepository';
 export { HttpPresentationRepository } from './HttpPresentationRepository';
 export { HttpColorRepository } from './HttpColorRepository';
+export { HttpClientRepository } from './HttpClientRepository';
+export { HttpAreaRepository } from './HttpAreaRepository';
+export { HttpRouteRepository } from './HttpRouteRepository';

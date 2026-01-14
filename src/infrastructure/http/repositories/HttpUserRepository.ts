@@ -2,10 +2,7 @@ import { http } from '../httpClient';
 import { User } from '../../../domain/entities/User';
 import { IUserRepository, CreateUserDTO, UpdateUserDTO } from '../../../domain/ports/IUserRepository';
 
-/**
- * Implementación HTTP del repositorio de usuarios
- * Adaptador de infraestructura que conecta con el backend via REST
- */
+
 export class HttpUserRepository implements IUserRepository {
   private readonly basePath = '/users';
 
@@ -25,8 +22,6 @@ export class HttpUserRepository implements IUserRepository {
   }
 
   async update(id: number, data: UpdateUserDTO): Promise<User> {
-    // Backend defines PATCH /users/:id for partial updates
-    // Map frontend `username` -> backend expected `userName` to remain compatible
     const payload: any = { ...data };
     if ((payload as any).username !== undefined) {
       payload.userName = (payload as any).username;
@@ -37,7 +32,6 @@ export class HttpUserRepository implements IUserRepository {
   }
 
   async updateState(id: number, state: boolean, currentUserId: number): Promise<void> {
-    // El backend espera user_id en el body para auditoría
     await http.patch(
       `${this.basePath}/${id}/state`,
       { state, user_id: currentUserId }
@@ -46,5 +40,9 @@ export class HttpUserRepository implements IUserRepository {
 
   async resetPassword(id: number): Promise<void> {
     await http.post(`${this.basePath}/${id}/reset-password`);
+  }
+
+  async updatePassword(id: number, newPassword: string): Promise<void> {
+    await http.patch(`${this.basePath}/${id}/password`, { password: newPassword });
   }
 }

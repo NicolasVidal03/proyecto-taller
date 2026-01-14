@@ -3,10 +3,12 @@ import { Product } from '../../../domain/entities/Product';
 
 interface ProductDetailsModalProps {
   product: Product | null;
+  presentationMap: Map<number, string>;
+  colorMap: Map<number, string>;
   onClose: () => void;
 }
 
-const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({ product, onClose }) => {
+const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({ product, presentationMap, colorMap, onClose }) => {
   if (!product) return null;
 
   const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
@@ -14,7 +16,6 @@ const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({ product, onCl
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto overflow-x-hidden bg-black/60 backdrop-blur-sm p-4 md:p-0">
       <div className="relative w-full max-w-3xl transform rounded-3xl bg-white shadow-2xl transition-all">
-        {/* Header con imagen banner (ancha, redondeada) */}
         <div className="relative h-56 w-full overflow-hidden rounded-t-3xl bg-gray-100">
           <button
             onClick={onClose}
@@ -44,18 +45,16 @@ const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({ product, onCl
             </div>
           )}
         </div>
-
-        {/* Contenido */}
         <div className="px-8 pb-8 pt-8">
           <div className="mb-2 text-center">
             <h2 className="text-3xl font-bold text-gray-900">{product.name}</h2>
             <p className="text-lg text-brand-600 font-medium">{product.brandName || product.categoryName || ''}</p>
             <div className="mt-3 flex items-center justify-center gap-2">
               <span className="inline-flex items-center rounded-full bg-blue-100 px-3 py-1 text-xs font-medium text-blue-800">
-                {product.presentationName || 'Sin presentación'}
+                {product.presentationName || (product.presentationId ? presentationMap.get(product.presentationId) : null) || 'Sin presentación'}
               </span>
               <span className="inline-flex items-center rounded-full bg-purple-100 px-3 py-1 text-xs font-medium text-purple-800">
-                {product.colorName || 'Sin color'}
+                {product.colorName || (product.colorId ? colorMap.get(product.colorId) : null) || 'Sin color'}
               </span>
             </div>
           </div>

@@ -1,6 +1,6 @@
 import React from 'react';
 import { User } from '../../../domain/entities/User';
-import { BranchMap, getBranchName } from '../../../domain/entities/Branch';
+import { BranchMap, getBranchName } from '../../utils/branchHelpers';
 import { formatRole } from '../../utils/format';
 
 type UsersTableProps = {
@@ -47,7 +47,7 @@ const UsersTable: React.FC<UsersTableProps> = ({
               </td>
             </tr>
           ) : users.map(user => {
-            const isProtected = user.role === 'super_admin';
+            //const isProtected = user.role === 'super_admin';
             return (
               <tr key={user.id} className="transition-colors hover:bg-white">
                 <td className="px-4 py-3 font-medium text-brand-900">{user.userName}</td>
@@ -68,7 +68,7 @@ const UsersTable: React.FC<UsersTableProps> = ({
                       type="button"
                       onClick={() => onEdit(user)}
                       className="rounded bg-brand-100 px-3 py-1.5 font-medium text-brand-700 transition hover:bg-brand-200 disabled:opacity-50"
-                      disabled={isBusy(user.id) || isProtected}
+                      disabled={isBusy(user.id) }
                     >
                       Editar
                     </button>
@@ -76,7 +76,7 @@ const UsersTable: React.FC<UsersTableProps> = ({
                       type="button"
                       onClick={() => onDeactivate(user)}
                       className="rounded bg-accent-100 px-3 py-1.5 font-medium text-accent-700 transition hover:bg-accent-200 disabled:opacity-50"
-                      disabled={isBusy(user.id) || isProtected}
+                      disabled={isBusy(user.id)}
                     >
                       Eliminar
                     </button>
@@ -85,7 +85,7 @@ const UsersTable: React.FC<UsersTableProps> = ({
                         type="button"
                         onClick={() => onResetPassword(user)}
                         className="rounded bg-lead-200 px-3 py-1.5 font-medium text-lead-800 transition hover:bg-lead-300 disabled:opacity-50"
-                        disabled={isBusy(user.id) || isProtected}
+                        disabled={isBusy(user.id)}
                       >
                         Resetear
                       </button>

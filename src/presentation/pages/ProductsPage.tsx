@@ -4,6 +4,7 @@ import { useCategories } from '../hooks/useCategories';
 import { useBrands } from '../hooks/useBrands';
 import { usePresentations } from '../hooks/usePresentations';
 import { useColors } from '../hooks/useColors';
+import { useDebounce } from '../hooks/useDebounce';
 import { useAuth } from '../providers/AuthProvider';
 import { Product } from '../../domain/entities/Product';
 import { Category } from '../../domain/entities/Category';
@@ -23,17 +24,21 @@ import ColorsTable from '../components/colors/ColorsTable';
 import ColorFormModal, { ColorFormValues } from '../components/colors/ColorFormModal';
 import ConfirmDialog from '../components/shared/ConfirmDialog';
 import Loader from '../components/shared/Loader';
+import Pagination from '../components/shared/Pagination';
 import { ToastContainer, useToast } from '../components/shared/Toast';
 
 type ActiveSection = 'products' | 'brands' | 'categories' | 'presentations' | 'colors';
 
 export const ProductsPage: React.FC = () => {
-  // Hooks de datos
   const {
     products,
     isLoading: productsLoading,
     error: productsError,
-    fetchProducts,
+    page,
+    total,
+    totalPages,
+    goToPage,
+    applyFilters,
     createProduct,
     updateProduct,
     updateProductState,
@@ -88,18 +93,17 @@ export const ProductsPage: React.FC = () => {
     clearError: clearColorsError,
   } = useColors();
 
-  // Auth para obtener userId
   const auth = useAuth();
-
-  // Toast para feedback visual
   const toast = useToast();
 
-  // Estados UI generales
   const [activeSection, setActiveSection] = useState<ActiveSection>('products');
+
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<number | 'all'>('all');
+  const [brandFilter, setBrandFilter] = useState<number | 'all'>('all');
+  
+  const debouncedSearch = useDebounce(searchTerm, 500);
 
-  // Estados para Productos
   const [productFormOpen, setProductFormOpen] = useState(false);
   const [productFormMode, setProductFormMode] = useState<'create' | 'edit'>('create');
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
@@ -111,7 +115,6 @@ export const ProductsPage: React.FC = () => {
   const [productDetailOpen, setProductDetailOpen] = useState(false);
   const [selectedProductForView, setSelectedProductForView] = useState<Product | null>(null);
 
-  // Estados para Marcas
   const [brandFormOpen, setBrandFormOpen] = useState(false);
   const [brandFormMode, setBrandFormMode] = useState<'create' | 'edit'>('create');
   const [editingBrand, setEditingBrand] = useState<Brand | null>(null);
@@ -121,7 +124,6 @@ export const ProductsPage: React.FC = () => {
   const [targetBrand, setTargetBrand] = useState<Brand | null>(null);
   const [busyBrandId, setBusyBrandId] = useState<number | null>(null);
 
-  // Estados para Categorías
   const [categoryFormOpen, setCategoryFormOpen] = useState(false);
   const [categoryFormMode, setCategoryFormMode] = useState<'create' | 'edit'>('create');
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
@@ -131,7 +133,6 @@ export const ProductsPage: React.FC = () => {
   const [targetCategory, setTargetCategory] = useState<Category | null>(null);
   const [busyCategoryId, setBusyCategoryId] = useState<number | null>(null);
 
-  // Estados para Presentaciones
   const [presentationFormOpen, setPresentationFormOpen] = useState(false);
   const [presentationFormMode, setPresentationFormMode] = useState<'create' | 'edit'>('create');
   const [editingPresentation, setEditingPresentation] = useState<Presentation | null>(null);
@@ -141,7 +142,6 @@ export const ProductsPage: React.FC = () => {
   const [targetPresentation, setTargetPresentation] = useState<Presentation | null>(null);
   const [busyPresentationId, setBusyPresentationId] = useState<number | null>(null);
 
-  // Estados para Colores
   const [colorFormOpen, setColorFormOpen] = useState(false);
   const [colorFormMode, setColorFormMode] = useState<'create' | 'edit'>('create');
   const [editingColor, setEditingColor] = useState<Color | null>(null);
@@ -151,16 +151,46 @@ export const ProductsPage: React.FC = () => {
   const [targetColor, setTargetColor] = useState<Color | null>(null);
   const [busyColorId, setBusyColorId] = useState<number | null>(null);
 
-  // Cargar datos al montar
-  const loadData = useCallback(async () => {
-    await Promise.all([fetchProducts(), fetchCategories(), fetchBrands(), fetchPresentations(), fetchColors()]);
-  }, [fetchProducts, fetchCategories, fetchBrands, fetchPresentations, fetchColors]);
+  // Ordenar alfabéticamente por nombre
+  const sortedBrands = useMemo(() => {
+    return [...brands].sort((a, b) => a.name.localeCompare(b.name));
+  }, [brands]);
+
+  const sortedCategories = useMemo(() => {
+    return [...categories].sort((a, b) => a.name.localeCompare(b.name));
+  }, [categories]);
+
+  const sortedPresentations = useMemo(() => {
+    return [...presentations].sort((a, b) => a.name.localeCompare(b.name));
+  }, [presentations]);
+
+  const sortedColors = useMemo(() => {
+    return [...colors].sort((a, b) => a.name.localeCompare(b.name));
+  }, [colors]);
+
+  const loadAuxiliaryData = useCallback(async () => {
+    await Promise.all([fetchCategories(), fetchBrands(), fetchPresentations(), fetchColors()]);
+  }, [fetchCategories, fetchBrands, fetchPresentations, fetchColors]);
 
   useEffect(() => {
-    loadData();
-  }, [loadData]);
+    loadAuxiliaryData();
+  }, [loadAuxiliaryData]);
+  
+  useEffect(() => {
+    const filters: { search?: string; categoryId?: number; brandId?: number } = {};
+    
+    if (debouncedSearch.trim()) {
+      filters.search = debouncedSearch.trim();
+    }
+    if (categoryFilter !== 'all') {
+      filters.categoryId = categoryFilter;
+    }
+    if (brandFilter !== 'all') {
+      filters.brandId = brandFilter;
+    }
+    applyFilters(filters);
+  }, [debouncedSearch, categoryFilter, brandFilter, applyFilters]);
 
-  // Mostrar errores como toast
   useEffect(() => {
     if (productsError) {
       toast.error(productsError);
@@ -196,23 +226,8 @@ export const ProductsPage: React.FC = () => {
     }
   }, [colorsError, toast, clearColorsError]);
 
-  // Filtrado de productos
-  const filteredProducts = useMemo(() => {
-    const term = searchTerm.trim().toLowerCase();
-    return products.filter(product => {
-      const matchesSearch =
-        term.length === 0 ||
-        product.name.toLowerCase().includes(term) ||
-        (product.barcode ?? '').toLowerCase().includes(term) ||
-        (product.internalCode ?? '').toLowerCase().includes(term);
-      const matchesCategory = categoryFilter === 'all' || product.categoryId === categoryFilter;
-      return matchesSearch && matchesCategory;
-    });
-  }, [products, searchTerm, categoryFilter]);
-
-  // Stats
   const stats = useMemo(() => {
-    const totalProducts = products.length;
+    const totalProducts = total;
     const totalBrands = brands.length;
     const totalCategories = categories.length;
     const totalPresentations = presentations.length;
@@ -228,9 +243,7 @@ export const ProductsPage: React.FC = () => {
         { label: 'Colores', value: totalColors },
       ],
     };
-  }, [products, brands, categories, presentations, colors]);
-
-  // ═══════════════════ HANDLERS PRODUCTOS ═══════════════════
+  }, [total, brands, categories, presentations, colors]);
 
   const openProductCreateModal = () => {
     setProductFormMode('create');
@@ -338,8 +351,6 @@ export const ProductsPage: React.FC = () => {
     }
   };
 
-  // ═══════════════════ HANDLERS MARCAS ═══════════════════
-
   const openBrandCreateModal = () => {
     setBrandFormMode('create');
     setEditingBrand(null);
@@ -414,8 +425,6 @@ export const ProductsPage: React.FC = () => {
       setBusyBrandId(null);
     }
   };
-
-  // ═══════════════════ HANDLERS CATEGORÍAS ═══════════════════
 
   const openCategoryCreateModal = () => {
     setCategoryFormMode('create');
@@ -500,8 +509,6 @@ export const ProductsPage: React.FC = () => {
     }
   };
 
-  // ═══════════════════ HANDLERS PRESENTACIONES ═══════════════════
-
   const openPresentationCreateModal = () => {
     setPresentationFormMode('create');
     setEditingPresentation(null);
@@ -582,8 +589,6 @@ export const ProductsPage: React.FC = () => {
       setBusyPresentationId(null);
     }
   };
-
-  // ═══════════════════ HANDLERS COLORES ═══════════════════
 
   const openColorCreateModal = () => {
     setColorFormMode('create');
@@ -666,14 +671,11 @@ export const ProductsPage: React.FC = () => {
     }
   };
 
-  // ═══════════════════ RENDER ═══════════════════
-
   return (
     <>
       <div className="relative overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(17,93,216,0.12),transparent_60%),radial-gradient(circle_at_80%_0%,rgba(255,100,27,0.08),transparent_55%)]" />
         <div className="relative space-y-10 px-6 py-8 lg:px-10 lg:py-12">
-          {/* Hero Section */}
           <section className="relative overflow-hidden rounded-[2.5rem] bg-gradient-to-r from-brand-900 via-brand-700 to-brand-500 text-white shadow-2xl">
             <div
               className="absolute inset-0 opacity-30"
@@ -706,6 +708,16 @@ export const ProductsPage: React.FC = () => {
                           <option key={c.id} value={c.id} className="text-lead-900">{c.name}</option>
                         ))}
                       </select>
+                      <select
+                        className="rounded-full px-4 py-2 text-sm font-semibold bg-white/10 text-white/90 border border-white/20 focus:outline-none"
+                        value={brandFilter}
+                        onChange={(e) => setBrandFilter(e.target.value === 'all' ? 'all' : Number(e.target.value))}
+                      >
+                        <option value="all" className="text-lead-900">Todas las marcas</option>
+                        {brands.filter(b => b.state).map(b => (
+                          <option key={b.id} value={b.id} className="text-lead-900">{b.name}</option>
+                        ))}
+                      </select>
                     </div>
                   )}
                 </div>
@@ -735,7 +747,6 @@ export const ProductsPage: React.FC = () => {
             </div>
           </section>
 
-          {/* Selector de sección */}
           <div className="flex flex-wrap gap-3">
             <button
               type="button"
@@ -794,14 +805,17 @@ export const ProductsPage: React.FC = () => {
             </button>
           </div>
 
-          {/* Main Content */}
           <section className="grid gap-8 xl:grid-cols-[1fr]">
             {activeSection === 'products' && (
               <div className="card shadow-xl ring-1 ring-black/5">
                 <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between border-b border-lead-100 pb-4">
                   <div>
                     <h3 className="text-xl font-bold text-brand-900">Listado de productos</h3>
-                    <p className="text-sm text-lead-500">{filteredProducts.length} producto(s) coinciden con el filtro.</p>
+                    <p className="text-sm text-lead-500">
+                      {totalPages > 0 && `Página ${page} de ${totalPages} • `}
+                      {total.toLocaleString()} producto(s) total
+                      {(debouncedSearch || categoryFilter !== 'all' || brandFilter !== 'all') && ' (filtrados)'}
+                    </p>
                   </div>
                   <button 
                     type="button" 
@@ -811,18 +825,34 @@ export const ProductsPage: React.FC = () => {
                     Crear producto
                   </button>
                 </div>
-                {productsLoading ? (
+                {productsLoading && products.length === 0 ? (
                   <Loader />
                 ) : (
-                  <ProductsTable
-                    products={filteredProducts}
-                    categoryMap={categoryMap}
-                    brandMap={brandMap}
-                    onEdit={openProductEditModal}
-                    onDeactivate={openProductConfirm}
-                    onView={openProductView}
-                    busyId={busyProductId}
-                  />
+                  <>
+                    <ProductsTable
+                      products={products}
+                      categoryMap={categoryMap}
+                      brandMap={brandMap}
+                      presentationMap={presentationMap}
+                      colorMap={colorMap}
+                      onEdit={openProductEditModal}
+                      onDeactivate={openProductConfirm}
+                      onView={openProductView}
+                      busyId={busyProductId}
+                    />
+                    {totalPages > 0 && (
+                      <div className="mt-6">
+                        <Pagination
+                          currentPage={page}
+                          totalPages={totalPages}
+                          totalItems={total}
+                          itemsPerPage={10}
+                          onPageChange={goToPage}
+                          isLoading={productsLoading}
+                        />
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             )}
@@ -846,7 +876,7 @@ export const ProductsPage: React.FC = () => {
                   <Loader />
                 ) : (
                   <BrandsTable
-                    brands={brands}
+                    brands={sortedBrands}
                     onEdit={openBrandEditModal}
                     onDelete={openBrandConfirm}
                     busyBrandId={busyBrandId}
@@ -874,7 +904,7 @@ export const ProductsPage: React.FC = () => {
                   <Loader />
                 ) : (
                   <CategoriesTable
-                    categories={categories}
+                    categories={sortedCategories}
                     onEdit={openCategoryEditModal}
                     onDeactivate={openCategoryConfirm}
                     busyId={busyCategoryId}
@@ -902,7 +932,7 @@ export const ProductsPage: React.FC = () => {
                   <Loader />
                 ) : (
                   <PresentationsTable
-                    presentations={presentations}
+                    presentations={sortedPresentations}
                     onEdit={openPresentationEditModal}
                     onDeactivate={openPresentationConfirm}
                     busyId={busyPresentationId}
@@ -930,7 +960,7 @@ export const ProductsPage: React.FC = () => {
                   <Loader />
                 ) : (
                   <ColorsTable
-                    colors={colors}
+                    colors={sortedColors}
                     onEdit={openColorEditModal}
                     onDeactivate={openColorConfirm}
                     busyId={busyColorId}
@@ -942,7 +972,6 @@ export const ProductsPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Modales de Productos */}
       <ProductFormModal
         open={productFormOpen}
         mode={productFormMode}
@@ -956,12 +985,15 @@ export const ProductsPage: React.FC = () => {
         onSubmit={handleProductSubmit}
       />
 
-      {/* Modal Ver producto */}
       {productDetailOpen && (
-        <ProductDetailsModal product={selectedProductForView} onClose={closeProductView} />
+        <ProductDetailsModal 
+          product={selectedProductForView} 
+          presentationMap={presentationMap}
+          colorMap={colorMap}
+          onClose={closeProductView} 
+        />
       )}
 
-      {/* Modales de Marcas */}
       <BrandFormModal
         open={brandFormOpen}
         mode={brandFormMode}
@@ -971,7 +1003,6 @@ export const ProductsPage: React.FC = () => {
         onSubmit={handleBrandSubmit}
       />
 
-      {/* Modales de Categorías */}
       <CategoryFormModal
         open={categoryFormOpen}
         mode={categoryFormMode}
@@ -981,7 +1012,6 @@ export const ProductsPage: React.FC = () => {
         onSubmit={handleCategorySubmit}
       />
 
-      {/* Modales de Presentaciones */}
       <PresentationFormModal
         open={presentationFormOpen}
         mode={presentationFormMode}
@@ -991,7 +1021,6 @@ export const ProductsPage: React.FC = () => {
         onSubmit={handlePresentationSubmit}
       />
 
-      {/* Modales de Colores */}
       <ColorFormModal
         open={colorFormOpen}
         mode={colorFormMode}
@@ -1001,7 +1030,6 @@ export const ProductsPage: React.FC = () => {
         onSubmit={handleColorSubmit}
       />
 
-      {/* Diálogos de confirmación */}
       <ConfirmDialog
         open={productConfirmOpen}
         title="Eliminar producto"
@@ -1047,7 +1075,6 @@ export const ProductsPage: React.FC = () => {
         disabled={colorConfirmLoading}
       />
 
-      {/* Sistema de notificaciones Toast */}
       <ToastContainer toasts={toast.toasts} onDismiss={toast.dismissToast} />
     </>
   );

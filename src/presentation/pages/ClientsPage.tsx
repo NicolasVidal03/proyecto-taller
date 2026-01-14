@@ -22,7 +22,7 @@ const CLIENT_TYPE_FILTERS: Array<{ value: ClientTypeFilter; label: string }> = [
 export const ClientsPage: React.FC = () => {
   const navigate = useNavigate();
   const { clients, isLoading, error, total, currentPage, fetchClients, updateClientArea, deleteClient, clearError } = useClients();
-  const { areas, areaMap, isLoading: areasLoading } = useAreasSimple();
+  const { areas, areaMap, isLoading: areasLoading, refreshAreas } = useAreasSimple();
   const toast = useToast();
 
   const [page, setPage] = useState(1);
@@ -34,7 +34,8 @@ export const ClientsPage: React.FC = () => {
 
   useEffect(() => {
     fetchClients();
-  }, [fetchClients]);
+    refreshAreas();
+  }, [fetchClients, refreshAreas]);
 
   useEffect(() => {
     if (error) {
@@ -57,8 +58,6 @@ export const ClientsPage: React.FC = () => {
   };
 
   const handleEdit = (client: Client) => {
-    // Navegamos pasando el cliente en state para que la página de edición
-    // pueda usarlo inmediatamente sin esperar un refetch.
     navigate(`/clients/edit/${client.id}`, { state: { client } });
   };
 
@@ -96,7 +95,6 @@ export const ClientsPage: React.FC = () => {
   const totalPages = Math.ceil(filteredClients.length / pageSize);
   const paginatedClients = filteredClients.slice((page - 1) * pageSize, page * pageSize);
 
-  // Reset page when filters change
   useEffect(() => {
     setPage(1);
   }, [search, clientTypeFilter]);
@@ -106,7 +104,6 @@ export const ClientsPage: React.FC = () => {
       <div className="relative overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(17,93,216,0.12),transparent_60%),radial-gradient(circle_at_80%_0%,rgba(255,100,27,0.08),transparent_55%)]" />
         <div className="relative space-y-10 px-6 py-8 lg:px-10 lg:py-12">
-          {/* Hero Section */}
           <section className="relative overflow-hidden rounded-[2.5rem] bg-gradient-to-r from-brand-900 via-brand-700 to-brand-500 text-white shadow-2xl">
             <div
               className="absolute inset-0 opacity-30"
@@ -148,7 +145,6 @@ export const ClientsPage: React.FC = () => {
             </div>
           </section>
 
-          {/* Main Content */}
           <section className="card shadow-xl ring-1 ring-black/5">
             <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between border-b border-lead-100 pb-4">
               <div>
@@ -183,7 +179,6 @@ export const ClientsPage: React.FC = () => {
                   onDelete={handleDelete}
                 />
 
-                {/* Paginación */}
                 {totalPages > 1 && (
                   <div className="mt-6 flex items-center justify-between border-t border-lead-100 pt-4">
                     <button

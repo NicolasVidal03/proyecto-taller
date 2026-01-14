@@ -17,7 +17,6 @@ const BrandsTable: React.FC<BrandsTableProps> = ({ brands, onEdit, onDelete, bus
       <table className="min-w-full text-sm">
         <thead className="bg-brand-600 text-xs uppercase tracking-wider text-white">
           <tr>
-            <th className="px-4 py-4 text-left font-semibold">ID</th>
             <th className="px-4 py-4 text-left font-semibold">Nombre</th>
             <th className="w-40 px-4 py-4 text-center align-middle font-semibold">Acciones</th>
           </tr>
@@ -25,13 +24,12 @@ const BrandsTable: React.FC<BrandsTableProps> = ({ brands, onEdit, onDelete, bus
         <tbody className="divide-y divide-lead-200">
           {isEmpty ? (
             <tr>
-              <td className="px-4 py-6 text-center text-sm text-lead-600" colSpan={3}>
+              <td className="px-4 py-6 text-center text-sm text-lead-600" colSpan={2}>
                 No hay marcas para mostrar.
               </td>
             </tr>
           ) : brands.map(brand => (
             <tr key={brand.id} className="transition-colors hover:bg-white">
-              <td className="px-4 py-3 font-medium text-brand-900">#{brand.id}</td>
               <td className="px-4 py-3 text-lead-600">{brand.name}</td>
               {/* Estado removed */}
               <td className="px-4 py-3 text-center align-middle">

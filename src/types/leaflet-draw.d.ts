@@ -1,7 +1,4 @@
-/**
- * Declaraciones de tipos para leaflet-draw
- * Complementa @types/leaflet con funcionalidades de dibujo
- */
+
 import * as L from 'leaflet';
 
 declare module 'leaflet' {

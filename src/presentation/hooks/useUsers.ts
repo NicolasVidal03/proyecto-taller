@@ -1,8 +1,7 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { User } from '../../domain/entities/User';
 import { CreateUserDTO, UpdateUserDTO } from '../../domain/ports/IUserRepository';
 import { container } from '../../infrastructure/config/container';
-import { userStore } from '../stores/userStore';
 
 
 export interface UserError {
@@ -12,20 +11,18 @@ export interface UserError {
 }
 
 export interface UseUsersReturn {
-  // Estado
   users: User[];
   isLoading: boolean;
   error: UserError | null;
   
-  // Acciones CRUD
   fetchUsers: () => Promise<void>;
   fetchUserById: (id: number) => Promise<User | null>;
   createUser: (data: CreateUserDTO) => Promise<User | null>;
   updateUser: (id: number, data: UpdateUserDTO) => Promise<User | null>;
   updateUserState: (id: number, state: boolean, currentUserId: number) => Promise<boolean>;
   resetUserPassword: (id: number) => Promise<boolean>;
+  updateUserPassword: (id: number, newPassword: string) => Promise<boolean>;
   
-  // Utilidades
   clearError: () => void;
 }
 
@@ -45,26 +42,21 @@ function extractErrorMessage(err: unknown): string {
   return 'Error desconocido';
 }
 
-/**
- * Hook personalizado para gestionar usuarios
- * Sigue el patrón de Clean Architecture accediendo al servicio via container
- */
+
 export const useUsers = (): UseUsersReturn => {
-  const [users, setUsers] = useState<User[]>(userStore.getUsers());
+  const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<UserError | null>(null);
 
   const clearError = useCallback(() => setError(null), []);
 
-  /**
-   * Obtiene todos los usuarios
-   */
+  
   const fetchUsers = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
-      await userStore.fetch();
-      // userStore will notify subscribers
+      const data = await container.users.getAll();
+      setUsers(data);
     } catch (err) {
       const message = extractErrorMessage(err);
       setError({ message, code: 'FETCH_ERROR' });
@@ -73,20 +65,11 @@ export const useUsers = (): UseUsersReturn => {
     }
   }, []);
 
-  useEffect(() => {
-    const unsubscribe = userStore.subscribe(setUsers);
-    return () => unsubscribe();
-  }, []);
-
-  /**
-   * Obtiene un usuario por ID
-   */
   const fetchUserById = useCallback(async (id: number): Promise<User | null> => {
     setError(null);
     try {
-      // ensure we have latest users
-      const list = await userStore.fetch();
-      return list.find(u => u.id === id) ?? null;
+      const allUsers = await container.users.getAll();
+      return allUsers.find(u => u.id === id) ?? null;
     } catch (err) {
       const message = extractErrorMessage(err);
       setError({ message, code: 'FETCH_BY_ID_ERROR' });
@@ -94,14 +77,12 @@ export const useUsers = (): UseUsersReturn => {
     }
   }, []);
 
-  /**
-   * Crea un nuevo usuario
-   */
   const createUser = useCallback(async (data: CreateUserDTO): Promise<User | null> => {
     setIsLoading(true);
     setError(null);
     try {
-      const newUser = await userStore.create(data as any);
+      const newUser = await container.users.create(data);
+      setUsers(prev => [...prev, newUser]);
       return newUser;
     } catch (err) {
       const message = extractErrorMessage(err);
@@ -112,14 +93,12 @@ export const useUsers = (): UseUsersReturn => {
     }
   }, []);
 
-  /**
-   * Actualiza un usuario existente
-   */
   const updateUser = useCallback(async (id: number, data: UpdateUserDTO): Promise<User | null> => {
     setIsLoading(true);
     setError(null);
     try {
-      const updated = await userStore.update(id, data as any);
+      const updated = await container.users.update(id, data);
+      setUsers(prev => prev.map(u => (u.id === id ? updated : u)));
       return updated;
     } catch (err) {
       const message = extractErrorMessage(err);
@@ -130,15 +109,14 @@ export const useUsers = (): UseUsersReturn => {
     }
   }, []);
 
-  /**
-   * Actualiza el estado de un usuario (borrado lógico)
-   */
+ 
   const updateUserState = useCallback(async (id: number, state: boolean, currentUserId: number): Promise<boolean> => {
     setIsLoading(true);
     setError(null);
     try {
-      const res = await userStore.updateState(id, state, currentUserId);
-      return res;
+      await container.users.updateState(id, state, currentUserId);
+      setUsers(prev => prev.filter(u => u.id !== id));
+      return true;
     } catch (err) {
       const message = extractErrorMessage(err);
       setError({ message, code: 'UPDATE_STATE_ERROR' });
@@ -146,17 +124,32 @@ export const useUsers = (): UseUsersReturn => {
     } finally {
       setIsLoading(false);
     }
-  }, [fetchUsers]);
+  }, []);
 
   const resetUserPassword = useCallback(async (id: number): Promise<boolean> => {
     setIsLoading(true);
     setError(null);
     try {
-      await userStore.resetPassword(id);
+      await container.users.resetPassword(id);
       return true;
     } catch (err) {
       const message = extractErrorMessage(err);
       setError({ message, code: 'RESET_PASSWORD_ERROR' });
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const updateUserPassword = useCallback(async (id: number, newPassword: string): Promise<boolean> => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      await container.users.updatePassword(id, newPassword);
+      return true;
+    } catch (err) {
+      const message = extractErrorMessage(err);
+      setError({ message, code: 'UPDATE_PASSWORD_ERROR' });
       return false;
     } finally {
       setIsLoading(false);
@@ -173,6 +166,7 @@ export const useUsers = (): UseUsersReturn => {
     updateUser,
     updateUserState,
     resetUserPassword,
+    updateUserPassword,
     clearError,
   };
 };

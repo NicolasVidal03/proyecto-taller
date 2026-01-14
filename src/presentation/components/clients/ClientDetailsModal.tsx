@@ -1,6 +1,6 @@
 import React from 'react';
 import { Client } from '../../../domain/entities/Client';
-import { AreaMap, getAreaName } from '../../../domain/entities/Area';
+import { AreaMap, getAreaName } from '../../utils/areaHelpers';
 
 interface ClientDetailsModalProps {
   client: Client | null;

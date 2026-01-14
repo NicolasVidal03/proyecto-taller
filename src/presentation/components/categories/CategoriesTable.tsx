@@ -40,7 +40,6 @@ const CategoriesTable: React.FC<CategoriesTableProps> = ({ categories, onEdit, o
       <table className="min-w-full text-sm">
         <thead className="bg-brand-600 text-xs uppercase tracking-wider text-white">
           <tr>
-            <th className="px-4 py-4 text-left font-semibold">ID</th>
             <th className="px-4 py-4 text-left font-semibold">Nombre</th>
             <th className="px-4 py-4 text-left font-semibold">Descripción</th>
             <th className="w-40 px-4 py-4 text-center align-middle font-semibold">Acciones</th>

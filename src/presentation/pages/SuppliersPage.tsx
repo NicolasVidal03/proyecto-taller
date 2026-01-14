@@ -8,8 +8,7 @@ import SuppliersTable from '../components/suppliers/SuppliersTable';
 import SupplierFormModal from '../components/suppliers/SupplierFormModal';
 import ConfirmDialog from '../components/shared/ConfirmDialog';
 import Loader from '../components/shared/Loader';
-import ErrorMessage from '../components/shared/ErrorMessage';
-
+import { ToastContainer, useToast } from '../components/shared/Toast';
 
 export const SuppliersPage: React.FC = () => {
   const {
@@ -29,6 +28,7 @@ export const SuppliersPage: React.FC = () => {
   } = useCountries();
 
   const auth = useAuth();
+  const toast = useToast();
   const currentUserId = auth.user?.id;
 
   const [modalOpen, setModalOpen] = useState(false);
@@ -43,6 +43,12 @@ export const SuppliersPage: React.FC = () => {
     fetchCountries();
   }, [fetchSuppliers, fetchCountries]);
 
+  useEffect(() => {
+    if (error) {
+      toast.error(error);
+    }
+  }, [error, toast]);
+
   /* ───────── Filtros ───────── */
   const filtered = useMemo(() => {
     let list = suppliers;
@@ -55,7 +61,8 @@ export const SuppliersPage: React.FC = () => {
         (s.nit ?? '').toLowerCase().includes(q)
       );
     }
-    return list;
+    // Ordenar alfabéticamente por nombre
+    return list.sort((a, b) => a.name.localeCompare(b.name));
   }, [suppliers, search]);
 
   /* ───────── Handlers ───────── */
@@ -64,27 +71,38 @@ export const SuppliersPage: React.FC = () => {
   const closeModal = () => { setModalOpen(false); setEditing(null); };
 
   const handleSave = async (data: Partial<Supplier>) => {
-  setSaving(true);
-  try {
-    if (data.id) {
-      const { userId, ...updateData } = data;
-      await updateSupplier(data.id, updateData as UpdateSupplierDTO, currentUserId);
-    } else {
-      await createSupplier(data as CreateSupplierDTO, currentUserId);
+    setSaving(true);
+    try {
+      if (data.id) {
+        const { userId, ...updateData } = data;
+        await updateSupplier(data.id, updateData as UpdateSupplierDTO, currentUserId);
+        toast.success('Proveedor actualizado correctamente');
+      } else {
+        await createSupplier(data as CreateSupplierDTO, currentUserId);
+        toast.success('Proveedor creado correctamente');
+      }
+      closeModal();
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Error al guardar proveedor';
+      toast.error(message);
+    } finally {
+      setSaving(false);
     }
-    closeModal();
-  } finally {
-    setSaving(false);
-  }
-};
+  };
 
-  const handleDeactivate = (sup: Supplier) => setConfirmDelete(sup);
+  const handleDeactivate = (supplier: Supplier) => {
+    setConfirmDelete(supplier);
+  };
 
   const confirmDeactivate = async () => {
     if (!confirmDelete) return;
     setBusyId(confirmDelete.id);
     try {
       await updateSupplierState(confirmDelete.id, false, currentUserId);
+      toast.success(`Proveedor "${confirmDelete.name}" desactivado correctamente`);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Error al desactivar proveedor';
+      toast.error(message);
     } finally {
       setBusyId(null);
       setConfirmDelete(null);
@@ -133,14 +151,13 @@ export const SuppliersPage: React.FC = () => {
                   <h3 className="text-xl font-bold text-brand-900">Listado de proveedores</h3>
                   <p className="text-sm text-lead-500">{filtered.length} proveedor(es) coinciden con el filtro.</p>
                 </div>
-                <button type="button" className="btn-primary bg-accent-500 hover:bg-accent-600 border-transparent text-white shadow-md" onClick={openCreate}>
-                  Crear proveedor
+                <button onClick={openCreate} className="btn-primary">
+                  + Nuevo proveedor
                 </button>
               </div>
               
               {isLoading && <Loader />}
-              {error && <ErrorMessage message={error} />}
-              {!isLoading && !error && (
+              {!isLoading && (
                 <SuppliersTable 
                   suppliers={filtered} 
                   countryMap={countryMap}
@@ -176,6 +193,8 @@ export const SuppliersPage: React.FC = () => {
           onCancel={() => setConfirmDelete(null)}
         />
       )}
+
+      <ToastContainer toasts={toast.toasts} onDismiss={toast.dismissToast} />
     </>
   );
 };

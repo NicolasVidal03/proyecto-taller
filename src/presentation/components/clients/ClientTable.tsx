@@ -1,12 +1,14 @@
 import React from 'react';
 import { Client } from '../../../domain/entities/Client';
-import { AreaMap, getAreaName } from '../../../domain/entities/Area';
 import { Area } from '../../../domain/entities/Area';
 import AreaSelect from './AreaSelect';
 
+// Tipo simple para el mapa de áreas (solo para props compatibility)
+type AreaMapType = Record<number, string>;
+
 interface ClientTableProps {
   clients: Client[];
-  areaMap: AreaMap;
+  areaMap: AreaMapType;
   areas: Area[];
   onUpdateArea: (clientId: number, areaId: number) => Promise<void>;
   onViewDetails: (client: Client) => void;
@@ -60,21 +62,15 @@ const ClientTable: React.FC<ClientTableProps> = ({
                 <td className="px-4 py-3 text-lead-600">{client.businessType}</td>
                 <td className="px-4 py-3 text-lead-600">{client.clientType}</td>
                 <td className="px-4 py-3 text-sm">
-                  {client.areaId === null ? (
-                    <div className="max-w-[200px]">
-                      <AreaSelect
-                        areas={areas}
-                        value={null}
-                        onChange={(areaId) => handleAreaChange(client.id, areaId)}
-                        disabled={isUpdating}
-                        placeholder="Asignar área"
-                      />
-                    </div>
-                  ) : (
-                    <span className="inline-flex items-center rounded-full bg-brand-50 px-2.5 py-0.5 text-xs font-medium text-brand-700">
-                      {getAreaName(areaMap, client.areaId)}
-                    </span>
-                  )}
+                  <div className="max-w-[200px]">
+                    <AreaSelect
+                      areas={areas}
+                      value={client.areaId}
+                      onChange={(areaId) => handleAreaChange(client.id, areaId)}
+                      disabled={isUpdating}
+                      placeholder="Asignar área"
+                    />
+                  </div>
                 </td>
                 <td className="px-4 py-3 text-center align-middle">
                   <div className="flex items-center justify-center gap-2">

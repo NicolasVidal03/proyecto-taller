@@ -15,14 +15,13 @@ const ColorsTable: React.FC<ColorsTableProps> = ({ colors, onEdit, onDeactivate,
         <table className="min-w-full text-sm">
           <thead className="bg-brand-600 text-xs uppercase tracking-wider text-white">
             <tr>
-              <th className="px-4 py-4 text-left font-semibold">ID</th>
               <th className="px-4 py-4 text-left font-semibold">Nombre</th>
               <th className="w-40 px-4 py-4 text-center align-middle font-semibold">Acciones</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-lead-200">
             <tr>
-              <td colSpan={3} className="px-4 py-8 text-center text-lead-500">
+              <td colSpan={2} className="px-4 py-8 text-center text-lead-500">
                 No hay colores registrados.
               </td>
             </tr>
@@ -47,7 +46,6 @@ const ColorsTable: React.FC<ColorsTableProps> = ({ colors, onEdit, onDeactivate,
         <tbody className="divide-y divide-lead-200">
           {colors.map(color => (
             <tr key={color.id} className="transition-colors hover:bg-white">
-              <td className="px-4 py-3 font-medium text-brand-900">{color.id}</td>
               <td className="px-4 py-3 text-lead-600">{color.name}</td>
               <td className="px-4 py-3 text-center align-middle">
                 <div className="flex items-center justify-center gap-2">
