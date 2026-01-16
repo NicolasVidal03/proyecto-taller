@@ -130,6 +130,11 @@ export const InventoryPage: React.FC = () => {
 
   const selectedBranch = branches.find(b => b.id === selectedBranchId);
 
+  // Ramas ordenadas alfabéticamente para mostrar en selects
+  const sortedBranches = React.useMemo(() => {
+    return [...branches].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+  }, [branches]);
+
   return (
     <>
       <div className="relative overflow-hidden">
@@ -156,11 +161,11 @@ export const InventoryPage: React.FC = () => {
                         onChange={handleBranchChange}
                         disabled={branchesLoading}
                       >
-                        {branches.map(branch => (
-                          <option key={branch.id} value={branch.id} className="text-lead-900">
-                            {branch.name}
-                          </option>
-                        ))}
+                          {sortedBranches.map(branch => (
+                            <option key={branch.id} value={branch.id} className="text-lead-900">
+                              {branch.name}
+                            </option>
+                          ))}
                       </select>
                     </div>
                     <div className="flex-1">
@@ -272,7 +277,7 @@ export const InventoryPage: React.FC = () => {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-lead-200">
-                        {inventory.map(item => (
+                        {([...inventory].sort((a,b) => (a.name || '').localeCompare(b.name || ''))).map(item => (
                           <tr key={item.id} className="transition-colors hover:bg-white">
                             <td className="px-4 py-3 font-medium text-brand-900">
                               {item.name}

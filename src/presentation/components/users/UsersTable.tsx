@@ -47,12 +47,12 @@ const UsersTable: React.FC<UsersTableProps> = ({
               </td>
             </tr>
           ) : users.map(user => {
-            //const isProtected = user.role === 'super_admin';
             return (
               <tr key={user.id} className="transition-colors hover:bg-white">
                 <td className="px-4 py-3 font-medium text-brand-900">{user.userName}</td>
                 <td className="px-4 py-3 text-lead-600">
-                  {user.names} {user.lastName} {user.secondLastName}
+                  <span >{user.lastName}{user.secondLastName ? ` ${user.secondLastName}` : ''},</span>
+                  <span className="ml-1"> {user.names}</span>
                 </td>
                 <td className="px-4 py-3 capitalize text-lead-600">{formatRole(user.role)}</td>
                 <td className="px-4 py-3 text-lead-600">

@@ -10,7 +10,8 @@ type SuppliersTableProps = {
 };
 
 const SuppliersTable: React.FC<SuppliersTableProps> = ({ suppliers, countryMap, onEdit, onDeactivate, busyId }) => {
-  const isEmpty = suppliers.length === 0;
+  const safeList: Supplier[] = Array.isArray(suppliers) ? suppliers.filter(Boolean) as Supplier[] : [];
+  const isEmpty = safeList.length === 0;
 
   const isBusy = (id: number) => busyId != null && busyId === id;
 
@@ -35,11 +36,11 @@ const SuppliersTable: React.FC<SuppliersTableProps> = ({ suppliers, countryMap, 
                 No hay proveedores para mostrar.
               </td>
             </tr>
-          ) : suppliers.map(sup => (
-            <tr key={sup.id} className="transition-colors hover:bg-white">
-              <td className="px-4 py-3 text-lead-600">{sup.nit ?? '—'}</td>
-              <td className="px-4 py-3 font-medium text-brand-900">{sup.name}</td>
-              <td className="px-4 py-3 text-lead-600">{sup.phone ?? '—'}</td>
+          ) : safeList.map(sup => (
+            <tr key={sup?.id} className="transition-colors hover:bg-white">
+              <td className="px-4 py-3 text-lead-600">{sup?.nit ?? '—'}</td>
+              <td className="px-4 py-3 font-medium text-brand-900">{sup?.name ?? '—'}</td>
+              <td className="px-4 py-3 text-lead-600">{sup?.phone ?? '—'}</td>
               <td className="px-4 py-3 text-lead-600">
                 <span className="inline-flex items-center rounded-full bg-brand-50 px-2.5 py-0.5 text-xs font-medium text-brand-700">
                   {countryMap[sup.countryId] || 'Desconocido'}

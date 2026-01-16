@@ -105,29 +105,40 @@ export const UsersPage: React.FC = () => {
   //const canResetPassword = auth.user?.role === 'administrador' || auth.user?.role === 'super_admin';
 
   const filteredUsers = useMemo(() => {
+    const safeUsers: User[] = Array.isArray(users) ? users.filter(Boolean) : [];
     const term = searchTerm.trim().toLowerCase();
-    const filtered = users.filter(user => {
+    const filtered = safeUsers.filter(user => {
       const matchesSearch =
         term.length === 0 ||
-        user.userName.toLowerCase().includes(term) ||
-        `${user.names} ${user.lastName}`.toLowerCase().includes(term) ||
+        (user.userName ?? '').toLowerCase().includes(term) ||
+        `${user.names ?? ''} ${user.lastName ?? ''}`.toLowerCase().includes(term) ||
         (user.secondLastName ?? '').toLowerCase().includes(term);
       const matchesRole = roleFilter === 'all' || user.role === roleFilter;
       return matchesSearch && matchesRole;
     });
-    // Ordenar alfabéticamente por username
-    return filtered.sort((a, b) => a.userName.localeCompare(b.userName));
+    // Ordenar alfabéticamente por apellido, segundo apellido y luego nombres
+    return [...filtered].sort((a, b) => {
+      const aLast = (a.lastName || '').toLowerCase();
+      const bLast = (b.lastName || '').toLowerCase();
+      if (aLast !== bLast) return aLast.localeCompare(bLast);
+      const aSecond = (a.secondLastName || '').toLowerCase();
+      const bSecond = (b.secondLastName || '').toLowerCase();
+      if (aSecond !== bSecond) return aSecond.localeCompare(bSecond);
+      return (a.names || '').toLowerCase().localeCompare((b.names || '').toLowerCase());
+    });
   }, [roleFilter, searchTerm, users]);
 
   const sortedBranches = useMemo(() => {
-    return [...branches].sort((a, b) => a.name.localeCompare(b.name));
+    const safeBranches: Branch[] = Array.isArray(branches) ? branches.filter(Boolean) : [];
+    return [...safeBranches].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
   }, [branches]);
 
   const stats = useMemo(() => {
-    const total = users.length;
-    const admins = users.filter(user => user.role === 'administrador').length;
-    const sellers = users.filter(user => user.role === 'prevendedor').length;
-    const drivers = users.filter(user => user.role === 'transportista').length;
+    const safeUsers: User[] = Array.isArray(users) ? users.filter(Boolean) : [];
+    const total = safeUsers.length;
+    const admins = safeUsers.filter(user => user.role === 'administrador').length;
+    const sellers = safeUsers.filter(user => user.role === 'prevendedor').length;
+    const drivers = safeUsers.filter(user => user.role === 'transportista').length;
     return {
       cards: [
         { label: 'Total de usuarios', value: total, accent: 'from-brand-900 to-brand-600' },

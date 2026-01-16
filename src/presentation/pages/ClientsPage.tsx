@@ -78,8 +78,8 @@ export const ClientsPage: React.FC = () => {
   };
 
   const filteredClients = useMemo(() => {
-    return clients.filter(client => {
-      const term = search.trim().toLowerCase();
+    const term = search.trim().toLowerCase();
+    const filtered = clients.filter(client => {
       const matchesSearch =
         term.length === 0 ||
         client.fullName.toLowerCase().includes(term) ||
@@ -90,6 +90,9 @@ export const ClientsPage: React.FC = () => {
 
       return matchesSearch && matchesType;
     });
+
+    // Ordenar alfabéticamente por nombre completo
+    return filtered.sort((a, b) => (a.fullName || '').localeCompare(b.fullName || ''));
   }, [clients, search, clientTypeFilter]);
 
   const totalPages = Math.ceil(filteredClients.length / pageSize);

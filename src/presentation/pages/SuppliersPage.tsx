@@ -15,7 +15,7 @@ export const SuppliersPage: React.FC = () => {
     suppliers,
     isLoading,
     error,
-    fetchSuppliers,
+    applyFilters,
     createSupplier,
     updateSupplier,
     updateSupplierState,
@@ -26,7 +26,6 @@ export const SuppliersPage: React.FC = () => {
     countryMap,
     fetchCountries,
   } = useCountries();
-
   const auth = useAuth();
   const toast = useToast();
   const currentUserId = auth.user?.id;
@@ -39,9 +38,9 @@ export const SuppliersPage: React.FC = () => {
   const [search, setSearch] = useState('');
 
   useEffect(() => {
-    fetchSuppliers();
+    applyFilters();
     fetchCountries();
-  }, [fetchSuppliers, fetchCountries]);
+    }, [applyFilters, fetchCountries]);
 
   useEffect(() => {
     if (error) {
@@ -51,18 +50,18 @@ export const SuppliersPage: React.FC = () => {
 
   /* ───────── Filtros ───────── */
   const filtered = useMemo(() => {
-    let list = suppliers;
+    let list = Array.isArray(suppliers) ? suppliers.filter(Boolean) : [];
     if (search.trim()) {
       const q = search.toLowerCase();
       list = list.filter(s =>
-        s.name.toLowerCase().includes(q) ||
+        (s.name ?? '').toLowerCase().includes(q) ||
         (s.contactName ?? '').toLowerCase().includes(q) ||
         (s.phone ?? '').toLowerCase().includes(q) ||
         (s.nit ?? '').toLowerCase().includes(q)
       );
     }
-    // Ordenar alfabéticamente por nombre
-    return list.sort((a, b) => a.name.localeCompare(b.name));
+    // Ordenar alfabéticamente por nombre (usar copia para no mutar referencia)
+    return [...list].sort((a, b) => (a.name || '').toLowerCase().localeCompare((b.name || '').toLowerCase()));
   }, [suppliers, search]);
 
   /* ───────── Handlers ───────── */

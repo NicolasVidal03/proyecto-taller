@@ -151,22 +151,27 @@ export const ProductsPage: React.FC = () => {
   const [targetColor, setTargetColor] = useState<Color | null>(null);
   const [busyColorId, setBusyColorId] = useState<number | null>(null);
 
-  // Ordenar alfabéticamente por nombre
+  
   const sortedBrands = useMemo(() => {
-    return [...brands].sort((a, b) => a.name.localeCompare(b.name));
+    return [...brands].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
   }, [brands]);
 
   const sortedCategories = useMemo(() => {
-    return [...categories].sort((a, b) => a.name.localeCompare(b.name));
+    return [...categories].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
   }, [categories]);
 
   const sortedPresentations = useMemo(() => {
-    return [...presentations].sort((a, b) => a.name.localeCompare(b.name));
+    return [...presentations].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
   }, [presentations]);
 
   const sortedColors = useMemo(() => {
-    return [...colors].sort((a, b) => a.name.localeCompare(b.name));
+    return [...colors].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
   }, [colors]);
+
+  const sortedProducts = useMemo(() => {
+    const safeProducts = Array.isArray(products) ? products.filter(Boolean) : [];
+    return [...safeProducts].sort((a, b) => (a.name || '').toLowerCase().localeCompare((b.name || '').toLowerCase()));
+  }, [products]);
 
   const loadAuxiliaryData = useCallback(async () => {
     await Promise.all([fetchCategories(), fetchBrands(), fetchPresentations(), fetchColors()]);
@@ -830,7 +835,7 @@ export const ProductsPage: React.FC = () => {
                 ) : (
                   <>
                     <ProductsTable
-                      products={products}
+                      products={sortedProducts}
                       categoryMap={categoryMap}
                       brandMap={brandMap}
                       presentationMap={presentationMap}

@@ -85,6 +85,10 @@ const AreasPage: React.FC = () => {
 
   const selectedArea = areas.find(a => a.id === selectedAreaId);
   const totalPoints = areas.reduce((sum, a) => sum + (a.area?.length || 0), 0);
+  // Ordenar áreas alfabéticamente por nombre para mostrar al usuario
+  const sortedAreas = React.useMemo(() => {
+    return [...areas].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+  }, [areas]);
 
   return (
     <div className="relative overflow-hidden min-h-screen bg-gray-50/50">
@@ -134,7 +138,7 @@ const AreasPage: React.FC = () => {
               <div className="relative bg-gradient-to-br from-emerald-600 to-emerald-500 rounded-2xl shadow-xl overflow-hidden border border-emerald-400/30 p-1">
                 <div className="bg-white/95 backdrop-blur rounded-xl overflow-hidden h-full">
                   <AreaTable
-                    areas={areas}
+                    areas={sortedAreas}
                     loading={loading}
                     selectedAreaId={selectedAreaId}
                     onSelect={handleSelect}
@@ -175,7 +179,7 @@ const AreasPage: React.FC = () => {
             )}
           </div>
           <AreaMap
-            areas={areas}
+            areas={sortedAreas}
             selectedAreaId={selectedAreaId}
             onAreaClick={(area) => handleSelect(area)}
             onAreaEdit={handleEdit}

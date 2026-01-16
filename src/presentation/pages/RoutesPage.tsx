@@ -50,11 +50,17 @@ export const RoutesPage: React.FC = () => {
         toast.success('¡Ruta generada exitosamente!');
         const user = users.find(u => u.id === data.assignedIdUser);
         const area = areas.find(a => a.id === data.assignedIdArea);
-        
+
+        const userStr = user
+          ? `${user.lastName}${user.secondLastName ? ` ${user.secondLastName}` : ''}, ${user.names}`
+          : `Usuario #${data.assignedIdUser}`;
+
         setLastRouteInfo({
-          userStr: user ? `${user.names} ${user.lastName}` : `Usuario #${data.assignedIdUser}`,
+          userStr,
           areaStr: area ? area.name : `Área #${data.assignedIdArea}`,
-          date: data.assignedDate
+          date: data.assignedIdArea
+            ? data.assignedDate
+            : data.assignedDate,
         });
         
         setModalOpen(false);
@@ -67,6 +73,22 @@ export const RoutesPage: React.FC = () => {
   };
 
   const isLoading = routesLoading || usersLoading || areasLoading;
+
+  const sortedUsers = useMemo(() => {
+    return [...users].sort((a, b) => {
+      const aLast = (a.lastName || '').toLowerCase();
+      const bLast = (b.lastName || '').toLowerCase();
+      if (aLast !== bLast) return aLast.localeCompare(bLast);
+      const aSecond = (a.secondLastName || '').toLowerCase();
+      const bSecond = (b.secondLastName || '').toLowerCase();
+      if (aSecond !== bSecond) return aSecond.localeCompare(bSecond);
+      return (a.names || '').toLowerCase().localeCompare((b.names || '').toLowerCase());
+    });
+  }, [users]);
+
+  const sortedAreas = useMemo(() => {
+    return [...areas].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+  }, [areas]);
 
   return (
     <div className="relative overflow-hidden min-h-screen bg-gray-50/50">
@@ -176,8 +198,8 @@ export const RoutesPage: React.FC = () => {
         open={modalOpen}
         onClose={() => setModalOpen(false)}
         onSubmit={handleGenerateRoute}
-        users={users}
-        areas={areas}
+        users={sortedUsers}
+        areas={sortedAreas}
         isSubmitting={submitting}
       />
 
