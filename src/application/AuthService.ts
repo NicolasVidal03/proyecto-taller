@@ -31,7 +31,7 @@ export class AuthService {
     try {
       await this.authRepo.logout();
     } catch {
-      // Ignore logout errors
+     
     }
   }
 

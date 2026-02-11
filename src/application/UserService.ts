@@ -30,4 +30,8 @@ export class UserService {
   async updatePassword(id: number, newPassword: string): Promise<void> {
     return this.userRepo.updatePassword(id, newPassword);
   }
+
+  async changeFirstLoginPassword(currentPassword: string, newPassword: string): Promise<{ message: string }> {
+    return this.userRepo.changeFirstLoginPassword(currentPassword, newPassword);
+  }
 }

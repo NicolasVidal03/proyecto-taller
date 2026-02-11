@@ -8,6 +8,7 @@ import SuppliersTable from '../components/suppliers/SuppliersTable';
 import SupplierFormModal from '../components/suppliers/SupplierFormModal';
 import ConfirmDialog from '../components/shared/ConfirmDialog';
 import Loader from '../components/shared/Loader';
+import Pagination from '../components/shared/Pagination';
 import { ToastContainer, useToast } from '../components/shared/Toast';
 
 export const SuppliersPage: React.FC = () => {
@@ -36,6 +37,10 @@ export const SuppliersPage: React.FC = () => {
   const [saving, setSaving] = useState(false);
   const [busyId, setBusyId] = useState<number | null>(null);
   const [search, setSearch] = useState('');
+  
+  // Frontend pagination
+  const [page, setPage] = useState(1);
+  const pageSize = 10;
 
   useEffect(() => {
     applyFilters();
@@ -46,7 +51,8 @@ export const SuppliersPage: React.FC = () => {
     if (error) {
       toast.error(error);
     }
-  }, [error, toast]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [error]);
 
   /* ───────── Filtros ───────── */
   const filtered = useMemo(() => {
@@ -63,6 +69,19 @@ export const SuppliersPage: React.FC = () => {
     // Ordenar alfabéticamente por nombre (usar copia para no mutar referencia)
     return [...list].sort((a, b) => (a.name || '').toLowerCase().localeCompare((b.name || '').toLowerCase()));
   }, [suppliers, search]);
+
+  // Pagination calculations
+  const totalItems = filtered.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+  const paginatedSuppliers = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return filtered.slice(start, start + pageSize);
+  }, [filtered, page, pageSize]);
+
+  // Reset page when search changes
+  useEffect(() => {
+    setPage(1);
+  }, [search]);
 
   /* ───────── Handlers ───────── */
   const openCreate = () => { setEditing(null); setModalOpen(true); };
@@ -148,22 +167,39 @@ export const SuppliersPage: React.FC = () => {
               <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between border-b border-lead-100 pb-4">
                 <div>
                   <h3 className="text-xl font-bold text-brand-900">Listado de proveedores</h3>
-                  <p className="text-sm text-lead-500">{filtered.length} proveedor(es) coinciden con el filtro.</p>
+                  <p className="text-sm text-lead-500">
+                    {totalPages > 1 && `Página ${page} de ${totalPages} • `}
+                    {totalItems} proveedor(es) {search.trim() && '(filtrados)'}
+                  </p>
                 </div>
-                <button onClick={openCreate} className="btn-primary">
+                <button onClick={openCreate} className="btn-primary bg-accent-500 hover:bg-accent-600 border-transparent text-white shadow-md flex items-center gap-2">
                   + Nuevo proveedor
                 </button>
               </div>
               
               {isLoading && <Loader />}
               {!isLoading && (
-                <SuppliersTable 
-                  suppliers={filtered} 
-                  countryMap={countryMap}
-                  onEdit={openEdit} 
-                  onDeactivate={handleDeactivate} 
-                  busyId={busyId} 
-                />
+                <>
+                  <SuppliersTable 
+                    suppliers={paginatedSuppliers} 
+                    countryMap={Object.fromEntries(countryMap)}
+                    onEdit={openEdit} 
+                    onDeactivate={handleDeactivate} 
+                    busyId={busyId} 
+                  />
+                  {totalPages > 0 && (
+                    <div className="mt-6">
+                      <Pagination
+                        currentPage={page}
+                        totalPages={totalPages}
+                        totalItems={totalItems}
+                        itemsPerPage={pageSize}
+                        onPageChange={setPage}
+                        isLoading={isLoading}
+                      />
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </section>

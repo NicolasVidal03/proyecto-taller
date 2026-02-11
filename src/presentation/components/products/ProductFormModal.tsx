@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Product, SalePrice } from '../../../domain/entities/Product';
+import { Product, ProductPrice } from '../../../domain/entities/Product';
 import { Category } from '../../../domain/entities/Category';
 import { Brand } from '../../../domain/entities/Brand';
 import { Presentation } from '../../../domain/entities/Presentation';
@@ -11,7 +11,7 @@ export interface ProductFormValues {
   internalCode: string | null;
   presentationId: number | null;
   colorId: number | null;
-  salePrice: SalePrice;
+  prices: ProductPrice[];
   categoryId: number;
   brandId: number;
   imageFile?: File | null;
@@ -66,9 +66,12 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
         setColorId(initialData.colorId || 0);
         setCategoryId(initialData.categoryId || 0);
         setBrandId(initialData.brandId || 0);
-        setPriceMayorista(String(initialData.salePrice?.mayorista || ''));
-        setPriceMinorista(String(initialData.salePrice?.minorista || ''));
-        setPriceRegular(String(initialData.salePrice?.regular || ''));
+        const mayorista = initialData.prices?.find(p => p.priceTypeId === 3);
+        const minorista = initialData.prices?.find(p => p.priceTypeId === 2);
+        const regular = initialData.prices?.find(p => p.priceTypeId === 1);
+        setPriceMayorista(mayorista ? String(mayorista.price) : '');
+        setPriceMinorista(minorista ? String(minorista.price) : '');
+        setPriceRegular(regular ? String(regular.price) : '');
         setImageFile(null);
         setPreviewUrl(null);
       } else {
@@ -124,10 +127,10 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
     e.preventDefault();
     if (!validate()) return;
 
-    const salePrice: SalePrice = {};
-    if (priceMayorista) salePrice.mayorista = Math.round(parseFloat(priceMayorista) * 100) / 100;
-    if (priceMinorista) salePrice.minorista = Math.round(parseFloat(priceMinorista) * 100) / 100;
-    if (priceRegular) salePrice.regular = Math.round(parseFloat(priceRegular) * 100) / 100;
+    const prices: ProductPrice[] = [];
+    if (priceMayorista) prices.push({ priceTypeId: 3, price: Math.round(parseFloat(priceMayorista) * 100) / 100 });
+    if (priceMinorista) prices.push({ priceTypeId: 2, price: Math.round(parseFloat(priceMinorista) * 100) / 100 });
+    if (priceRegular) prices.push({ priceTypeId: 1, price: Math.round(parseFloat(priceRegular) * 100) / 100 });
 
     onSubmit({
       name: name.trim(),
@@ -135,7 +138,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
       internalCode: internalCode.trim() || null,
       presentationId: presentationId || null,
       colorId: colorId || null,
-      salePrice,
+      prices,
       imageFile: imageFile || undefined,
       categoryId,
       brandId,
@@ -191,7 +194,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
               className={`mt-1 block w-full rounded-lg border px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500 ${
                 errors.name ? 'border-red-500' : 'border-lead-300 bg-white'
               }`}
-              placeholder="Ej: Cable HDMI 2m"
+              placeholder="Cable HDMI 2m"
               disabled={submitting}
             />
             {errors.name && <p className="mt-1 text-sm text-red-600">{errors.name}</p>}
@@ -253,7 +256,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
                 value={barcode}
                 onChange={(e) => setBarcode(e.target.value)}
                 className="mt-1 block w-full rounded-lg border border-lead-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500"
-                placeholder="Ej: 123456789012"
+                placeholder="123456789012"
                 disabled={submitting}
               />
             </div>
@@ -267,7 +270,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
                 value={internalCode}
                 onChange={(e) => setInternalCode(e.target.value)}
                 className="mt-1 block w-full rounded-lg border border-lead-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500"
-                placeholder="Ej: CAB-HDMI-2M"
+                placeholder="CAB-HDMI-2M"
                 disabled={submitting}
               />
             </div>

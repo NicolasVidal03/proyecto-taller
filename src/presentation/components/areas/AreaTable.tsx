@@ -64,7 +64,7 @@ const AreaTable: React.FC<AreaTableProps> = ({
         </span>
       </div>
 
-      <div className="divide-y divide-lead-100 max-h-[400px] overflow-y-auto">
+      <div className={`divide-y divide-lead-100 ${areas.length >= 4 ? 'max-h-[250px] overflow-y-auto' : ''}`}>
         {areas.map((area) => {
           const isSelected = selectedAreaId === area.id;
           const color = getAreaColor(area.id || 0);
@@ -80,13 +80,12 @@ const AreaTable: React.FC<AreaTableProps> = ({
               }`}
             >
               <div className="flex items-center gap-3">
-                {/* Color indicator */}
                 <div 
                   className="w-4 h-4 rounded-sm shrink-0 shadow-sm"
                   style={{ backgroundColor: color }}
                 />
                 
-                {/* Información del área */}
+               
                 <div className="flex-1 min-w-0">
                   <h4 className={`font-medium text-sm truncate ${
                     isSelected ? 'text-accent-700' : 'text-lead-800'
@@ -98,7 +97,7 @@ const AreaTable: React.FC<AreaTableProps> = ({
                   </p>
                 </div>
 
-                {/* Botones de acción - siempre visibles */}
+               
                 <div className="flex items-center gap-1 shrink-0">
                   <button
                     onClick={(e) => { e.stopPropagation(); onEdit?.(area); }}

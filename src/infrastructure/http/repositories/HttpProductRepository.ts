@@ -27,7 +27,6 @@ export class HttpProductRepository implements IProductRepository {
     if ((data as any).imageFile) {
       const formData = createFormData(data as any);
       const res = await http.post('/products', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
       });
       return res.data;
     }
@@ -68,7 +67,7 @@ function createFormData(data: any): FormData {
   if (data.internalCode !== undefined) formData.append('internalCode', data.internalCode === null ? '' : data.internalCode);
   if (data.presentationId !== undefined) formData.append('presentationId', data.presentationId === null ? '' : String(data.presentationId));
   if (data.colorId !== undefined) formData.append('colorId', data.colorId === null ? '' : String(data.colorId));
-  if (data.salePrice) formData.append('salePrice', JSON.stringify(data.salePrice));
+  if (data.prices) formData.append('prices', JSON.stringify(data.prices));
   if (data.imageFile) formData.append('image', data.imageFile);
   return formData;
 }

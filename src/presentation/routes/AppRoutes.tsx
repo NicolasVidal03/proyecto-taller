@@ -9,11 +9,10 @@ import {
   InventoryPage,
   UsersPage,
   ProfilePage,
+  ActivitiesPage,
 } from '../pages';
 
-import { ClientsPage } from '../pages/ClientsPage';
-import { NewClientPage } from '../pages/NewClientPage';
-import { EditClientPage } from '../pages/EditClientPage';
+import ClientsBusinessesPage from '../pages/ClientsBusinessesPage';
 import AreasPage from '../pages/AreasPage';
 import RoutesPage from '../pages/RoutesPage';
 
@@ -35,11 +34,11 @@ export const AppRoutes: React.FC = () => {
           <Route path="/inventory" element={<InventoryPage />} />
           <Route path="/users" element={<UsersPage />} />
           <Route path="/profile" element={<ProfilePage />} />
-          <Route path="/clients" element={<ClientsPage />} />
-          <Route path="/clients/new" element={<NewClientPage />} />
-          <Route path="/clients/edit/:id" element={<EditClientPage />} />
+          <Route path="/clients" element={<ClientsBusinessesPage />} />
+          <Route path="/businesses" element={<ClientsBusinessesPage />} />
           <Route path="/areas" element={<AreasPage />} />
           <Route path="/routes" element={<RoutesPage />} />
+          <Route path="/activities" element={<ActivitiesPage />} />
         </Route>
       </Route>
       <Route path="*" element={<Navigate to="/users" replace />} />

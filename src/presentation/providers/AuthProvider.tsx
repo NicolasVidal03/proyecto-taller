@@ -1,6 +1,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { User } from '../../domain/entities/User';
 import { container } from '../../infrastructure/config/container';
+import ForcePasswordChangeModal from '../components/auth/ForcePasswordChangeModal';
 
 export interface AuthContextValue {
   isLoading: boolean;
@@ -19,11 +20,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  const [showPasswordChangeModal, setShowPasswordChangeModal] = useState(false);
+  const [passwordChangeSubmitting, setPasswordChangeSubmitting] = useState(false);
+  const [passwordChangeError, setPasswordChangeError] = useState<string | null>(null);
+
   useEffect(() => {
     const checkAuth = async () => {
       try {
         const profile = await container.auth.getCurrentUser();
         setUser(profile);
+        if (profile && profile.isFirstLogin) {
+          setShowPasswordChangeModal(true);
+        }
       } catch {
         setUser(null);
       } finally {
@@ -40,6 +48,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const result = await container.auth.login(username, password);
       if (result.success && result.user) {
         setUser(result.user);
+        if (result.user.isFirstLogin) {
+          setShowPasswordChangeModal(true);
+        }
         return true;
       } else {
         setError(result.error || 'Error al iniciar sesión');
@@ -59,6 +70,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     await container.auth.logout();
     setUser(null);
     setError(null);
+    setShowPasswordChangeModal(false);
+    setPasswordChangeError(null);
   }, []);
 
   const refreshProfile = useCallback(async () => {
@@ -66,6 +79,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(profile);
     return profile;
   }, []);
+
+  const handlePasswordChange = useCallback(async (currentPassword: string, newPassword: string) => {
+    setPasswordChangeSubmitting(true);
+    setPasswordChangeError(null);
+    try {
+      await container.user.changeFirstLoginPassword(currentPassword, newPassword);
+      if (user) {
+        setUser({ ...user, isFirstLogin: false });
+      }
+      setShowPasswordChangeModal(false);
+    } catch (err: any) {
+      const message = err?.response?.data?.message || err?.message || 'Error al cambiar la contraseña';
+      setPasswordChangeError(message);
+    } finally {
+      setPasswordChangeSubmitting(false);
+    }
+  }, [user]);
 
   const isAuthenticated = Boolean(user);
 
@@ -82,7 +112,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     [isLoading, isAuthenticated, user, error, login, logout, refreshProfile]
   );
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+      <ForcePasswordChangeModal
+        open={showPasswordChangeModal && isAuthenticated}
+        submitting={passwordChangeSubmitting}
+        error={passwordChangeError}
+        onSubmit={handlePasswordChange}
+      />
+    </AuthContext.Provider>
+  );
 };
 
 export const useAuth = (): AuthContextValue => {

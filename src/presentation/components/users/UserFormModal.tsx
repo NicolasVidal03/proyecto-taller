@@ -1,23 +1,28 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import ReactDOM from 'react-dom';
 import { useAuth } from '../../providers/AuthProvider';
 import { User } from '../../../domain/entities/User';
 import { Branch } from '../../../domain/entities/Branch';
 
 export type UserFormValues = {
-  username?: string;
   ci: string;
   names: string;
   lastName: string;
   secondLastName?: string | null;
   branchId: number;
   role: string;
-  password?: string;
+  email: string;
 };
 
-type AssignableRole = 'administrador' | 'prevendedor' | 'transportista' | 'super administrador';
+type AssignableRole = 'propietario' | 'administrador' | 'prevendedor' | 'transportista';
 
-const ROLE_OPTIONS: Array<{ value: AssignableRole; label: string }> = [
+const ROLE_OPTIONS_PROPIETARIO: Array<{ value: AssignableRole; label: string }> = [
   { value: 'administrador', label: 'Administrador' },
+  { value: 'prevendedor', label: 'Prevendedor' },
+  { value: 'transportista', label: 'Transportista' },
+];
+
+const ROLE_OPTIONS_ADMIN: Array<{ value: AssignableRole; label: string }> = [
   { value: 'prevendedor', label: 'Prevendedor' },
   { value: 'transportista', label: 'Transportista' },
 ];
@@ -25,7 +30,6 @@ const ROLE_OPTIONS: Array<{ value: AssignableRole; label: string }> = [
 const defaultRole: AssignableRole = 'prevendedor';
 
 type FormState = {
-  username: string;
   ciMain: string;
   ciExt: string; 
   names: string;
@@ -33,8 +37,7 @@ type FormState = {
   secondLastName: string;
   branchId: string;
   role: AssignableRole;
-  password: string;
-  confirmPassword: string;
+  email: string;
 };
 
 type UserFormModalProps = {
@@ -49,7 +52,6 @@ type UserFormModalProps = {
 };
 
 const emptyForm: FormState = {
-  username: '',
   ciMain: '',
   ciExt: '',
   names: '',
@@ -57,8 +59,7 @@ const emptyForm: FormState = {
   secondLastName: '',
   branchId: '',
   role: defaultRole,
-  password: '',
-  confirmPassword: '',
+  email: '',
 };
 
 const UserFormModal: React.FC<UserFormModalProps> = ({ 
@@ -73,27 +74,9 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
 }) => {
   const [form, setForm] = useState<FormState>(emptyForm);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [usernameTouched, setUsernameTouched] = useState(false);
   const auth = useAuth();
-  const isSuperAdmin = auth.user?.role === 'super_admin' || auth.user?.role === 'super administrador';
-  const isAdmin = auth.user?.role === 'admin' || auth.user?.role === 'administrador';
-
-  const buildSuggestedUsername = (
-    lastNameValue: string,
-    secondLastValue: string,
-    ciMainValue: string,
-    ciExtValue: string,
-  ) => {
-    const cleanLast1 = (lastNameValue || '').replace(/\s+/g, '').toLowerCase();
-    const cleanLast2 = (secondLastValue || '').replace(/\s+/g, '').toLowerCase();
-    const letter1 = cleanLast1.charAt(0) || '';
-    const letter2 = cleanLast2.charAt(0) || '';
-    const ci = `${ciMainValue}${ciExtValue}`.replace(/[^0-9a-zA-Z]/g, '');
-    if (letter1 && letter2) return `${letter1}${letter2}${ci}`;
-    const fallback = cleanLast1.slice(0, 2);
-    if (!fallback && !ci) return '';
-    return `${fallback}${ci}`;
-  };
+  const isPropietario = auth.user?.role === 'propietario';
+  const isAdmin = auth.user?.role === 'administrador';
 
   useEffect(() => {
     if (!open) return;
@@ -101,21 +84,17 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
       const rawCi = initialUser.ci ?? '';
       const [mainPart, extPart] = rawCi.includes('-') ? rawCi.split('-', 2) : [rawCi, ''];
       setForm({
-        username: initialUser.userName,
         ciMain: mainPart,
         ciExt: extPart,
         names: initialUser.names,
         lastName: initialUser.lastName,
         secondLastName: initialUser.secondLastName ?? '',
         branchId: initialUser.branchId != null ? String(initialUser.branchId) : '',
-        role: (initialUser.role === 'super_admin' || initialUser.role === 'super administrador') ? defaultRole : (initialUser.role as AssignableRole),
-        password: '',
-        confirmPassword: '',
+        role: (initialUser.role === 'propietario') ? defaultRole : (initialUser.role as AssignableRole),
+        email: initialUser.email ?? '',
       });
-      setUsernameTouched(true);
     } else {
       setForm(emptyForm);
-      setUsernameTouched(false);
     }
     setErrors({});
   }, [open, mode, initialUser]);
@@ -124,12 +103,12 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
   const submitLabel = mode === 'create' ? 'Crear' : 'Guardar cambios';
 
   const filteredRoles = useMemo(() => {
-    if (isSuperAdmin) return ROLE_OPTIONS;
-    if (isAdmin) return ROLE_OPTIONS.filter(r => r.value === 'prevendedor' || r.value === 'transportista');
-    return [] as typeof ROLE_OPTIONS;
-  }, [isSuperAdmin, isAdmin]);
+    if (isPropietario) return ROLE_OPTIONS_PROPIETARIO;
+    if (isAdmin) return ROLE_OPTIONS_ADMIN;
+    return [] as typeof ROLE_OPTIONS_PROPIETARIO;
+  }, [isPropietario, isAdmin]);
 
-  const displayedRoles = filteredRoles.length ? filteredRoles : ROLE_OPTIONS;
+  const displayedRoles = filteredRoles.length ? filteredRoles : ROLE_OPTIONS_ADMIN;
 
   const handleChange = (event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = event.target as HTMLInputElement;
@@ -144,27 +123,26 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
     if (name === 'ciExt') {
       nextValue = value.replace(/[^0-9a-zA-Z]/g, '').slice(0, 2).toUpperCase();
     }
-    if (name === 'username') {
-      setUsernameTouched(true);
+    if (name === 'email') {
+      nextValue = value.toLowerCase();
     }
+    
+    // Validación inmediata
+    const newErrors = { ...errors };
+    if (name === 'email') {
+       if (nextValue.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(nextValue.trim())) {
+           newErrors.email = 'Formato de correo inválido';
+       } else {
+           delete newErrors.email;
+       }
+    }
+    
     setForm(prev => ({ ...prev, [name]: nextValue }));
+    setErrors(newErrors);
   };
 
-  useEffect(() => {
-    if (mode !== 'create') return;
-    const suggestion = buildSuggestedUsername(form.lastName, form.secondLastName, form.ciMain, form.ciExt);
-    setForm(prev => {
-      const shouldUpdate = !usernameTouched || !prev.username.trim() || prev.username === '' || prev.username === suggestion;
-      if (!shouldUpdate) return prev;
-      return { ...prev, username: suggestion };
-    });
-  }, [mode, form.lastName, form.secondLastName, form.ciMain, form.ciExt, usernameTouched]);
-
   const validate = (): boolean => {
-    const nextErrors: Record<string, string> = {};
-    if (mode === 'create' && !form.username.trim()) {
-      nextErrors.username = 'El usuario es obligatorio';
-    }
+    const nextErrors: Record<string, string> = { ...errors };
     if (!form.ciMain.trim()) {
       nextErrors.ciMain = 'La cédula (CI) es obligatoria';
     } else if (!/^\d{1,9}$/.test(form.ciMain)) {
@@ -196,13 +174,11 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
     if (!form.role) {
       nextErrors.role = 'Selecciona un rol';
     }
-    if (mode === 'create' && !form.password.trim()) {
-      nextErrors.password = 'La contraseña es obligatoria';
-    }
-    if (mode === 'create' && !form.confirmPassword.trim()) {
-      nextErrors.confirmPassword = 'Confirma la contraseña';
-    } else if (mode === 'create' && form.password.trim() !== form.confirmPassword.trim()) {
-      nextErrors.confirmPassword = 'Las contraseñas no coinciden';
+    
+    if (mode === 'create' && !form.email.trim()) {
+      nextErrors.email = 'El correo electrónico es obligatorio';
+    } else if (form.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
+      nextErrors.email = 'Formato de correo inválido';
     }
     if (form.ciExt.trim() && !/^\d[a-zA-Z]$/.test(form.ciExt.trim())) {
       nextErrors.ciExt = 'Formato de ext inválido (ej: 1B)';
@@ -220,20 +196,19 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
     const ext = form.ciExt.trim();
     const composedCi = ext ? `${main}-${ext}` : main;
     onSubmit({
-      ...(mode === 'create' && { username: form.username.trim() }),
       ci: composedCi,
       names: form.names.trim(),
       lastName: form.lastName.trim(),
       secondLastName: form.secondLastName.trim() || null,
       branchId: branchNumber,
       role: form.role,
-      password: form.password.trim() || undefined,
+      email: form.email.trim(),
     });
   };
 
   if (!open) return null;
 
-  return (
+  return ReactDOM.createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-lead-900/60 backdrop-blur-sm overflow-y-auto">
       <div className="mx-4 my-10 w-full max-w-lg overflow-hidden rounded-xl bg-lead-50 shadow-2xl ring-1 ring-black/5">
         <div className="flex items-center justify-between bg-brand-600 px-6 py-4 text-white">
@@ -245,6 +220,24 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
           </button>
         </div>
         <form onSubmit={handleSubmit} className="space-y-5 px-6 py-6">
+          
+          {mode === 'create' && (
+            <div className="rounded-lg bg-blue-50 border border-blue-200 p-4">
+              <div className="flex items-start gap-3">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-blue-500 mt-0.5 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                </svg>
+                <div className="text-sm text-blue-800">
+                  <p className="font-medium">Credenciales automáticas</p>
+                  <p className="mt-1 text-blue-700">
+                    El usuario y contraseña temporal se generarán automáticamente y se enviarán al correo electrónico del usuario.
+                    En su primer inicio de sesión, deberá cambiar su contraseña.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
           <div>
             <div className="grid grid-cols-3 gap-3 items-end">
               <div className="col-span-2">
@@ -318,6 +311,27 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
             />
             {errors.secondLastName ? <p className="mt-1 text-xs text-red-600">{errors.secondLastName}</p> : null}
           </div>
+
+          <div>
+            <label htmlFor="email" className="block text-sm font-medium text-lead-700">
+              Correo electrónico {mode === 'create' ? '*' : ''}
+            </label>
+            <input
+              id="email"
+              name="email"
+              type="email"
+              value={form.email}
+              onChange={handleChange}
+              className={`mt-1 block w-full rounded-lg border px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500 ${errors.email ? 'border-red-500' : 'border-lead-300 bg-white'}`}
+              placeholder="usuario@ejemplo.com"
+              disabled={submitting}
+            />
+            {errors.email ? <p className="mt-1 text-xs text-red-600">{errors.email}</p> : null}
+            {mode === 'create' && (
+              <p className="mt-1 text-xs text-lead-500">Las credenciales de acceso se enviarán a este correo</p>
+            )}
+          </div>
+
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div>
               <label htmlFor="branchId" className="block text-sm font-medium text-lead-700">Sucursal *</label>
@@ -377,54 +391,6 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
             </div>
           </div>
 
-          {mode === 'create' && (
-            <div>
-              <label htmlFor="username" className="block text-sm font-medium text-lead-700">Usuario *</label>
-              <input
-                id="username"
-                name="username"
-                value={form.username}
-                onChange={handleChange}
-                className={`mt-1 block w-full rounded-lg border px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500 ${errors.username ? 'border-red-500' : 'border-lead-300 bg-white'}`}
-                placeholder="usuario.unico"
-                disabled={submitting}
-              />
-              {errors.username ? <p className="mt-1 text-xs text-red-600">{errors.username}</p> : null}
-            </div>
-          )}
-          {mode === 'create' && (
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-lead-700">Contraseña *</label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                value={form.password}
-                onChange={handleChange}
-                className={`mt-1 block w-full rounded-lg border px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500 ${errors.password ? 'border-red-500' : 'border-lead-300 bg-white'}`}
-                placeholder="••••••••"
-                disabled={submitting}
-              />
-              {errors.password ? <p className="mt-1 text-xs text-red-600">{errors.password}</p> : null}
-            </div>
-          )}
-
-          {mode === 'create' && (
-            <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-lead-700">Confirmar contraseña *</label>
-              <input
-                id="confirmPassword"
-                name="confirmPassword"
-                type="password"
-                value={form.confirmPassword}
-                onChange={handleChange}
-                className={`mt-1 block w-full rounded-lg border px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500 ${errors.confirmPassword ? 'border-red-500' : 'border-lead-300 bg-white'}`}
-                placeholder="••••••••"
-                disabled={submitting}
-              />
-              {errors.confirmPassword ? <p className="mt-1 text-xs text-red-600">{errors.confirmPassword}</p> : null}
-            </div>
-          )}
           <div className="flex justify-end gap-3 pt-4 border-t border-lead-100">
             <button
               type="button"
@@ -444,7 +410,8 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
           </div>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 

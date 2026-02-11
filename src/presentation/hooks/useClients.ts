@@ -1,33 +1,53 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { Client } from '../../domain/entities/Client';
-import { CreateClientDTO, UpdateClientDTO } from '../../domain/ports/IClientRepository';
+import { CreateClientDTO, UpdateClientDTO, ClientSearchParams } from '../../domain/ports/IClientRepository';
 import { container } from '../../infrastructure/config/container';
+import { extractErrorMessage, AppError } from './shared';
 
-export interface ClientError {
-  message: string;
-  code?: string;
+export interface UseClientsReturn {
+  // Datos
+  clients: Client[];
+  clientMap: Map<number, Client>;
+  total: number;
+  currentPage: number;
+  
+  // Estado
+  isLoading: boolean;
+  error: AppError | null;
+  
+  // Operaciones
+  fetchClients: () => Promise<void>;
+  createClient: (data: CreateClientDTO) => Promise<Client | null>;
+  updateClient: (id: number, data: UpdateClientDTO) => Promise<Client | null>;
+  deleteClient: (id: number) => Promise<boolean>;
+  searchClients: (params: ClientSearchParams) => Promise<Client[]>;
+  
+  // Utilidades
+  getClientName: (id: number | null | undefined) => string;
+  clearError: () => void;
 }
 
-function extractErrorMessage(err: unknown): string {
-  if (err instanceof Error) {
-    const axiosError = err as { response?: { data?: { message?: string } } };
-    if (axiosError.response?.data?.message) {
-      return axiosError.response.data.message;
-    }
-    return err.message;
-  }
-  if (typeof err === 'string') return err;
-  return 'Error desconocido';
-}
-
-export const useClients = () => {
+export const useClients = (): UseClientsReturn => {
   const [clients, setClients] = useState<Client[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<ClientError | null>(null);
+  const [error, setError] = useState<AppError | null>(null);
   const [total, setTotal] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
 
+  // Mapa de clientes para búsqueda rápida
+  const clientMap = useMemo(() => {
+    return new Map(clients.map(c => [c.id, c]));
+  }, [clients]);
+
+  const getClientName = useCallback((id: number | null | undefined): string => {
+    if (id == null) return 'Sin cliente';
+    const client = clientMap.get(id);
+    return client ? `${client.name} ${client.lastName}` : 'Desconocido';
+  }, [clientMap]);
+
   const clearError = useCallback(() => setError(null), []);
+
+  // ========== CRUD ==========
 
   const fetchClients = useCallback(async () => {
     setIsLoading(true);
@@ -38,8 +58,7 @@ export const useClients = () => {
       setTotal(result.length);
       setCurrentPage(1);
     } catch (err) {
-      const message = extractErrorMessage(err);
-      setError({ message, code: 'FETCH_ERROR' });
+      setError({ message: extractErrorMessage(err), code: 'FETCH_ERROR' });
     } finally {
       setIsLoading(false);
     }
@@ -50,10 +69,11 @@ export const useClients = () => {
     setError(null);
     try {
       const newClient = await container.clients.create(data);
+      setClients(prev => [...prev, newClient]);
+      setTotal(prev => prev + 1);
       return newClient;
     } catch (err) {
-      const message = extractErrorMessage(err);
-      setError({ message, code: 'CREATE_ERROR' });
+      setError({ message: extractErrorMessage(err), code: 'CREATE_ERROR' });
       return null;
     } finally {
       setIsLoading(false);
@@ -68,25 +88,10 @@ export const useClients = () => {
       setClients(prev => prev.map(c => c.id === id ? updatedClient : c));
       return updatedClient;
     } catch (err) {
-      const message = extractErrorMessage(err);
-      setError({ message, code: 'UPDATE_ERROR' });
+      setError({ message: extractErrorMessage(err), code: 'UPDATE_ERROR' });
       return null;
     } finally {
       setIsLoading(false);
-    }
-  }, []);
-
-  const updateClientArea = useCallback(async (id: number, areaId: number): Promise<boolean> => {
-    setError(null);
-    try {
-      await container.clients.updateArea(id, areaId);
-      // Actualizar en la lista local
-      setClients(prev => prev.map(c => c.id === id ? { ...c, areaId } : c));
-      return true;
-    } catch (err) {
-      const message = extractErrorMessage(err);
-      setError({ message, code: 'UPDATE_AREA_ERROR' });
-      return false;
     }
   }, []);
 
@@ -94,42 +99,39 @@ export const useClients = () => {
     setError(null);
     try {
       await container.clients.softDelete(id);
-      // Actualizar en la lista local (soft delete cambia estado o elimina?)
-      // Asumiendo soft delete que cambia estado, recargamos o actualizamos
-      // Si el backend devuelve void, asumimos éxito.
-      // Si es soft delete real (cambia status a false), deberíamos actualizar el objeto en local.
-      // Pero como no retorna el objeto actualizado, lo mejor es refetch o actualizar manualmente si sabemos la lógica.
-      // Si el backend hace toggle, necesitamos saber el nuevo estado.
-      // Revisando ClientController.softDelete: devuelve { message: "Eliminado" } si ok.
-      // Asumiremos que lo quita de la lista o lo marca inactivo.
-      // Si queremos mostrar inactivos, actualizamos el status.
-      // Vamos a hacer refetch para estar seguros o actualizar localmente invirtiendo el status si tuvieramos el cliente.
-      // Como solo tenemos ID, busquemos el cliente actual para invertir su status visualmente.
-      setClients(prev => prev.map(c => {
-        if (c.id === id) {
-          return { ...c, status: !c.status }; // Toggle optimista
-        }
-        return c;
-      }));
+      setClients(prev => prev.filter(c => c.id !== id));
+      setTotal(prev => prev - 1);
       return true;
     } catch (err) {
-      const message = extractErrorMessage(err);
-      setError({ message, code: 'DELETE_ERROR' });
+      setError({ message: extractErrorMessage(err), code: 'DELETE_ERROR' });
       return false;
+    }
+  }, []);
+
+  // ========== Búsqueda ==========
+
+  const searchClients = useCallback(async (params: ClientSearchParams): Promise<Client[]> => {
+    try {
+      return await container.clients.search(params);
+    } catch (err) {
+      console.error('Error buscando clientes:', extractErrorMessage(err));
+      return [];
     }
   }, []);
 
   return {
     clients,
-    isLoading,
-    error,
+    clientMap,
     total,
     currentPage,
+    isLoading,
+    error,
     fetchClients,
     createClient,
     updateClient,
-    updateClientArea,
     deleteClient,
+    searchClients,
+    getClientName,
     clearError,
   };
 };

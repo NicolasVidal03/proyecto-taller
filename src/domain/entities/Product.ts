@@ -1,11 +1,7 @@
-/**
- * Product Entity - Domain Layer (Frontend)
- */
-export interface SalePrice {
-  mayorista?: number;
-  minorista?: number;
-  regular?: number;
-  [key: string]: number | undefined;
+export interface ProductPrice {
+  priceTypeId: number;
+  priceTypeName?: string;
+  price: number;
 }
 
 export interface Product {
@@ -15,7 +11,7 @@ export interface Product {
   internalCode: string | null;
   presentationId: number | null;
   colorId: number | null;
-  salePrice: SalePrice;
+  prices: ProductPrice[];
   state: boolean;
   categoryId: number;
   brandId: number;

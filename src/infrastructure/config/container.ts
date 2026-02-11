@@ -15,6 +15,8 @@ import {
   ClientService,
   AreaService,
   RouteService,
+  BusinessService,
+  ActivityService,
 } from '../../application';
 
 import {
@@ -31,8 +33,10 @@ import {
   HttpPresentationRepository,
   HttpColorRepository,
   HttpClientRepository,
+  HttpBusinessRepository,
   HttpAreaRepository,
   HttpRouteRepository,
+  HttpActivityRepository,
 } from '../http/repositories';
 
 const authRepository = new HttpAuthRepository();
@@ -50,11 +54,14 @@ const productBranchRepository = new HttpProductBranchRepository();
 const presentationRepository = new HttpPresentationRepository();
 const colorRepository = new HttpColorRepository();
 const routeRepository = new HttpRouteRepository();
+const businessRepository = new HttpBusinessRepository();
+const activityRepository = new HttpActivityRepository();
 
 
 export const container = {
   auth: new AuthService(authRepository),
-  users: new UserService(userRepository),
+  user: new UserService(userRepository),
+  users: new UserService(userRepository), // Alias para compatibilidad
   categories: new CategoryService(categoryRepository),
   products: new ProductService(productRepository),
   suppliers: new SupplierService(supplierRepository),
@@ -67,6 +74,8 @@ export const container = {
   productBranches: new ProductBranchService(productBranchRepository),
   presentations: new PresentationService(presentationRepository),
   colors: new ColorService(colorRepository),
+  businesses: new BusinessService(businessRepository),
   routes: new RouteService(routeRepository),
+  activities: new ActivityService(activityRepository),
 };
 export type Container = typeof container;

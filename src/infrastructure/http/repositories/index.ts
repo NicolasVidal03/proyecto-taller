@@ -13,3 +13,5 @@ export { HttpColorRepository } from './HttpColorRepository';
 export { HttpClientRepository } from './HttpClientRepository';
 export { HttpAreaRepository } from './HttpAreaRepository';
 export { HttpRouteRepository } from './HttpRouteRepository';
+export { HttpBusinessRepository } from './HttpBusinessRepository';
+export { HttpActivityRepository } from './HttpActivityRepository';

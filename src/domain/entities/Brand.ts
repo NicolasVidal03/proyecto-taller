@@ -1,6 +1,4 @@
-/**
- * Brand Entity - Domain Layer (Frontend)
- */
+
 export interface Brand {
   id: number;
   name: string;

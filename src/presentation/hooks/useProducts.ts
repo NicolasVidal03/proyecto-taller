@@ -1,201 +1,165 @@
-import { useState, useCallback, useRef } from 'react';
+import { useCallback, useState } from 'react';
 import { Product } from '../../domain/entities/Product';
 import { CreateProductDTO, UpdateProductDTO, ProductFilters } from '../../domain/ports/IProductRepository';
 import { container } from '../../infrastructure/config/container';
+import { usePagination, extractErrorMessage } from './shared';
 
 export interface UseProductsReturn {
+  // Datos
   products: Product[];
-  isLoading: boolean;
-  error: string | null;
+  
+  // Paginación
   page: number;
   total: number;
   totalPages: number;
   goToPage: (page: number) => Promise<void>;
   applyFilters: (filters?: ProductFilters) => Promise<void>;
   refreshCurrentPage: () => Promise<void>;
+  
+  // Estado
+  isLoading: boolean;
+  error: string | null;
+  clearError: () => void;
+  clearCache: () => void;
+  
+  // CRUD
   fetchProductById: (id: number) => Promise<Product | null>;
   createProduct: (data: CreateProductDTO) => Promise<Product | null>;
   updateProduct: (id: number, data: UpdateProductDTO) => Promise<Product | null>;
   updateProductState: (id: number, userId: number) => Promise<boolean>;
   deleteProduct: (id: number) => Promise<boolean>;
-  clearError: () => void;
-  clearCache: () => void;
 }
 
 const LIMIT = 10;
 
-const getCacheKey = (filters: ProductFilters, page: number): string => {
-  return JSON.stringify({ ...filters, page, limit: LIMIT });
-};
-
 export const useProducts = (): UseProductsReturn => {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [page, setPage] = useState(1);
-  const [total, setTotal] = useState(0);
-  const [totalPages, setTotalPages] = useState(0);
-  
-  const cacheRef = useRef<Map<string, { data: Product[]; total: number; totalPages: number }>>(new Map());
-  const currentFiltersRef = useRef<ProductFilters>({});
+  const [crudLoading, setCrudLoading] = useState(false);
+  const [crudError, setCrudError] = useState<string | null>(null);
 
-  const fetchPage = useCallback(async (pageNum: number, filters: ProductFilters, forceRefresh = false) => {
-    const cacheKey = getCacheKey(filters, pageNum);
-    if (!forceRefresh && cacheRef.current.has(cacheKey)) {
-      console.log(`🟢 ¡BINGO! Usando caché para: ${cacheKey}`);
-      const cached = cacheRef.current.get(cacheKey)!;
-      setProducts(cached.data);
-      setPage(pageNum);
-      setTotal(cached.total);
-      setTotalPages(cached.totalPages);
-      return;
-    }
-    console.log(`🔴 NO hay caché (o forzaste refresh). Llamando API para: ${cacheKey}`);
-
-    setIsLoading(true);
-    setError(null);
-    
-    try {
-      const result = await container.products.getAll({ ...filters, page: pageNum, limit: LIMIT });
-      cacheRef.current.set(cacheKey, {
-        data: result.data,
-        total: result.total,
-        totalPages: result.totalPages,
-      });
-      
-      setProducts(result.data);
-      setPage(pageNum);
-      setTotal(result.total);
-      setTotalPages(result.totalPages);
-    } catch (err: any) {
-      setError(err?.message || 'Error al cargar productos');
-    } finally {
-      setIsLoading(false);
-    }
+  const fetchProducts = useCallback(async (filters: ProductFilters, page: number, limit: number) => {
+    const result = await container.products.getAll({ ...filters, page, limit });
+    return {
+      data: result.data,
+      total: result.total,
+      totalPages: result.totalPages,
+    };
   }, []);
 
- 
-  const applyFilters = useCallback(async (filters?: ProductFilters) => {
-    cacheRef.current.clear();
-    currentFiltersRef.current = filters || {};
-    await fetchPage(1, currentFiltersRef.current);
-  }, [fetchPage]);
+  // Usar hook genérico de paginación
+  const {
+    items: products,
+    pagination,
+    isLoading: paginationLoading,
+    error: paginationError,
+    goToPage,
+    applyFilters,
+    refreshCurrentPage,
+    clearError: clearPaginationError,
+    clearCache,
+  } = usePagination<Product, ProductFilters>({
+    fetchFn: fetchProducts,
+    limit: LIMIT,
+  });
 
-
-  const goToPage = useCallback(async (pageNum: number) => {
-    if (pageNum < 1 || (totalPages > 0 && pageNum > totalPages)) return;
-    await fetchPage(pageNum, currentFiltersRef.current);
-  }, [fetchPage, totalPages]);
-
-
-  const refreshCurrentPage = useCallback(async () => {
-    await fetchPage(page, currentFiltersRef.current, true);
-  }, [fetchPage, page]);
-
-  
-  const clearCache = useCallback(() => {
-    cacheRef.current.clear();
-  }, []);
+  // ========== CRUD Operations ==========
 
   const fetchProductById = useCallback(async (id: number): Promise<Product | null> => {
-    setError(null);
+    setCrudError(null);
     try {
       return await container.products.getById(id);
-    } catch (err: any) {
-      setError(err?.message || 'Error al cargar producto');
+    } catch (err) {
+      setCrudError(extractErrorMessage(err));
       return null;
     }
   }, []);
 
   const createProduct = useCallback(async (data: CreateProductDTO): Promise<Product | null> => {
-    setIsLoading(true);
-    setError(null);
+    setCrudLoading(true);
+    setCrudError(null);
     try {
       const newProduct = await container.products.create(data);
-      cacheRef.current.clear();
-      await fetchPage(1, currentFiltersRef.current, true);
+      clearCache();
+      await applyFilters(); // Volver a página 1
       return newProduct;
-    } catch (err: any) {
-      setError(err?.message || 'Error al crear producto');
+    } catch (err) {
+      setCrudError(extractErrorMessage(err));
       return null;
     } finally {
-      setIsLoading(false);
+      setCrudLoading(false);
     }
-  }, [fetchPage]);
+  }, [clearCache, applyFilters]);
 
   const updateProduct = useCallback(async (id: number, data: UpdateProductDTO): Promise<Product | null> => {
-    setIsLoading(true);
-    setError(null);
+    setCrudLoading(true);
+    setCrudError(null);
     try {
       const updated = await container.products.update(id, data);
-      setProducts(prev => prev.map(p => (p.id === id ? updated : p)));
-      const cacheKey = getCacheKey(currentFiltersRef.current, page);
-      const cached = cacheRef.current.get(cacheKey);
-      if (cached) {
-        cached.data = cached.data.map(p => (p.id === id ? updated : p));
-      }
-      
+      clearCache();
+      await refreshCurrentPage();
       return updated;
-    } catch (err: any) {
-      setError(err?.message || 'Error al actualizar producto');
+    } catch (err) {
+      setCrudError(extractErrorMessage(err));
       return null;
     } finally {
-      setIsLoading(false);
+      setCrudLoading(false);
     }
-  }, [page]);
+  }, [clearCache, refreshCurrentPage]);
 
   const updateProductState = useCallback(async (id: number, userId: number): Promise<boolean> => {
-    setIsLoading(true);
-    setError(null);
+    setCrudLoading(true);
+    setCrudError(null);
     try {
       await container.products.updateState(id, userId);
-      cacheRef.current.clear();
-      await fetchPage(page, currentFiltersRef.current, true);
+      clearCache();
+      await refreshCurrentPage();
       return true;
-    } catch (err: any) {
-      setError(err?.message || 'Error al actualizar estado');
+    } catch (err) {
+      setCrudError(extractErrorMessage(err));
       return false;
     } finally {
-      setIsLoading(false);
+      setCrudLoading(false);
     }
-  }, [fetchPage, page]);
+  }, [clearCache, refreshCurrentPage]);
 
   const deleteProduct = useCallback(async (id: number): Promise<boolean> => {
-    setIsLoading(true);
-    setError(null);
+    setCrudLoading(true);
+    setCrudError(null);
     try {
       await container.products.delete(id);
-      cacheRef.current.clear();
-      await fetchPage(page, currentFiltersRef.current, true);
+      clearCache();
+      await refreshCurrentPage();
       return true;
-    } catch (err: any) {
-      setError(err?.message || 'Error al eliminar producto');
+    } catch (err) {
+      setCrudError(extractErrorMessage(err));
       return false;
     } finally {
-      setIsLoading(false);
+      setCrudLoading(false);
     }
-  }, [fetchPage, page]);
+  }, [clearCache, refreshCurrentPage]);
+
+  // ========== Combinación de estados ==========
 
   const clearError = useCallback(() => {
-    setError(null);
-  }, []);
+    clearPaginationError();
+    setCrudError(null);
+  }, [clearPaginationError]);
 
   return {
     products,
-    isLoading,
-    error,
-    page,
-    total,
-    totalPages,
+    page: pagination.page,
+    total: pagination.total,
+    totalPages: pagination.totalPages,
     goToPage,
     applyFilters,
     refreshCurrentPage,
+    isLoading: paginationLoading || crudLoading,
+    error: paginationError || crudError,
+    clearError,
+    clearCache,
     fetchProductById,
     createProduct,
     updateProduct,
     updateProductState,
     deleteProduct,
-    clearError,
-    clearCache,
   };
 };

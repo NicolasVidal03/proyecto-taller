@@ -1,6 +1,3 @@
-/**
- * Supplier Entity - Domain Layer (Frontend)
- */
 export interface Supplier {
   id: number;
   nit: string;

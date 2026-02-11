@@ -1,4 +1,5 @@
 import React from 'react';
+import { env } from '../../../infrastructure/config/env';
 import { Product } from '../../../domain/entities/Product';
 
 interface ProductDetailsModalProps {
@@ -11,7 +12,7 @@ interface ProductDetailsModalProps {
 const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({ product, presentationMap, colorMap, onClose }) => {
   if (!product) return null;
 
-  const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+  const apiUrl = env.apiBaseUrl || 'http://localhost:3000';
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto overflow-x-hidden bg-black/60 backdrop-blur-sm p-4 md:p-0">
@@ -94,15 +95,15 @@ const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({ product, pres
                 <div className="grid grid-cols-3 gap-2 text-center">
                   <div className="rounded-lg bg-white p-2 shadow-sm">
                     <p className="text-xs text-gray-500">Mayorista</p>
-                    <p className="font-bold text-brand-600">{product.salePrice?.mayorista ? Number(product.salePrice.mayorista).toFixed(2) : '—'}</p>
+                    <p className="font-bold text-brand-600">{product.prices?.find(p => p.priceTypeId === 3)?.price ? Number(product.prices.find(p => p.priceTypeId === 3)?.price).toFixed(2) : '—'}</p>
                   </div>
                   <div className="rounded-lg bg-white p-2 shadow-sm">
                     <p className="text-xs text-gray-500">Minorista</p>
-                    <p className="font-bold text-brand-600">{product.salePrice?.minorista ? Number(product.salePrice.minorista).toFixed(2) : '—'}</p>
+                    <p className="font-bold text-brand-600">{product.prices?.find(p => p.priceTypeId === 2)?.price ? Number(product.prices.find(p => p.priceTypeId === 2)?.price).toFixed(2) : '—'}</p>
                   </div>
                   <div className="rounded-lg bg-white p-2 shadow-sm">
                     <p className="text-xs text-gray-500">Regular</p>
-                    <p className="font-bold text-brand-600">{product.salePrice?.regular ? Number(product.salePrice.regular).toFixed(2) : '—'}</p>
+                    <p className="font-bold text-brand-600">{product.prices?.find(p => p.priceTypeId === 1)?.price ? Number(product.prices.find(p => p.priceTypeId === 1)?.price).toFixed(2) : '—'}</p>
                   </div>
                 </div>
                 <div className="pt-2">

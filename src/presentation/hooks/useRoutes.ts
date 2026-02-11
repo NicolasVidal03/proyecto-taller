@@ -2,29 +2,15 @@ import { useState, useCallback } from 'react';
 import { Route } from '../../domain/entities/Route';
 import { CreateRouteDTO } from '../../domain/ports/IRouteRepository';
 import { container } from '../../infrastructure/config/container';
+import { AppError, extractErrorMessage } from './shared';
 
-export interface RouteError {
-  message: string;
-  code?: string;
-}
+export type RouteError = AppError;
 
 export interface UseRoutesReturn {
   isLoading: boolean;
   error: RouteError | null;
   createRoute: (data: CreateRouteDTO) => Promise<Route | null>;
   clearError: () => void;
-}
-
-function extractErrorMessage(err: unknown): string {
-  if (err instanceof Error) {
-    const axiosError = err as { response?: { data?: { message?: string } } };
-    if (axiosError.response?.data?.message) {
-      return axiosError.response.data.message;
-    }
-    return err.message;
-  }
-  if (typeof err === 'string') return err;
-  return 'Error desconocido';
 }
 
 export const useRoutes = (): UseRoutesReturn => {
@@ -40,8 +26,7 @@ export const useRoutes = (): UseRoutesReturn => {
       const newRoute = await container.routes.create(data);
       return newRoute;
     } catch (err) {
-      const message = extractErrorMessage(err);
-      setError({ message, code: 'CREATE_ERROR' });
+      setError({ message: extractErrorMessage(err), code: 'CREATE_ERROR' });
       return null;
     } finally {
       setIsLoading(false);

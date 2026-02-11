@@ -1,26 +1,26 @@
-/**
- * Client Entity - Domain Layer (Frontend)
- * Solo tipos e interfaces, sin lógica de negocio
- */
 export interface Position {
   lat: number;
   lng: number;
 }
 
-export type ClientType = 'Mayorista' | 'Minorista' | 'Regular' | 'Otro';
-export type BusinessType = 'Ferreteria' | 'Tienda' | 'Institucion' | 'Otro';
+export interface BusinessType {
+  id: number;
+  name: string;
+}
 
 export interface Client {
   id: number;
-  fullName: string;
-  position: Position;
-  nitCi: string;
-  businessName: string;
+  name: string;
+  lastName: string;
+  secondLastName: string;
   phone: string;
-  businessType: BusinessType;
-  clientType: ClientType;
-  areaId: number | null;
+  ci: string | null;
+  ciExt?: string | null;
+  status?: boolean;
+  businessName?: string;
   address?: string;
-  status: boolean;
-  pathImage?: string;
+  apartado?: string;
+  areaId?: number | null;
+  position?: Position | null;
+  pathImage?: string | null;
 }

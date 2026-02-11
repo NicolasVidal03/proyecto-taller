@@ -19,15 +19,15 @@ export class HttpSupplierRepository implements ISupplierRepository {
   }
 
   async update(id: number, data: UpdateSupplierDTO): Promise<Supplier> {
-    const res = await http.put(`/suppliers/${id}`, { ...data, user_id: data.userId });
-    return res.data.supplier;
+    const res = await http.patch(`/suppliers/${id}`, { ...data, user_id: data.userId });
+    return res.data.supplier || res.data;
   }
 
   async updateState(id: number, state: boolean, userId?: number): Promise<void> {
     await http.patch(`/suppliers/${id}/state`, { state, user_id: userId });
   }
 
-  async delete(id: number): Promise<void> {
-    await http.delete(`/suppliers/${id}`);
+  async delete(id: number, userId?: number): Promise<void> {
+    await http.patch(`/suppliers/${id}/state`, { state: false, user_id: userId });
   }
 }

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import ReactDOM from 'react-dom';
 import { Branch } from '../../../domain/entities/Branch';
 
 export interface BranchFormValues {
@@ -47,7 +48,7 @@ const BranchFormModal: React.FC<BranchFormModalProps> = ({
 
   if (!open) return null;
 
-  return (
+  return ReactDOM.createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-lead-900/60 backdrop-blur-sm overflow-y-auto">
       <div className="mx-4 my-10 w-full max-w-md overflow-hidden rounded-xl bg-lead-50 shadow-2xl ring-1 ring-black/5">
         <div className="flex items-center justify-between bg-brand-600 px-6 py-4 text-white">
@@ -107,7 +108,8 @@ const BranchFormModal: React.FC<BranchFormModalProps> = ({
           </div>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 

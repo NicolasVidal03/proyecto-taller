@@ -2,8 +2,10 @@ import { useState, useCallback, useRef } from 'react';
 import { ProductWithBranchInfo, BranchProductsFilters } from '../../domain/entities/ProductBranch';
 import { UpdateStockDTO, UpdateStockResponse } from '../../domain/ports/IProductBranchRepository';
 import { container } from '../../infrastructure/config/container';
+import { extractErrorMessage } from './shared';
 
 export interface UseInventoryReturn {
+  // Datos
   inventory: ProductWithBranchInfo[];
   pagination: {
     page: number;
@@ -11,19 +13,26 @@ export interface UseInventoryReturn {
     total: number;
     totalPages: number;
   };
+  
+  // Estado
   isLoading: boolean;
   error: string | null;
+  
+  // Paginación y filtros
   goToPage: (page: number) => Promise<void>;
   applyFilters: (branchId: number, filters?: BranchProductsFilters) => Promise<void>;
   refreshCurrentPage: () => Promise<void>;
+  
+  // Operaciones
   setStock: (productId: number, branchId: number, data: UpdateStockDTO) => Promise<UpdateStockResponse | null>;
+  
+  // Utilidades
   clearError: () => void;
   clearCache: () => void;
 }
 
 const LIMIT = 10;
 
-// Clave para el caché basada en branchId, filtros y página
 const getCacheKey = (branchId: number, filters: BranchProductsFilters, page: number): string => {
   return JSON.stringify({ branchId, ...filters, page, limit: LIMIT });
 };
@@ -46,11 +55,12 @@ export const useInventory = (): UseInventoryReturn => {
     totalPages: number 
   }>>(new Map());
   
-  // Guardar estado actual
+  // Estado actual
   const currentBranchIdRef = useRef<number>(0);
   const currentFiltersRef = useRef<BranchProductsFilters>({});
 
-  // Función interna para fetch con caché
+  // ========== Paginación ==========
+
   const fetchPage = useCallback(async (
     branchId: number, 
     filters: BranchProductsFilters, 
@@ -59,19 +69,22 @@ export const useInventory = (): UseInventoryReturn => {
   ) => {
     const cacheKey = getCacheKey(branchId, filters, pageNum);
     
-    // Si está en caché y no es refresh forzado, usar caché
     if (!forceRefresh && cacheRef.current.has(cacheKey)) {
       const cached = cacheRef.current.get(cacheKey)!;
+      // Solo actualizamos si los datos son diferentes para evitar re-renders?
+      // Por simplicidad, asumimos que siempre actualizamos el estado si hay hit en cache
       setInventory(cached.data);
-      setPagination({
+      setPagination(prev => ({
+        ...prev,
         page: pageNum,
-        limit: LIMIT,
         total: cached.total,
         totalPages: cached.totalPages,
-      });
+      }));
       return;
     }
 
+    // Prevenir llamadas redundantes si ya estamos cargando ESTE conjunto específico?
+    // Puede ser complejo. Por ahora confiamos en el effect.
     setIsLoading(true);
     setError(null);
     
@@ -82,53 +95,68 @@ export const useInventory = (): UseInventoryReturn => {
         limit: LIMIT,
       });
       
-      // Guardar en caché
+      // Validación defensiva por si result es undefined
+      const data = result?.data || [];
+      const total = result?.total || 0;
+      const totalPages = result?.totalPages || 0;
+      const currentPage = result?.page || pageNum;
+
       cacheRef.current.set(cacheKey, {
-        data: result.data,
-        total: result.total,
-        totalPages: result.totalPages,
+        data,
+        total,
+        totalPages,
       });
       
-      setInventory(result.data);
+      setInventory(data);
       setPagination({
-        page: result.page,
-        limit: result.limit,
-        total: result.total,
-        totalPages: result.totalPages,
+        page: currentPage,
+        limit: LIMIT,
+        total,
+        totalPages,
       });
-    } catch (err: any) {
-      setError(err?.message || 'Error al cargar inventario');
+    } catch (err) {
+      // Si falla, limpiar inventario para no mostrar datos viejos confusos
+      // O mantenerlo? Mejor mostrar error y mantener datos si es posible, 
+      // pero si es la primera carga (inventory vacio), no pasa nada.
+      console.error("Error fetching inventory:", err);
+      // setInventory([]); // Opcional: limpiar tabla en error
+      setError(extractErrorMessage(err));
     } finally {
       setIsLoading(false);
     }
   }, []);
 
-  // Aplicar nuevos filtros (limpia caché y va a página 1)
   const applyFilters = useCallback(async (branchId: number, filters?: BranchProductsFilters) => {
-    // Limpiar caché cuando cambian los filtros o la sucursal
+    const nextFilters = filters || {};
+    const sameBranch = currentBranchIdRef.current === branchId;
+    const sameFilters = JSON.stringify(currentFiltersRef.current) === JSON.stringify(nextFilters);
+
+    if (sameBranch && sameFilters) {
+      return;
+    }
+
     cacheRef.current.clear();
     currentBranchIdRef.current = branchId;
-    currentFiltersRef.current = filters || {};
+    currentFiltersRef.current = nextFilters;
     await fetchPage(branchId, currentFiltersRef.current, 1);
   }, [fetchPage]);
 
-  // Ir a una página específica (usa caché si existe)
   const goToPage = useCallback(async (pageNum: number) => {
     if (pageNum < 1 || (pagination.totalPages > 0 && pageNum > pagination.totalPages)) return;
     if (currentBranchIdRef.current === 0) return;
     await fetchPage(currentBranchIdRef.current, currentFiltersRef.current, pageNum);
   }, [fetchPage, pagination.totalPages]);
 
-  // Refrescar página actual (fuerza re-fetch)
   const refreshCurrentPage = useCallback(async () => {
     if (currentBranchIdRef.current === 0) return;
     await fetchPage(currentBranchIdRef.current, currentFiltersRef.current, pagination.page, true);
   }, [fetchPage, pagination.page]);
 
-  // Limpiar caché manualmente
   const clearCache = useCallback(() => {
     cacheRef.current.clear();
   }, []);
+
+  // ========== Operaciones ==========
 
   const setStock = useCallback(async (
     productId: number,
@@ -139,18 +167,15 @@ export const useInventory = (): UseInventoryReturn => {
     setError(null);
     try {
       const result = await container.productBranches.setStock(productId, branchId, data);
-      
-      // Limpiar TODO el caché para forzar recarga limpia
-      cacheRef.current.clear();
-      
+      clearCache();
       return result;
-    } catch (err: any) {
-      setError(err?.message || 'Error al actualizar stock');
+    } catch (err) {
+      setError(extractErrorMessage(err));
       return null;
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [clearCache]);
 
   const clearError = useCallback(() => {
     setError(null);

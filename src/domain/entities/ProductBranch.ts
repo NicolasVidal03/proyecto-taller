@@ -1,3 +1,9 @@
+export interface ProductPriceInfo {
+  priceTypeId: number;
+  priceTypeName?: string;
+  price: number;
+}
+
 export interface ProductBranch {
   productId: number;
   branchId: number;
@@ -5,15 +11,12 @@ export interface ProductBranch {
   stockQty: number | null;
   updatedAt?: string;
   
-  // Datos del producto para lectura
   productName?: string;
   productBarcode?: string | null;
-  productSalePrice?: Record<string, number>;
+  productPrices?: ProductPriceInfo[];
 }
 
-/**
- * Producto con información de sucursal (respuesta del endpoint paginado)
- */
+
 export interface ProductWithBranchInfo {
   id: number;
   name: string;
@@ -21,7 +24,7 @@ export interface ProductWithBranchInfo {
   internalCode: string | null;
   presentationId: number | null;
   colorId: number | null;
-  salePrice: Record<string, number>;
+  prices: ProductPriceInfo[];
   brand: {
     id: number;
     name: string;
@@ -37,9 +40,7 @@ export interface ProductWithBranchInfo {
   };
 }
 
-/**
- * Respuesta paginada de productos por sucursal
- */
+
 export interface PaginatedBranchProducts {
   data: ProductWithBranchInfo[];
   page: number;
@@ -48,9 +49,7 @@ export interface PaginatedBranchProducts {
   totalPages: number;
 }
 
-/**
- * Filtros para consulta de productos por sucursal
- */
+
 export interface BranchProductsFilters {
   search?: string;
   page?: number;

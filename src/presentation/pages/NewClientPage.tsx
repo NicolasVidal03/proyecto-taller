@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useClients } from '../hooks/useClients';
-import { useAreasSimple } from '../hooks/useAreas';
 import ClientForm from '../components/clients/ClientForm';
 import { CreateClientDTO, UpdateClientDTO } from '../../domain/ports/IClientRepository';
 import { ToastContainer, useToast } from '../components/shared/Toast';
@@ -9,13 +8,9 @@ import { ToastContainer, useToast } from '../components/shared/Toast';
 export const NewClientPage: React.FC = () => {
   const navigate = useNavigate();
   const { createClient } = useClients();
-  const { areas, isLoading: areasLoading, refreshAreas } = useAreasSimple();
   const toast = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  useEffect(() => {
-    refreshAreas();
-  }, [refreshAreas]);
 
   const handleSubmit = async (data: CreateClientDTO | UpdateClientDTO) => {
     setIsSubmitting(true);
@@ -46,7 +41,6 @@ export const NewClientPage: React.FC = () => {
       <div className="relative overflow-hidden min-h-screen">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(17,93,216,0.12),transparent_60%),radial-gradient(circle_at_80%_0%,rgba(255,100,27,0.08),transparent_55%)]" />
         <div className="relative space-y-6 px-6 py-8 lg:px-10 lg:py-12 max-w-5xl mx-auto">
-          {/* Header */}
           <div className="flex items-center gap-4 mb-6">
             <button
               onClick={handleCancel}
@@ -62,26 +56,17 @@ export const NewClientPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Form Card */}
           <div className="card shadow-xl ring-1 ring-black/5">
             <div className="mb-6 border-b border-lead-100 pb-4">
-              <h2 className="text-lg font-bold text-brand-900">Información del cliente</h2>
+              <h2 className="text-lg font-bold text-brand-900">Informacion del cliente</h2>
               <p className="text-sm text-lead-500">Los campos marcados con * son obligatorios</p>
             </div>
 
-            {areasLoading ? (
-              <div className="py-8 text-center">
-                <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-brand-600 border-r-transparent"></div>
-                <p className="mt-2 text-sm text-lead-600">Cargando áreas...</p>
-              </div>
-            ) : (
-              <ClientForm
-                areas={areas}
-                onSubmit={handleSubmit}
-                onCancel={handleCancel}
-                isSubmitting={isSubmitting}
-              />
-            )}
+            <ClientForm
+              onSubmit={handleSubmit}
+              onCancel={handleCancel}
+              isSubmitting={isSubmitting}
+            />
           </div>
         </div>
       </div>

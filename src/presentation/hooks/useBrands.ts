@@ -1,18 +1,27 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { Brand } from '../../domain/entities/Brand';
 import { CreateBrandDTO, UpdateBrandDTO } from '../../domain/ports/IBrandRepository';
 import { container } from '../../infrastructure/config/container';
+import { extractErrorMessage } from './shared';
 
 export interface UseBrandsReturn {
+  // Datos
   brands: Brand[];
   brandMap: Map<number, string>;
+  
+  // Estado
   isLoading: boolean;
   error: string | null;
+  
+  // CRUD
   fetchBrands: () => Promise<void>;
   fetchBrandById: (id: number) => Promise<Brand | null>;
   createBrand: (data: CreateBrandDTO) => Promise<Brand | null>;
   updateBrand: (id: number, data: UpdateBrandDTO) => Promise<Brand | null>;
   updateBrandState: (id: number, userId: number) => Promise<boolean>;
+  
+  // Utilidades
+  getBrandName: (id: number | null | undefined) => string;
   clearError: () => void;
 }
 
@@ -21,7 +30,19 @@ export const useBrands = (): UseBrandsReturn => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const brandMap = new Map(brands.map(b => [b.id, b.name]));
+  // Mapa de marcas para búsqueda rápida
+  const brandMap = useMemo(() => {
+    return new Map(brands.map(b => [b.id, b.name]));
+  }, [brands]);
+
+  const getBrandName = useCallback((id: number | null | undefined): string => {
+    if (id == null) return 'Sin marca';
+    return brandMap.get(id) ?? 'Desconocida';
+  }, [brandMap]);
+
+  const clearError = useCallback(() => setError(null), []);
+
+  // ========== CRUD ==========
 
   const fetchBrands = useCallback(async () => {
     setIsLoading(true);
@@ -29,8 +50,8 @@ export const useBrands = (): UseBrandsReturn => {
     try {
       const data = await container.brands.getAll();
       setBrands(data);
-    } catch (err: any) {
-      setError(err?.message || 'Error al cargar marcas');
+    } catch (err) {
+      setError(extractErrorMessage(err));
     } finally {
       setIsLoading(false);
     }
@@ -40,8 +61,8 @@ export const useBrands = (): UseBrandsReturn => {
     setError(null);
     try {
       return await container.brands.getById(id);
-    } catch (err: any) {
-      setError(err?.message || 'Error al cargar marca');
+    } catch (err) {
+      setError(extractErrorMessage(err));
       return null;
     }
   }, []);
@@ -53,8 +74,8 @@ export const useBrands = (): UseBrandsReturn => {
       const newBrand = await container.brands.create(data);
       setBrands(prev => [newBrand, ...prev]);
       return newBrand;
-    } catch (err: any) {
-      setError(err?.message || 'Error al crear marca');
+    } catch (err) {
+      setError(extractErrorMessage(err));
       return null;
     } finally {
       setIsLoading(false);
@@ -68,8 +89,8 @@ export const useBrands = (): UseBrandsReturn => {
       const updated = await container.brands.update(id, data);
       setBrands(prev => prev.map(b => (b.id === id ? updated : b)));
       return updated;
-    } catch (err: any) {
-      setError(err?.message || 'Error al actualizar marca');
+    } catch (err) {
+      setError(extractErrorMessage(err));
       return null;
     } finally {
       setIsLoading(false);
@@ -85,23 +106,17 @@ export const useBrands = (): UseBrandsReturn => {
         const found = prev.find(b => b.id === id);
         if (!found) return prev;
         if (found.state) {
-          // Deactivating -> remove from list
           return prev.filter(b => b.id !== id);
         }
-        // Activating -> mark as active
         return prev.map(b => (b.id === id ? { ...b, state: true } : b));
       });
       return true;
-    } catch (err: any) {
-      setError(err?.message || 'Error al actualizar estado');
+    } catch (err) {
+      setError(extractErrorMessage(err));
       return false;
     } finally {
       setIsLoading(false);
     }
-  }, []);
-
-  const clearError = useCallback(() => {
-    setError(null);
   }, []);
 
   return {
@@ -114,6 +129,7 @@ export const useBrands = (): UseBrandsReturn => {
     createBrand,
     updateBrand,
     updateBrandState,
+    getBrandName,
     clearError,
   };
 };

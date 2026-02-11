@@ -56,6 +56,7 @@ const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     { label: 'Clientes', to: '/clients', icon: '👥' },
     { label: 'Áreas', to: '/areas', icon: '🗺️' },
     { label: 'Rutas', to: '/routes', icon: '🛤️' },
+    { label: 'Actividades', to: '/activities', icon: '📍' },
     { label: 'Productos', to: '/products', icon: '📦' },
     { label: 'Inventario', to: '/inventory', icon: '📊' },
     { label: 'Proveedores', to: '/suppliers', icon: '🚚' },
@@ -153,7 +154,7 @@ const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           <div>
             <p className="text-[0.65rem] uppercase tracking-[0.3em] text-brand-600 font-bold mb-0.5">Panel General</p>
             <h1 className="text-xl font-bold text-lead-900">
-              {user?.role === 'super_admin' ? 'Super Administrador' : 'Administración'}
+              {user?.role === 'propietario' ? 'Propietario' : 'Administración'}
             </h1>
           </div>
           <div className="flex items-center gap-4">

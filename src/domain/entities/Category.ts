@@ -1,6 +1,3 @@
-/**
- * Category Entity - Domain Layer (Frontend)
- */
 export interface Category {
   id: number;
   name: string;

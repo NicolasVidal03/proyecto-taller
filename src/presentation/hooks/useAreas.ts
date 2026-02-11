@@ -3,6 +3,7 @@ import { Area, AreaPoint } from '../../domain/entities/Area';
 import { AreaMap as AreaMapType, createAreaMap } from '../utils/areaHelpers';
 import { container } from '../../infrastructure/config/container';
 import { areaPolygonsOverlap } from '../../domain/utils/geometry';
+import { extractErrorMessage } from './shared';
 
 export const useAreasSimple = () => {
   const [areas, setAreas] = useState<Area[]>([]);
@@ -71,11 +72,10 @@ export function useAreas(): UseAreasReturn {
     setLoading(true);
     setError(null);
     try {
-
       const allAreas = await container.areas.getAllFresh();
       setAreas(allAreas);
-    } catch (err: any) {
-      setError(err?.response?.data?.message || 'Error al cargar las áreas');
+    } catch (err) {
+      setError(extractErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -92,8 +92,8 @@ export function useAreas(): UseAreasReturn {
       const created = await container.areas.create(name, area);
       setAreas(prev => [...prev, created]);
       return created;
-    } catch (err: any) {
-      setError(err?.response?.data?.message || 'Error al crear el área');
+    } catch (err) {
+      setError(extractErrorMessage(err));
       return null;
     } finally {
       setLoading(false);
@@ -108,8 +108,8 @@ export function useAreas(): UseAreasReturn {
       setAreas(prev => prev.map(a => (a.id === id ? updated : a)));
       setSelectedArea(prev => (prev?.id === id ? updated : prev));
       return updated;
-    } catch (err: any) {
-      setError(err?.response?.data?.message || 'Error al actualizar el área');
+    } catch (err) {
+      setError(extractErrorMessage(err));
       return null;
     } finally {
       setLoading(false);
@@ -124,8 +124,8 @@ export function useAreas(): UseAreasReturn {
       setAreas(prev => prev.filter(a => a.id !== id));
       setSelectedArea(prev => (prev?.id === id ? null : prev));
       return true;
-    } catch (err: any) {
-      setError(err?.response?.data?.message || 'Error al eliminar el área');
+    } catch (err) {
+      setError(extractErrorMessage(err));
       return false;
     } finally {
       setLoading(false);

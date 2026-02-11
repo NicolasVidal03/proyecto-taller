@@ -9,6 +9,7 @@ export type { ProductBranch } from './ProductBranch';
 export type { Presentation } from './Presentation';
 export type { Color } from './Color';
 export type { Area, AreaPoint, LeafletLatLng, LeafletPolygonCoords } from './Area';
-export type { Client, Position, ClientType, BusinessType } from './Client';
+export type { Client, Position, BusinessType } from './Client';
+export type { PriceType } from './PriceType';
 export type { Country } from './Country';
 export type { Route } from './Route';

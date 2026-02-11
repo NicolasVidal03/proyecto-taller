@@ -27,6 +27,7 @@ const AreasPage: React.FC = () => {
 
   const [selectedAreaId, setSelectedAreaId] = useState<number | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<Area | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
 
   const handleCreate = () => {
     setModalMode('create');
@@ -59,7 +60,6 @@ const AreasPage: React.FC = () => {
       }
       toast.success('Área eliminada correctamente');
     } catch (err) {
-      console.error('Error deleting area:', err);
       toast.error('Error al eliminar el área');
     }
   };
@@ -76,7 +76,6 @@ const AreasPage: React.FC = () => {
       }
       setModalOpen(false);
     } catch (err) {
-      console.error('Error saving area:', err);
       toast.error('Error al guardar el área');
     } finally {
       setSubmitting(false);
@@ -85,10 +84,15 @@ const AreasPage: React.FC = () => {
 
   const selectedArea = areas.find(a => a.id === selectedAreaId);
   const totalPoints = areas.reduce((sum, a) => sum + (a.area?.length || 0), 0);
-  // Ordenar áreas alfabéticamente por nombre para mostrar al usuario
+  // Ordenar y filtrar áreas por nombre
   const sortedAreas = React.useMemo(() => {
-    return [...areas].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
-  }, [areas]);
+    const term = searchTerm.trim().toLowerCase();
+    let filtered = [...areas];
+    if (term) {
+      filtered = filtered.filter(a => (a.name || '').toLowerCase().includes(term));
+    }
+    return filtered.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+  }, [areas, searchTerm]);
 
   return (
     <div className="relative overflow-hidden min-h-screen bg-gray-50/50">
@@ -114,7 +118,7 @@ const AreasPage: React.FC = () => {
               <div className="flex flex-wrap gap-4">
                 <button
                   onClick={handleCreate}
-                  className="flex items-center gap-2 px-6 py-3 bg-white text-brand-700 rounded-xl hover:bg-brand-50 transition-colors shadow-lg font-bold"
+                  className="btn-primary bg-accent-500 hover:bg-accent-600 border-transparent text-white shadow-md flex items-center gap-2 px-6 py-3 rounded-xl font-bold transition-all"
                 >
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -137,6 +141,15 @@ const AreasPage: React.FC = () => {
               <div className="absolute inset-0 bg-emerald-500/30 blur-xl rounded-full transform translate-y-4" />
               <div className="relative bg-gradient-to-br from-emerald-600 to-emerald-500 rounded-2xl shadow-xl overflow-hidden border border-emerald-400/30 p-1">
                 <div className="bg-white/95 backdrop-blur rounded-xl overflow-hidden h-full">
+                  <div className="px-4 py-3 border-b border-gray-200 bg-gray-50/50">
+                    <input
+                      type="text"
+                      className="w-full px-4 py-2 rounded-lg border border-gray-300 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
+                      placeholder="Buscar áreas por nombre..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                  </div>
                   <AreaTable
                     areas={sortedAreas}
                     loading={loading}

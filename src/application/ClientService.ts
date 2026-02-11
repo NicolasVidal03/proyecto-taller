@@ -1,4 +1,4 @@
-import { IClientRepository, CreateClientDTO, UpdateClientDTO, UpdateClientAreaDTO } from '../domain/ports/IClientRepository';
+import { IClientRepository, CreateClientDTO, UpdateClientDTO, ClientSearchParams } from '../domain/ports/IClientRepository';
 import { Client } from '../domain/entities/Client';
 
 export class ClientService {
@@ -20,11 +20,11 @@ export class ClientService {
     return this.repository.update(id, data);
   }
 
-  async updateArea(id: number, areaId: number): Promise<Client> {
-    return this.repository.updateArea(id, { areaId });
-  }
-
   async softDelete(id: number): Promise<void> {
     return this.repository.softDelete(id);
+  }
+
+  async search(params: ClientSearchParams): Promise<Client[]> {
+    return this.repository.search(params);
   }
 }

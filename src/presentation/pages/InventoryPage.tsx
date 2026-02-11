@@ -120,17 +120,16 @@ export const InventoryPage: React.FC = () => {
     }
   };
 
-  const formatPrice = (price: Record<string, number> | undefined) => {
-    if (!price) return '—';
-    const entries = Object.entries(price);
-    if (entries.length === 0) return '—';
-    const [, value] = entries[0];
-    return `Bs. ${value.toFixed(2)}`;
+  const formatPrice = (prices: Array<{ priceTypeId: number; price: number }> | undefined) => {
+    if (!prices || prices.length === 0) return '—';
+    const regular = prices.find(p => p.priceTypeId === 1);
+    if (regular) return `Bs. ${regular.price.toFixed(2)}`;
+    return `Bs. ${prices[0].price.toFixed(2)}`;
   };
 
   const selectedBranch = branches.find(b => b.id === selectedBranchId);
 
-  // Ramas ordenadas alfabéticamente para mostrar en selects
+ 
   const sortedBranches = React.useMemo(() => {
     return [...branches].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
   }, [branches]);
@@ -254,12 +253,6 @@ export const InventoryPage: React.FC = () => {
 
               {isLoading && inventory.length === 0 ? (
                 <Loader />
-              ) : inventory.length === 0 ? (
-                <div className="rounded-md border bg-white p-6 text-center text-sm text-gray-600 shadow-sm">
-                  {debouncedSearch || categoryFilter !== 'all' || brandFilter !== 'all' || stockFilter === 'available'
-                    ? 'No se encontraron productos con los filtros seleccionados.'
-                    : 'No hay productos en el inventario de esta sucursal.'}
-                </div>
               ) : (
                 <>
                   <div className="overflow-x-auto rounded-lg border border-lead-200 bg-lead-50 shadow-lg">
@@ -277,7 +270,15 @@ export const InventoryPage: React.FC = () => {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-lead-200">
-                        {([...inventory].sort((a,b) => (a.name || '').localeCompare(b.name || ''))).map(item => (
+                        {inventory.length === 0 ? (
+                          <tr>
+                            <td className="px-4 py-6 text-center text-sm text-lead-600" colSpan={8}>
+                              {debouncedSearch || categoryFilter !== 'all' || brandFilter !== 'all'
+                                ? 'No se encontraron productos con los filtros seleccionados.'
+                                : 'No hay productos en el inventario de esta sucursal.'}
+                            </td>
+                          </tr>
+                        ) : ([...inventory].sort((a,b) => (a.name || '').localeCompare(b.name || '')).map(item => (
                           <tr key={item.id} className="transition-colors hover:bg-white">
                             <td className="px-4 py-3 font-medium text-brand-900">
                               {item.name}
@@ -312,7 +313,7 @@ export const InventoryPage: React.FC = () => {
                               </span>
                             </td>
                             <td className="px-4 py-3 text-lead-600">
-                              {formatPrice(item.salePrice)}
+                              {formatPrice(item.prices)}
                             </td>
                             <td className="px-4 py-3 text-center">
                               <button
@@ -324,7 +325,7 @@ export const InventoryPage: React.FC = () => {
                               </button>
                             </td>
                           </tr>
-                        ))}
+                        ))) }
                       </tbody>
                     </table>
                   </div>

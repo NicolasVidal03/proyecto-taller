@@ -1,6 +1,3 @@
-/**
- * ProductSupplier Entity - Domain Layer (Frontend)
- */
 export interface ProductSupplier {
   id: number;
   productId: number;

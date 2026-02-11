@@ -2,18 +2,27 @@ import { useState, useCallback, useMemo } from 'react';
 import { Color } from '../../domain/entities/Color';
 import { CreateColorDTO, UpdateColorDTO } from '../../domain/ports/IColorRepository';
 import { container } from '../../infrastructure/config/container';
+import { extractErrorMessage } from './shared';
 
 export interface UseColorsReturn {
+  // Datos
   colors: Color[];
   colorMap: Map<number, string>;
+  
+  // Estado
   isLoading: boolean;
   error: string | null;
+  
+  // CRUD
   fetchColors: () => Promise<void>;
   fetchColorById: (id: number) => Promise<Color | null>;
   createColor: (data: CreateColorDTO) => Promise<Color | null>;
   updateColor: (id: number, data: UpdateColorDTO) => Promise<Color | null>;
   updateColorState: (id: number, userId: number) => Promise<boolean>;
   deleteColor: (id: number) => Promise<boolean>;
+  
+  // Utilidades
+  getColorName: (id: number | null | undefined) => string;
   clearError: () => void;
 }
 
@@ -22,15 +31,19 @@ export const useColors = (): UseColorsReturn => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Mapa de colores para búsqueda rápida
   const colorMap = useMemo(() => {
-    const map = new Map<number, string>();
-    colors.forEach(c => map.set(c.id, c.name));
-    return map;
+    return new Map(colors.map(c => [c.id, c.name]));
   }, [colors]);
 
-  const clearError = useCallback(() => {
-    setError(null);
-  }, []);
+  const getColorName = useCallback((id: number | null | undefined): string => {
+    if (id == null) return 'Sin color';
+    return colorMap.get(id) ?? 'Desconocido';
+  }, [colorMap]);
+
+  const clearError = useCallback(() => setError(null), []);
+
+  // ========== CRUD ==========
 
   const fetchColors = useCallback(async () => {
     setIsLoading(true);
@@ -38,8 +51,8 @@ export const useColors = (): UseColorsReturn => {
     try {
       const data = await container.colors.getAll();
       setColors(data);
-    } catch (err: any) {
-      setError(err?.message || 'Error al cargar colores');
+    } catch (err) {
+      setError(extractErrorMessage(err));
     } finally {
       setIsLoading(false);
     }
@@ -49,8 +62,8 @@ export const useColors = (): UseColorsReturn => {
     setError(null);
     try {
       return await container.colors.getById(id);
-    } catch (err: any) {
-      setError(err?.message || 'Error al cargar color');
+    } catch (err) {
+      setError(extractErrorMessage(err));
       return null;
     }
   }, []);
@@ -62,8 +75,8 @@ export const useColors = (): UseColorsReturn => {
       const newColor = await container.colors.create(data);
       setColors(prev => [...prev, newColor]);
       return newColor;
-    } catch (err: any) {
-      setError(err?.message || 'Error al crear color');
+    } catch (err) {
+      setError(extractErrorMessage(err));
       return null;
     } finally {
       setIsLoading(false);
@@ -77,8 +90,8 @@ export const useColors = (): UseColorsReturn => {
       const updated = await container.colors.update(id, data);
       setColors(prev => prev.map(c => (c.id === id ? updated : c)));
       return updated;
-    } catch (err: any) {
-      setError(err?.message || 'Error al actualizar color');
+    } catch (err) {
+      setError(extractErrorMessage(err));
       return null;
     } finally {
       setIsLoading(false);
@@ -94,15 +107,13 @@ export const useColors = (): UseColorsReturn => {
         const found = prev.find(c => c.id === id);
         if (!found) return prev;
         if (found.state) {
-          // Deactivating -> remove from list
           return prev.filter(c => c.id !== id);
         }
-        // Activating -> mark as active
         return prev.map(c => (c.id === id ? { ...c, state: true } : c));
       });
       return true;
-    } catch (err: any) {
-      setError(err?.message || 'Error al actualizar estado');
+    } catch (err) {
+      setError(extractErrorMessage(err));
       return false;
     } finally {
       setIsLoading(false);
@@ -116,8 +127,8 @@ export const useColors = (): UseColorsReturn => {
       await container.colors.delete(id);
       setColors(prev => prev.filter(c => c.id !== id));
       return true;
-    } catch (err: any) {
-      setError(err?.message || 'Error al eliminar color');
+    } catch (err) {
+      setError(extractErrorMessage(err));
       return false;
     } finally {
       setIsLoading(false);
@@ -135,6 +146,7 @@ export const useColors = (): UseColorsReturn => {
     updateColor,
     updateColorState,
     deleteColor,
+    getColorName,
     clearError,
   };
 };

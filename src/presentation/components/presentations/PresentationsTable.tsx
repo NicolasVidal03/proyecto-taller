@@ -38,7 +38,6 @@ const PresentationsTable: React.FC<PresentationsTableProps> = ({ presentations, 
       <table className="min-w-full text-sm">
         <thead className="bg-brand-600 text-xs uppercase tracking-wider text-white">
           <tr>
-            <th className="px-4 py-4 text-left font-semibold">ID</th>
             <th className="px-4 py-4 text-left font-semibold">Nombre</th>
             <th className="w-40 px-4 py-4 text-center align-middle font-semibold">Acciones</th>
           </tr>
@@ -46,7 +45,7 @@ const PresentationsTable: React.FC<PresentationsTableProps> = ({ presentations, 
         <tbody className="divide-y divide-lead-200">
           {presentations.map(pres => (
             <tr key={pres.id} className="transition-colors hover:bg-white">
-              <td className="px-4 py-3 text-lead-600">{pres.name}</td>
+              <td className="px-4 py-3 text-lead-600 font-medium text-brand-900">{pres.name}</td>
               <td className="px-4 py-3 text-center align-middle">
                 <div className="flex items-center justify-center gap-2">
                   <button

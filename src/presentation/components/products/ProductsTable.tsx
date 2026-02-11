@@ -69,13 +69,13 @@ const ProductsTable: React.FC<ProductsTableProps> = ({
                 {product.brandName || brandMap.get(product.brandId) || '—'}
               </td>
               <td className="px-4 py-3 text-lead-600 text-xs">
-                {product.salePrice?.mayorista ? Number(product.salePrice.mayorista).toFixed(2) : '—'}
+                {product.prices?.find(p => p.priceTypeId === 3)?.price ? Number(product.prices.find(p => p.priceTypeId === 3)?.price).toFixed(2) : '—'}
               </td>
               <td className="px-4 py-3 text-lead-600 text-xs">
-                {product.salePrice?.minorista ? Number(product.salePrice.minorista).toFixed(2) : '—'}
+                {product.prices?.find(p => p.priceTypeId === 2)?.price ? Number(product.prices.find(p => p.priceTypeId === 2)?.price).toFixed(2) : '—'}
               </td>
               <td className="px-4 py-3 text-lead-600 text-xs">
-                {product.salePrice?.regular ? Number(product.salePrice.regular).toFixed(2) : '—'}
+                {product.prices?.find(p => p.priceTypeId === 1)?.price ? Number(product.prices.find(p => p.priceTypeId === 1)?.price).toFixed(2) : '—'}
               </td>
               {/* Estado removed: do not display product.state column */}
               <td className="px-4 py-3 text-center align-middle">

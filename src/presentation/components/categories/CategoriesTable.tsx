@@ -15,15 +15,14 @@ const CategoriesTable: React.FC<CategoriesTableProps> = ({ categories, onEdit, o
         <table className="min-w-full text-sm">
           <thead className="bg-brand-600 text-xs uppercase tracking-wider text-white">
             <tr>
-              <th className="px-4 py-4 text-left font-semibold">ID</th>
-              <th className="px-4 py-4 text-left font-semibold">Nombre</th>
-              <th className="px-4 py-4 text-left font-semibold">Descripción</th>
-              <th className="w-40 px-4 py-4 text-center align-middle font-semibold">Acciones</th>
+                <th className="px-4 py-4 text-left font-semibold">Nombre</th>
+                <th className="px-4 py-4 text-left font-semibold">Descripción</th>
+                <th className="w-40 px-4 py-4 text-center align-middle font-semibold">Acciones</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-lead-200">
             <tr>
-                <td colSpan={4} className="px-4 py-8 text-center text-lead-500">
+                  <td colSpan={3} className="px-4 py-8 text-center text-lead-500">
                   No hay categorías registradas.
                 </td>
               </tr>
@@ -48,8 +47,7 @@ const CategoriesTable: React.FC<CategoriesTableProps> = ({ categories, onEdit, o
         <tbody className="divide-y divide-lead-200">
           {categories.map(cat => (
             <tr key={cat.id} className="transition-colors hover:bg-white">
-              <td className="px-4 py-3 font-medium text-brand-900">{cat.id}</td>
-              <td className="px-4 py-3 text-lead-600">{cat.name}</td>
+              <td className="px-4 py-3 text-lead-600 font-medium text-brand-900">{cat.name}</td>
               <td className="px-4 py-3 text-lead-600">{cat.description ?? '—'}</td>
               {/* Estado removed */}
               <td className="px-4 py-3 text-center align-middle">

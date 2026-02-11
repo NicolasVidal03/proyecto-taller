@@ -20,11 +20,11 @@ export class SupplierService {
     return this.supplierRepo.update(id, data);
   }
 
-  async updateState(id: number, state: boolean, userId?: number): Promise<Supplier> {
-    return this.supplierRepo.update(id, { state } as any);
+  async updateState(id: number, state: boolean, userId?: number): Promise<void> {
+    return this.supplierRepo.updateState(id, state, userId);
   }
 
-  async delete(id: number): Promise<void> {
-    return this.supplierRepo.delete(id);
+  async delete(id: number, userId?: number): Promise<void> {
+    return this.supplierRepo.delete(id, userId);
   }
 }

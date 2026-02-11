@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { useClients } from '../hooks/useClients';
-import { useAreasSimple } from '../hooks/useAreas';
 import ClientForm from '../components/clients/ClientForm';
 import { CreateClientDTO, UpdateClientDTO } from '../../domain/ports/IClientRepository';
 import { ToastContainer, useToast } from '../components/shared/Toast';
@@ -11,10 +10,10 @@ export const EditClientPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { clients, updateClient, fetchClients, isLoading: clientsLoading } = useClients();
-  const { areas, isLoading: areasLoading, refreshAreas } = useAreasSimple();
   const toast = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
+
+
   const clientId = Number(id);
   const location = useLocation();
   const stateClient = (location.state as any)?.client as any | undefined;
@@ -24,12 +23,11 @@ export const EditClientPage: React.FC = () => {
     if (!clientToEdit && !clientsLoading) {
       fetchClients();
     }
-    refreshAreas();
-  }, [clientToEdit, clientsLoading, fetchClients, refreshAreas]);
+  }, [clientToEdit, clientsLoading, fetchClients]);
 
   const handleSubmit = async (data: CreateClientDTO | UpdateClientDTO) => {
     if (!clientId) return;
-    
+
     setIsSubmitting(true);
     try {
       const updated = await updateClient(clientId, data as UpdateClientDTO);
@@ -52,7 +50,7 @@ export const EditClientPage: React.FC = () => {
     navigate('/clients');
   };
 
-  if (clientsLoading || areasLoading) {
+  if (clientsLoading) {
     return (
       <div className="flex h-screen items-center justify-center">
         <Loader />
@@ -95,12 +93,11 @@ export const EditClientPage: React.FC = () => {
           </div>
           <div className="card shadow-xl ring-1 ring-black/5">
             <div className="mb-6 border-b border-lead-100 pb-4">
-              <h2 className="text-lg font-bold text-brand-900">Información del cliente</h2>
+              <h2 className="text-lg font-bold text-brand-900">Informacion del cliente</h2>
               <p className="text-sm text-lead-500">Los campos marcados con * son obligatorios</p>
             </div>
 
             <ClientForm
-              areas={areas}
               onSubmit={handleSubmit}
               onCancel={handleCancel}
               isSubmitting={isSubmitting}

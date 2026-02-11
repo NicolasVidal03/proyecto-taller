@@ -22,12 +22,7 @@ export class HttpUserRepository implements IUserRepository {
   }
 
   async update(id: number, data: UpdateUserDTO): Promise<User> {
-    const payload: any = { ...data };
-    if ((payload as any).username !== undefined) {
-      payload.userName = (payload as any).username;
-      delete payload.username;
-    }
-    const response = await http.patch<User>(`${this.basePath}/${id}`, payload);
+    const response = await http.patch<User>(`${this.basePath}/${id}`, data);
     return response.data;
   }
 
@@ -44,5 +39,13 @@ export class HttpUserRepository implements IUserRepository {
 
   async updatePassword(id: number, newPassword: string): Promise<void> {
     await http.patch(`${this.basePath}/${id}/password`, { password: newPassword });
+  }
+
+  async changeFirstLoginPassword(currentPassword: string, newPassword: string): Promise<{ message: string }> {
+    const response = await http.post<{ message: string }>(`${this.basePath}/change-first-login-password`, {
+      currentPassword,
+      newPassword,
+    });
+    return response.data;
   }
 }

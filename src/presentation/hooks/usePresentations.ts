@@ -2,18 +2,27 @@ import { useState, useCallback, useMemo } from 'react';
 import { Presentation } from '../../domain/entities/Presentation';
 import { CreatePresentationDTO, UpdatePresentationDTO } from '../../domain/ports/IPresentationRepository';
 import { container } from '../../infrastructure/config/container';
+import { extractErrorMessage } from './shared';
 
 export interface UsePresentationsReturn {
+  // Datos
   presentations: Presentation[];
   presentationMap: Map<number, string>;
+  
+  // Estado
   isLoading: boolean;
   error: string | null;
+  
+  // CRUD
   fetchPresentations: () => Promise<void>;
   fetchPresentationById: (id: number) => Promise<Presentation | null>;
   createPresentation: (data: CreatePresentationDTO) => Promise<Presentation | null>;
   updatePresentation: (id: number, data: UpdatePresentationDTO) => Promise<Presentation | null>;
   updatePresentationState: (id: number, userId: number) => Promise<boolean>;
   deletePresentation: (id: number) => Promise<boolean>;
+  
+  // Utilidades
+  getPresentationName: (id: number | null | undefined) => string;
   clearError: () => void;
 }
 
@@ -22,15 +31,19 @@ export const usePresentations = (): UsePresentationsReturn => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Mapa de presentaciones para búsqueda rápida
   const presentationMap = useMemo(() => {
-    const map = new Map<number, string>();
-    presentations.forEach(p => map.set(p.id, p.name));
-    return map;
+    return new Map(presentations.map(p => [p.id, p.name]));
   }, [presentations]);
 
-  const clearError = useCallback(() => {
-    setError(null);
-  }, []);
+  const getPresentationName = useCallback((id: number | null | undefined): string => {
+    if (id == null) return 'Sin presentación';
+    return presentationMap.get(id) ?? 'Desconocida';
+  }, [presentationMap]);
+
+  const clearError = useCallback(() => setError(null), []);
+
+  // ========== CRUD ==========
 
   const fetchPresentations = useCallback(async () => {
     setIsLoading(true);
@@ -38,8 +51,8 @@ export const usePresentations = (): UsePresentationsReturn => {
     try {
       const data = await container.presentations.getAll();
       setPresentations(data);
-    } catch (err: any) {
-      setError(err?.message || 'Error al cargar presentaciones');
+    } catch (err) {
+      setError(extractErrorMessage(err));
     } finally {
       setIsLoading(false);
     }
@@ -49,8 +62,8 @@ export const usePresentations = (): UsePresentationsReturn => {
     setError(null);
     try {
       return await container.presentations.getById(id);
-    } catch (err: any) {
-      setError(err?.message || 'Error al cargar presentación');
+    } catch (err) {
+      setError(extractErrorMessage(err));
       return null;
     }
   }, []);
@@ -62,8 +75,8 @@ export const usePresentations = (): UsePresentationsReturn => {
       const newPresentation = await container.presentations.create(data);
       setPresentations(prev => [...prev, newPresentation]);
       return newPresentation;
-    } catch (err: any) {
-      setError(err?.message || 'Error al crear presentación');
+    } catch (err) {
+      setError(extractErrorMessage(err));
       return null;
     } finally {
       setIsLoading(false);
@@ -77,8 +90,8 @@ export const usePresentations = (): UsePresentationsReturn => {
       const updated = await container.presentations.update(id, data);
       setPresentations(prev => prev.map(p => (p.id === id ? updated : p)));
       return updated;
-    } catch (err: any) {
-      setError(err?.message || 'Error al actualizar presentación');
+    } catch (err) {
+      setError(extractErrorMessage(err));
       return null;
     } finally {
       setIsLoading(false);
@@ -94,15 +107,13 @@ export const usePresentations = (): UsePresentationsReturn => {
         const found = prev.find(p => p.id === id);
         if (!found) return prev;
         if (found.state) {
-          // Deactivating -> remove from list
           return prev.filter(p => p.id !== id);
         }
-        // Activating -> mark as active
         return prev.map(p => (p.id === id ? { ...p, state: true } : p));
       });
       return true;
-    } catch (err: any) {
-      setError(err?.message || 'Error al actualizar estado');
+    } catch (err) {
+      setError(extractErrorMessage(err));
       return false;
     } finally {
       setIsLoading(false);
@@ -116,8 +127,8 @@ export const usePresentations = (): UsePresentationsReturn => {
       await container.presentations.delete(id);
       setPresentations(prev => prev.filter(p => p.id !== id));
       return true;
-    } catch (err: any) {
-      setError(err?.message || 'Error al eliminar presentación');
+    } catch (err) {
+      setError(extractErrorMessage(err));
       return false;
     } finally {
       setIsLoading(false);
@@ -135,6 +146,7 @@ export const usePresentations = (): UsePresentationsReturn => {
     updatePresentation,
     updatePresentationState,
     deletePresentation,
+    getPresentationName,
     clearError,
   };
 };

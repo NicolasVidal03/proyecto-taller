@@ -1,17 +1,15 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { User } from '../../domain/entities/User';
 import { CreateUserDTO, UpdateUserDTO } from '../../domain/ports/IUserRepository';
 import { container } from '../../infrastructure/config/container';
+import { AppError, extractErrorMessage } from './shared';
 
-
-export interface UserError {
-  message: string;
-  code?: string;
-  field?: string;
-}
+export type UserError = AppError;
 
 export interface UseUsersReturn {
   users: User[];
+  userMap: Map<number, User>;
+  
   isLoading: boolean;
   error: UserError | null;
   
@@ -23,34 +21,27 @@ export interface UseUsersReturn {
   resetUserPassword: (id: number) => Promise<boolean>;
   updateUserPassword: (id: number, newPassword: string) => Promise<boolean>;
   
+  getUserName: (id: number | null | undefined) => string;
   clearError: () => void;
 }
-
-
-function extractErrorMessage(err: unknown): string {
-  if (err instanceof Error) {
-    const axiosError = err as { response?: { data?: { message?: string; error?: string } } };
-    if (axiosError.response?.data?.message) {
-      return axiosError.response.data.message;
-    }
-    if (axiosError.response?.data?.error) {
-      return axiosError.response.data.error;
-    }
-    return err.message;
-  }
-  if (typeof err === 'string') return err;
-  return 'Error desconocido';
-}
-
 
 export const useUsers = (): UseUsersReturn => {
   const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<UserError | null>(null);
 
+  const userMap = useMemo(() => {
+    return new Map(users.map(u => [u.id, u]));
+  }, [users]);
+
+  const getUserName = useCallback((id: number | null | undefined): string => {
+    if (id == null) return 'Sin usuario';
+    const user = userMap.get(id);
+    return user ? `${user.names} ${user.lastName}` : 'Desconocido';
+  }, [userMap]);
+
   const clearError = useCallback(() => setError(null), []);
 
-  
   const fetchUsers = useCallback(async () => {
     setIsLoading(true);
     setError(null);
@@ -58,8 +49,7 @@ export const useUsers = (): UseUsersReturn => {
       const data = await container.users.getAll();
       setUsers(data);
     } catch (err) {
-      const message = extractErrorMessage(err);
-      setError({ message, code: 'FETCH_ERROR' });
+      setError({ message: extractErrorMessage(err), code: 'FETCH_ERROR' });
     } finally {
       setIsLoading(false);
     }
@@ -71,8 +61,7 @@ export const useUsers = (): UseUsersReturn => {
       const allUsers = await container.users.getAll();
       return allUsers.find(u => u.id === id) ?? null;
     } catch (err) {
-      const message = extractErrorMessage(err);
-      setError({ message, code: 'FETCH_BY_ID_ERROR' });
+      setError({ message: extractErrorMessage(err), code: 'FETCH_BY_ID_ERROR' });
       return null;
     }
   }, []);
@@ -85,8 +74,7 @@ export const useUsers = (): UseUsersReturn => {
       setUsers(prev => [...prev, newUser]);
       return newUser;
     } catch (err) {
-      const message = extractErrorMessage(err);
-      setError({ message, code: 'CREATE_ERROR' });
+      setError({ message: extractErrorMessage(err), code: 'CREATE_ERROR' });
       return null;
     } finally {
       setIsLoading(false);
@@ -101,15 +89,13 @@ export const useUsers = (): UseUsersReturn => {
       setUsers(prev => prev.map(u => (u.id === id ? updated : u)));
       return updated;
     } catch (err) {
-      const message = extractErrorMessage(err);
-      setError({ message, code: 'UPDATE_ERROR' });
+      setError({ message: extractErrorMessage(err), code: 'UPDATE_ERROR' });
       return null;
     } finally {
       setIsLoading(false);
     }
   }, []);
 
- 
   const updateUserState = useCallback(async (id: number, state: boolean, currentUserId: number): Promise<boolean> => {
     setIsLoading(true);
     setError(null);
@@ -118,8 +104,7 @@ export const useUsers = (): UseUsersReturn => {
       setUsers(prev => prev.filter(u => u.id !== id));
       return true;
     } catch (err) {
-      const message = extractErrorMessage(err);
-      setError({ message, code: 'UPDATE_STATE_ERROR' });
+      setError({ message: extractErrorMessage(err), code: 'UPDATE_STATE_ERROR' });
       return false;
     } finally {
       setIsLoading(false);
@@ -133,8 +118,7 @@ export const useUsers = (): UseUsersReturn => {
       await container.users.resetPassword(id);
       return true;
     } catch (err) {
-      const message = extractErrorMessage(err);
-      setError({ message, code: 'RESET_PASSWORD_ERROR' });
+      setError({ message: extractErrorMessage(err), code: 'RESET_PASSWORD_ERROR' });
       return false;
     } finally {
       setIsLoading(false);
@@ -148,8 +132,7 @@ export const useUsers = (): UseUsersReturn => {
       await container.users.updatePassword(id, newPassword);
       return true;
     } catch (err) {
-      const message = extractErrorMessage(err);
-      setError({ message, code: 'UPDATE_PASSWORD_ERROR' });
+      setError({ message: extractErrorMessage(err), code: 'UPDATE_PASSWORD_ERROR' });
       return false;
     } finally {
       setIsLoading(false);
@@ -158,6 +141,7 @@ export const useUsers = (): UseUsersReturn => {
 
   return {
     users,
+    userMap,
     isLoading,
     error,
     fetchUsers,
@@ -167,6 +151,7 @@ export const useUsers = (): UseUsersReturn => {
     updateUserState,
     resetUserPassword,
     updateUserPassword,
+    getUserName,
     clearError,
   };
 };

@@ -6,9 +6,6 @@ import {
   UpdateBranchDTO,
 } from '../../../domain/ports/IBranchRepository';
 
-/**
- * Implementación HTTP real del repositorio de sucursales
- */
 export class HttpBranchRepository implements IBranchRepository {
   private readonly basePath = '/branches';
 
@@ -34,7 +31,6 @@ export class HttpBranchRepository implements IBranchRepository {
 
   async updateState(id: number, state: boolean): Promise<Branch> {
     await http.patch(`${this.basePath}/${id}/state`, { state });
-    // El backend retorna 204; obtenemos el estado actualizado para mantener el contrato
     return this.getById(id);
   }
 }

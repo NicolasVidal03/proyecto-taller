@@ -3,9 +3,21 @@ import { User } from '../../../domain/entities/User';
 import { BranchMap, getBranchName } from '../../utils/branchHelpers';
 import { formatRole } from '../../utils/format';
 
+
+function canManageUser(actorRole: string, targetRole: string): boolean {
+  if (actorRole === 'propietario') {
+    return targetRole !== 'propietario'; 
+  }
+  if (actorRole === 'administrador') {
+    return targetRole === 'prevendedor' || targetRole === 'transportista';
+  }
+  return false;
+}
+
 type UsersTableProps = {
   users: User[];
   branchMap: BranchMap;
+  currentUserRole: string; 
   onEdit: (user: User) => void;
   onDeactivate: (user: User) => void;
   onResetPassword?: (user: User) => void;
@@ -16,6 +28,7 @@ type UsersTableProps = {
 const UsersTable: React.FC<UsersTableProps> = ({ 
   users, 
   branchMap,
+  currentUserRole,
   onEdit, 
   onDeactivate, 
   onResetPassword, 
@@ -47,6 +60,8 @@ const UsersTable: React.FC<UsersTableProps> = ({
               </td>
             </tr>
           ) : users.map(user => {
+            const canManage = canManageUser(currentUserRole, user.role);
+            
             return (
               <tr key={user.id} className="transition-colors hover:bg-white">
                 <td className="px-4 py-3 font-medium text-brand-900">{user.userName}</td>
@@ -54,7 +69,17 @@ const UsersTable: React.FC<UsersTableProps> = ({
                   <span >{user.lastName}{user.secondLastName ? ` ${user.secondLastName}` : ''},</span>
                   <span className="ml-1"> {user.names}</span>
                 </td>
-                <td className="px-4 py-3 capitalize text-lead-600">{formatRole(user.role)}</td>
+                <td className="px-4 py-3 capitalize text-lead-600">
+                  <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                    user.role === 'propietario' 
+                      ? 'bg-purple-100 text-purple-800' 
+                      : user.role === 'administrador'
+                        ? 'bg-blue-100 text-blue-800'
+                        : 'bg-gray-100 text-gray-800'
+                  }`}>
+                    {formatRole(user.role)}
+                  </span>
+                </td>
                 <td className="px-4 py-3 text-lead-600">
                   <span className="inline-flex items-center rounded-full bg-brand-50 px-2.5 py-0.5 text-xs font-medium text-brand-700">
                     {getBranchName(branchMap, user.branchId)}
@@ -63,33 +88,38 @@ const UsersTable: React.FC<UsersTableProps> = ({
                 <td className="px-4 py-3 text-lead-600">{user.ci ?? '—'}</td>
                 <td className="px-4 py-3 text-center align-middle">
                   <div className="flex items-center justify-center gap-2">
-                    
-                    <button
-                      type="button"
-                      onClick={() => onEdit(user)}
-                      className="rounded bg-brand-100 px-3 py-1.5 font-medium text-brand-700 transition hover:bg-brand-200 disabled:opacity-50"
-                      disabled={isBusy(user.id) }
-                    >
-                      Editar
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => onDeactivate(user)}
-                      className="rounded bg-accent-100 px-3 py-1.5 font-medium text-accent-700 transition hover:bg-accent-200 disabled:opacity-50"
-                      disabled={isBusy(user.id)}
-                    >
-                      Eliminar
-                    </button>
-                    {showResetButton && onResetPassword ? (
-                      <button
-                        type="button"
-                        onClick={() => onResetPassword(user)}
-                        className="rounded bg-lead-200 px-3 py-1.5 font-medium text-lead-800 transition hover:bg-lead-300 disabled:opacity-50"
-                        disabled={isBusy(user.id)}
-                      >
-                        Resetear
-                      </button>
-                    ) : null}
+                    {canManage ? (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => onEdit(user)}
+                          className="rounded bg-brand-100 px-3 py-1.5 font-medium text-brand-700 transition hover:bg-brand-200 disabled:opacity-50"
+                          disabled={isBusy(user.id)}
+                        >
+                          Editar
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => onDeactivate(user)}
+                          className="rounded bg-accent-100 px-3 py-1.5 font-medium text-accent-700 transition hover:bg-accent-200 disabled:opacity-50"
+                          disabled={isBusy(user.id)}
+                        >
+                          Eliminar
+                        </button>
+                        {showResetButton && onResetPassword ? (
+                          <button
+                            type="button"
+                            onClick={() => onResetPassword(user)}
+                            className="rounded bg-lead-200 px-3 py-1.5 font-medium text-lead-800 transition hover:bg-lead-300 disabled:opacity-50"
+                            disabled={isBusy(user.id)}
+                          >
+                            Resetear
+                          </button>
+                        ) : null}
+                      </>
+                    ) : (
+                      <span className="text-xs text-lead-400 italic">Sin permisos</span>
+                    )}
                   </div>
                 </td>
               </tr>

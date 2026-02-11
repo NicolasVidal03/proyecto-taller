@@ -1,6 +1,8 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useMemo } from 'react';
 import { Supplier } from '../../domain/entities/Supplier';
 import { CreateSupplierDTO, UpdateSupplierDTO } from '../../domain/ports/ISupplierRepository';
+import { container } from '../../infrastructure/config/container';
+import { extractErrorMessage } from './shared';
 
 export type SupplierFilters = Partial<{
   name: string;
@@ -9,23 +11,30 @@ export type SupplierFilters = Partial<{
   state: boolean;
   q: string;
 }>;
-import { container } from '../../infrastructure/config/container';
 
 export interface UseSuppliersReturn {
   suppliers: Supplier[];
+  supplierMap: Map<number, Supplier>;
   isLoading: boolean;
   error: string | null;
   page: number;
   total: number;
   totalPages: number;
+  
+  // Paginación y filtros
   goToPage: (page: number) => Promise<void>;
   applyFilters: (filters?: SupplierFilters) => Promise<void>;
   refreshCurrentPage: () => Promise<void>;
+  
+  // CRUD
   fetchSupplierById: (id: number) => Promise<Supplier | null>;
   createSupplier: (data: CreateSupplierDTO, userId?: number) => Promise<Supplier | null>;
   updateSupplier: (id: number, data: UpdateSupplierDTO, userId?: number) => Promise<Supplier | null>;
   updateSupplierState: (id: number, state: boolean, userId?: number) => Promise<boolean>;
-  deleteSupplier: (id: number) => Promise<boolean>;
+  deleteSupplier: (id: number, userId?: number) => Promise<boolean>;
+  
+  // Utilidades
+  getSupplierName: (id: number | null | undefined) => string;
   clearError: () => void;
   clearCache: () => void;
 }
@@ -47,8 +56,21 @@ export const useSuppliers = (): UseSuppliersReturn => {
   const cacheRef = useRef<Map<string, { data: Supplier[]; total: number; totalPages: number }>>(new Map());
   const currentFiltersRef = useRef<SupplierFilters>({});
 
+  // Mapa de proveedores para búsqueda rápida
+  const supplierMap = useMemo(() => {
+    return new Map(suppliers.map(s => [s.id, s]));
+  }, [suppliers]);
+
+  const getSupplierName = useCallback((id: number | null | undefined): string => {
+    if (id == null) return 'Sin proveedor';
+    return supplierMap.get(id)?.name ?? 'Desconocido';
+  }, [supplierMap]);
+
+  // ========== Paginación ==========
+
   const fetchPage = useCallback(async (pageNum: number, filters: SupplierFilters, forceRefresh = false) => {
     const cacheKey = getCacheKey(filters, pageNum);
+    
     if (!forceRefresh && cacheRef.current.has(cacheKey)) {
       const cached = cacheRef.current.get(cacheKey)!;
       setSuppliers(cached.data);
@@ -62,7 +84,8 @@ export const useSuppliers = (): UseSuppliersReturn => {
     setError(null);
 
     try {
-      const raw: any = await (container.suppliers as any).getAll(filters, pageNum, LIMIT);
+      const raw: unknown = await (container.suppliers as { getAll: (filters: SupplierFilters, page: number, limit: number) => Promise<unknown> }).getAll(filters, pageNum, LIMIT);
+      
       let data: Supplier[] = [];
       let totalRes = 0;
       let totalPagesRes = 0;
@@ -71,29 +94,20 @@ export const useSuppliers = (): UseSuppliersReturn => {
         data = raw as Supplier[];
         totalRes = data.length;
         totalPagesRes = Math.max(1, Math.ceil(totalRes / LIMIT));
-      } else if (raw && Array.isArray(raw.data)) {
-        data = raw.data as Supplier[];
-        totalRes = typeof raw.total === 'number' ? raw.total : data.length;
-        totalPagesRes = typeof raw.totalPages === 'number' ? raw.totalPages : Math.max(1, Math.ceil(totalRes / LIMIT));
-      } else {
-        data = raw ? (Array.isArray(raw) ? raw : []) : [];
-        totalRes = data.length;
-        totalPagesRes = Math.max(1, Math.ceil(totalRes / LIMIT));
+      } else if (raw && typeof raw === 'object' && 'data' in raw) {
+        const result = raw as { data: Supplier[]; total?: number; totalPages?: number };
+        data = result.data;
+        totalRes = result.total ?? data.length;
+        totalPagesRes = result.totalPages ?? Math.max(1, Math.ceil(totalRes / LIMIT));
       }
 
-      cacheRef.current.set(cacheKey, {
-        data,
-        total: totalRes,
-        totalPages: totalPagesRes,
-      });
-
+      cacheRef.current.set(cacheKey, { data, total: totalRes, totalPages: totalPagesRes });
       setSuppliers(data);
       setPage(pageNum);
       setTotal(totalRes);
       setTotalPages(totalPagesRes);
-    } catch (err: any) {
-      console.error('useSuppliers.fetchPage error', err);
-      setError(err?.message || 'Error al cargar proveedores');
+    } catch (err) {
+      setError(extractErrorMessage(err));
     } finally {
       setIsLoading(false);
     }
@@ -118,12 +132,14 @@ export const useSuppliers = (): UseSuppliersReturn => {
     cacheRef.current.clear();
   }, []);
 
+  // ========== CRUD ==========
+
   const fetchSupplierById = useCallback(async (id: number): Promise<Supplier | null> => {
     setError(null);
     try {
       return await container.suppliers.getById(id);
-    } catch (err: any) {
-      setError(err?.message || 'Error al cargar proveedor');
+    } catch (err) {
+      setError(extractErrorMessage(err));
       return null;
     }
   }, []);
@@ -133,30 +149,16 @@ export const useSuppliers = (): UseSuppliersReturn => {
     setError(null);
     try {
       const newSupplier = await container.suppliers.create({ ...data, userId });
-      const pageKey = getCacheKey(currentFiltersRef.current, 1);
-      const cached = cacheRef.current.get(pageKey);
-      if (cached) {
-        cached.data = [newSupplier, ...cached.data];
-        cached.total = (cached.total || 0) + 1;
-        cached.totalPages = Math.max(1, Math.ceil(cached.total / LIMIT));
-        cacheRef.current.set(pageKey, cached);
-      } else {
-        cacheRef.current.set(pageKey, { data: [newSupplier], total: 1, totalPages: 1 });
-      }
-      setSuppliers(prev => [newSupplier, ...prev]);
-      setPage(1);
-      const newTotal = (total || 0) + 1;
-      setTotal(newTotal);
-      setTotalPages(Math.max(1, Math.ceil(newTotal / LIMIT)));
-      fetchPage(1, currentFiltersRef.current, true).catch(e => console.error('refresh after createSupplier failed', e));
+      clearCache();
+      await fetchPage(1, currentFiltersRef.current, true);
       return newSupplier;
-    } catch (err: any) {
-      setError(err?.message || 'Error al crear proveedor');
+    } catch (err) {
+      setError(extractErrorMessage(err));
       return null;
     } finally {
       setIsLoading(false);
     }
-  }, [fetchPage]);
+  }, [fetchPage, clearCache]);
 
   const updateSupplier = useCallback(async (id: number, data: UpdateSupplierDTO, userId?: number): Promise<Supplier | null> => {
     setIsLoading(true);
@@ -164,14 +166,17 @@ export const useSuppliers = (): UseSuppliersReturn => {
     try {
       const updated = await container.suppliers.update(id, { ...data, userId });
       setSuppliers(prev => prev.map(s => (s.id === id ? updated : s)));
+      
+      // Actualizar caché
       const cacheKey = getCacheKey(currentFiltersRef.current, page);
       const cached = cacheRef.current.get(cacheKey);
       if (cached) {
         cached.data = cached.data.map(s => (s.id === id ? updated : s));
       }
+      
       return updated;
-    } catch (err: any) {
-      setError(err?.message || 'Error al actualizar proveedor');
+    } catch (err) {
+      setError(extractErrorMessage(err));
       return null;
     } finally {
       setIsLoading(false);
@@ -182,33 +187,33 @@ export const useSuppliers = (): UseSuppliersReturn => {
     setIsLoading(true);
     setError(null);
     try {
-      await container.suppliers.updateState(id, state);
-      cacheRef.current.clear();
+      await container.suppliers.updateState(id, state, userId);
+      clearCache();
       await fetchPage(page, currentFiltersRef.current, true);
       return true;
-    } catch (err: any) {
-      setError(err?.message || 'Error al actualizar estado');
+    } catch (err) {
+      setError(extractErrorMessage(err));
       return false;
     } finally {
       setIsLoading(false);
     }
-  }, [fetchPage, page]);
+  }, [fetchPage, page, clearCache]);
 
-  const deleteSupplier = useCallback(async (id: number): Promise<boolean> => {
+  const deleteSupplier = useCallback(async (id: number, userId?: number): Promise<boolean> => {
     setIsLoading(true);
     setError(null);
     try {
-      await container.suppliers.delete(id);
-      cacheRef.current.clear();
+      await container.suppliers.delete(id, userId);
+      clearCache();
       await fetchPage(page, currentFiltersRef.current, true);
       return true;
-    } catch (err: any) {
-      setError(err?.message || 'Error al eliminar proveedor');
+    } catch (err) {
+      setError(extractErrorMessage(err));
       return false;
     } finally {
       setIsLoading(false);
     }
-  }, [fetchPage, page]);
+  }, [fetchPage, page, clearCache]);
 
   const clearError = useCallback(() => {
     setError(null);
@@ -216,6 +221,7 @@ export const useSuppliers = (): UseSuppliersReturn => {
 
   return {
     suppliers,
+    supplierMap,
     isLoading,
     error,
     page,
@@ -229,6 +235,7 @@ export const useSuppliers = (): UseSuppliersReturn => {
     updateSupplier,
     updateSupplierState,
     deleteSupplier,
+    getSupplierName,
     clearError,
     clearCache,
   };

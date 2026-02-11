@@ -1,24 +1,28 @@
 import { Client } from '../entities/Client';
 
 export interface CreateClientDTO {
-  fullName: string;
-  nitCi: string;
-  businessName: string;
+  name: string;
+  lastName: string;
+  secondLastName: string;
   phone: string;
-  businessType: string;
-  clientType: string;
-  position: { lat: number; lng: number };
-  areaId?: number | null;
-  address?: string;
-  imageFile?: File;
+  ci?: string | null;
+  ciExt?: string | null;
 }
 
-export interface UpdateClientAreaDTO {
-  areaId: number;
-}
 
-export interface UpdateClientDTO extends Partial<CreateClientDTO> {
+export interface UpdateClientDTO {
   id: number;
+  name?: string;
+  lastName?: string;
+  secondLastName?: string;
+  phone?: string;
+  ci?: string | null;
+  ciExt?: string | null;
+}
+
+export interface ClientSearchParams {
+  search?: string;
+  limit?: number;
 }
 
 export interface IClientRepository {
@@ -26,6 +30,6 @@ export interface IClientRepository {
   getById(id: number): Promise<Client>;
   create(data: CreateClientDTO): Promise<Client>;
   update(id: number, data: UpdateClientDTO): Promise<Client>;
-  updateArea(id: number, data: UpdateClientAreaDTO): Promise<Client>;
   softDelete(id: number): Promise<void>;
+  search(params: ClientSearchParams): Promise<Client[]>;
 }

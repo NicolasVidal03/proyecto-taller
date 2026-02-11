@@ -3,9 +3,6 @@ import { IProductBranchRepository, UpdateStockDTO, UpdateStockResponse } from '.
 import { http } from '../httpClient';
 
 export class HttpProductBranchRepository implements IProductBranchRepository {
-  /**
-   * @deprecated Usar getByBranchPaginated para grandes volúmenes
-   */
   async getByBranch(branchId: number): Promise<ProductBranch[]> {
     const response = await http.get<PaginatedBranchProducts>(`/branches/${branchId}/products?limit=100`);
     return response.data.data.map(item => ({
@@ -15,7 +12,7 @@ export class HttpProductBranchRepository implements IProductBranchRepository {
       stockQty: item.branch.stockQty,
       productName: item.name,
       productBarcode: item.barcode,
-      productSalePrice: item.salePrice,
+      productPrices: item.prices,
     }));
   }
 

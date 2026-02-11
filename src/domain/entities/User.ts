@@ -1,6 +1,3 @@
-/**
- * User Entity - Domain Layer (Frontend)
- */
 export interface User {
   id: number;
   userName: string;
@@ -10,4 +7,6 @@ export interface User {
   secondLastName: string;
   role: string;
   branchId: number | null;
+  email: string | null;
+  isFirstLogin: boolean;
 }

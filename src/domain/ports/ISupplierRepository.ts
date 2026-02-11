@@ -26,5 +26,5 @@ export interface ISupplierRepository {
   create(data: CreateSupplierDTO): Promise<Supplier>;
   update(id: number, data: UpdateSupplierDTO): Promise<Supplier>;
   updateState(id: number, state: boolean, userId?: number): Promise<void>;
-  delete(id: number): Promise<void>;
+  delete(id: number, userId?: number): Promise<void>;
 }

@@ -1,41 +1,31 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useClients } from '../hooks/useClients';
-import { useAreasSimple } from '../hooks/useAreas';
 import ClientTable from '../components/clients/ClientTable';
-import ClientDetailsModal from '../components/clients/ClientDetailsModal';
 import ConfirmDialog from '../components/shared/ConfirmDialog';
 import Loader from '../components/shared/Loader';
 import { ToastContainer, useToast } from '../components/shared/Toast';
 import { Client } from '../../domain/entities/Client';
-
-type ClientTypeFilter = 'all' | 'Mayorista' | 'Minorista' | 'Regular' | 'Otros';
-
-const CLIENT_TYPE_FILTERS: Array<{ value: ClientTypeFilter; label: string }> = [
-  { value: 'all', label: 'Todos' },
-  { value: 'Mayorista', label: 'Mayorista' },
-  { value: 'Minorista', label: 'Minorista' },
-  { value: 'Regular', label: 'Regular' },
-  { value: 'Otros', label: 'Otros' },
-];
+import ClientFormModal from '../components/clients/ClientFormModal';
+import { CreateClientDTO, UpdateClientDTO } from '../../domain/ports/IClientRepository';
 
 export const ClientsPage: React.FC = () => {
-  const navigate = useNavigate();
-  const { clients, isLoading, error, total, currentPage, fetchClients, updateClientArea, deleteClient, clearError } = useClients();
-  const { areas, areaMap, isLoading: areasLoading, refreshAreas } = useAreasSimple();
+  const { clients, isLoading, error, fetchClients, deleteClient, createClient, updateClient, clearError } = useClients();
   const toast = useToast();
 
   const [page, setPage] = useState(1);
   const pageSize = 10;
   const [search, setSearch] = useState('');
-  const [clientTypeFilter, setClientTypeFilter] = useState<ClientTypeFilter>('all');
+  
+  // Modal state
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
   const [clientToDelete, setClientToDelete] = useState<Client | null>(null);
 
   useEffect(() => {
     fetchClients();
-    refreshAreas();
-  }, [fetchClients, refreshAreas]);
+  }, [fetchClients]);
 
   useEffect(() => {
     if (error) {
@@ -44,21 +34,39 @@ export const ClientsPage: React.FC = () => {
     }
   }, [error, toast, clearError]);
 
-  const handleUpdateArea = async (clientId: number, areaId: number) => {
-    const success = await updateClientArea(clientId, areaId);
-    if (success) {
-      toast.success('Área asignada correctamente');
-    } else {
-      toast.error('No se pudo asignar el área');
-    }
-  };
-
-  const handleViewDetails = (client: Client) => {
-    setSelectedClient(client);
+  const handleCreate = () => {
+    setSelectedClient(null);
+    setIsModalOpen(true);
   };
 
   const handleEdit = (client: Client) => {
-    navigate(`/clients/edit/${client.id}`, { state: { client } });
+    setSelectedClient(client);
+    setIsModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setSelectedClient(null);
+  };
+
+  const handleModalSubmit = async (values: CreateClientDTO | UpdateClientDTO) => {
+    setIsSubmitting(true);
+    let result;
+
+    if (selectedClient) {
+      result = await updateClient(selectedClient.id, values as UpdateClientDTO);
+      if (result) {
+        toast.success('Cliente actualizado exitosamente');
+        closeModal();
+      }
+    } else {
+      result = await createClient(values as CreateClientDTO);
+      if (result) {
+        toast.success('Cliente creado exitosamente');
+        closeModal();
+      }
+    }
+    setIsSubmitting(false);
   };
 
   const handleDelete = (client: Client) => {
@@ -70,9 +78,9 @@ export const ClientsPage: React.FC = () => {
     
     const success = await deleteClient(clientToDelete.id);
     if (success) {
-      toast.success(`Cliente ${clientToDelete.status ? 'desactivado' : 'activado'} correctamente`);
+      toast.success('Cliente eliminado correctamente');
     } else {
-      toast.error('No se pudo cambiar el estado del cliente');
+      toast.error('No se pudo eliminar el cliente');
     }
     setClientToDelete(null);
   };
@@ -80,27 +88,28 @@ export const ClientsPage: React.FC = () => {
   const filteredClients = useMemo(() => {
     const term = search.trim().toLowerCase();
     const filtered = clients.filter(client => {
+      const fullName = `${client.lastName || ''} ${client.secondLastName || ''} ${client.name}`.trim().toLowerCase();
       const matchesSearch =
         term.length === 0 ||
-        client.fullName.toLowerCase().includes(term) ||
-        client.businessName.toLowerCase().includes(term) ||
-        client.nitCi.includes(term);
+        fullName.includes(term) ||
+        (client.ci || '').includes(term);
 
-      const matchesType = clientTypeFilter === 'all' || client.clientType === clientTypeFilter;
-
-      return matchesSearch && matchesType;
+      return matchesSearch;
     });
 
-    // Ordenar alfabéticamente por nombre completo
-    return filtered.sort((a, b) => (a.fullName || '').localeCompare(b.fullName || ''));
-  }, [clients, search, clientTypeFilter]);
+    return filtered.sort((a, b) => {
+      const an = `${a.lastName || ''} ${a.secondLastName || ''} ${a.name}`.trim();
+      const bn = `${b.lastName || ''} ${b.secondLastName || ''} ${b.name}`.trim();
+      return an.localeCompare(bn);
+    });
+  }, [clients, search]);
 
   const totalPages = Math.ceil(filteredClients.length / pageSize);
   const paginatedClients = filteredClients.slice((page - 1) * pageSize, page * pageSize);
 
   useEffect(() => {
     setPage(1);
-  }, [search, clientTypeFilter]);
+  }, [search]);
 
   return (
     <>
@@ -114,7 +123,7 @@ export const ClientsPage: React.FC = () => {
             />
             <div className="grid gap-10 px-8 py-10 md:px-12 lg:grid-cols-[2fr,1.2fr]">
               <div className="space-y-6">
-                <p className="text-xs uppercase tracking-[0.45em] text-white/70">Gestión de Clientes</p>
+                <p className="text-xs uppercase tracking-[0.45em] text-white/70">Gestion de Clientes</p>
                 <h2 className="text-3xl font-semibold leading-tight md:text-4xl">
                   Administra tu cartera de clientes
                 </h2>
@@ -122,27 +131,12 @@ export const ClientsPage: React.FC = () => {
                   <div className="flex flex-col gap-3 md:flex-row md:items-center">
                     <input
                       className="input-plain flex-1"
-                      placeholder="Buscar por nombre, razón social o NIT..."
+                      placeholder="Buscar por nombre o CI..."
                       value={search}
                       onChange={e => setSearch(e.target.value)}
                     />
                   </div>
-                  <div className="flex flex-wrap gap-3">
-                    {CLIENT_TYPE_FILTERS.map(option => (
-                      <button
-                        key={option.value}
-                        type="button"
-                        onClick={() => setClientTypeFilter(option.value)}
-                        className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
-                          clientTypeFilter === option.value
-                            ? 'bg-lead-50 text-brand-700 shadow-lg'
-                            : 'bg-white/10 text-white/70 hover:bg-white/20'
-                        }`}
-                      >
-                        {option.label}
-                      </button>
-                    ))}
-                  </div>
+                  {/* Filtro por tipo eliminado: ahora vive en negocio */}
                 </div>
               </div>
             </div>
@@ -153,13 +147,13 @@ export const ClientsPage: React.FC = () => {
               <div>
                 <h3 className="text-xl font-bold text-brand-900">Listado de clientes</h3>
                 <p className="text-sm text-lead-500">
-                  {filteredClients.length} cliente(s) encontrado(s). Página {page} de {totalPages || 1}
+                  {filteredClients.length} cliente(s) encontrado(s). Pagina {page} de {totalPages || 1}
                 </p>
               </div>
               <button
                 type="button"
                 className="btn-primary bg-accent-500 hover:bg-accent-600 border-transparent text-white shadow-md flex items-center gap-2"
-                onClick={() => navigate('/clients/new')}
+                onClick={handleCreate}
               >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                   <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
@@ -168,16 +162,12 @@ export const ClientsPage: React.FC = () => {
               </button>
             </div>
 
-            {isLoading || areasLoading ? (
+            {isLoading ? (
               <Loader />
             ) : (
               <>
                 <ClientTable
                   clients={paginatedClients}
-                  areaMap={areaMap}
-                  areas={areas}
-                  onUpdateArea={handleUpdateArea}
-                  onViewDetails={handleViewDetails}
                   onEdit={handleEdit}
                   onDelete={handleDelete}
                 />
@@ -192,7 +182,7 @@ export const ClientsPage: React.FC = () => {
                       Anterior
                     </button>
                     <span className="text-sm text-lead-600">
-                      Página {page} de {totalPages}
+                      Pagina {page} de {totalPages}
                     </span>
                     <button
                       onClick={() => setPage(p => Math.min(totalPages, p + 1))}
@@ -209,18 +199,21 @@ export const ClientsPage: React.FC = () => {
         </div>
       </div>
 
-      <ClientDetailsModal
-        client={selectedClient}
-        areaMap={areaMap}
-        onClose={() => setSelectedClient(null)}
+      <ClientFormModal
+        open={isModalOpen}
+        mode={selectedClient ? 'edit' : 'create'}
+        initialClient={selectedClient}
+        submitting={isSubmitting}
+        onClose={closeModal}
+        onSubmit={handleModalSubmit}
       />
 
       {clientToDelete && (
         <ConfirmDialog
           open={!!clientToDelete}
-          title={clientToDelete.status ? "Desactivar cliente" : "Activar cliente"}
-          description={`¿Está seguro de que desea ${clientToDelete.status ? 'desactivar' : 'activar'} al cliente "${clientToDelete.fullName}"?`}
-          confirmLabel={clientToDelete.status ? "Desactivar" : "Activar"}
+          title="Eliminar cliente"
+          description={`Esta seguro de que desea eliminar al cliente "${`${clientToDelete.lastName || ''} ${clientToDelete.secondLastName || ''} ${clientToDelete.name}`.trim()}"?`}
+          confirmLabel="Eliminar"
           onConfirm={confirmDelete}
           onCancel={() => setClientToDelete(null)}
         />

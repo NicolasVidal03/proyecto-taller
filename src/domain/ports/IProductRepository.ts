@@ -1,4 +1,4 @@
-import { Product, SalePrice } from '../entities/Product';
+import { Product, ProductPrice } from '../entities/Product';
 
 export interface CreateProductDTO {
   name: string;
@@ -10,7 +10,7 @@ export interface CreateProductDTO {
   presentationId?: number | null;
   colorId?: number | null;
   imageFile?: File;
-  salePrice: SalePrice;
+  prices: ProductPrice[];
 }
 
 export interface UpdateProductDTO {
@@ -22,7 +22,7 @@ export interface UpdateProductDTO {
   presentationId?: number | null;
   colorId?: number | null;
   imageFile?: File;
-  salePrice?: SalePrice;
+  prices?: ProductPrice[];
   user_id?: number;
 }
 
@@ -30,7 +30,7 @@ export interface ProductFilters {
   categoryId?: number;
   brandId?: number;
   state?: boolean;
-  search?: string;  // Búsqueda por nombre, barcode o código interno
+  search?: string;
   page?: number;
   limit?: number;
 }
