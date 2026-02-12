@@ -6,7 +6,6 @@ Frontend React + Vite + TypeScript + Tailwind para consumir el backend.
 - Node 18+
 
 ## Variables de entorno
-Crea `.env` (opcional) basado en `.env.example`:
 ```
 VITE_API_BASE_URL=http://localhost:3000
 ```
