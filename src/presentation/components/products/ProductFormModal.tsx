@@ -56,9 +56,9 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
   const [valuesPrices, setValuesPrices] = useState<Record<string, string>>({});
 
   const priceTypes = [
+    { value: "regular", label: "Precio Regular" },
     { value: "minorista", label: "Precio Minorista" },
     { value: "mayorista", label: "Precio Mayorista" },
-    { value: "regular", label: "Precio Regular" },
     { value: "institucional", label: "Precio Institucional" },
   ];
   const priceTypeIdMap: Record<string, number> = {
