@@ -4,6 +4,7 @@ import { Category } from '../../../domain/entities/Category';
 import { Brand } from '../../../domain/entities/Brand';
 import { Presentation } from '../../../domain/entities/Presentation';
 import { Color } from '../../../domain/entities/Color';
+import { Trash2 } from 'lucide-react';
 
 export interface ProductFormValues {
   name: string;
@@ -70,7 +71,6 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
 
   useEffect(() => {
     if (open) {
-      console.log(initialData)
       if (mode === 'edit' && initialData) {
         setName(initialData.name || '');
         setBarcode(initialData.barcode || '');
@@ -195,20 +195,25 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
     e.target.value = ""; // resetear select
   };
 
-  const handlePriceTypeChange = 
+  const handlePriceChange = 
     (type: string) => 
     (e: React.ChangeEvent<HTMLInputElement>) => {
     setValuesPrices({
       ...valuesPrices,
-      [type]: e.target.value,
+      [type]: formatInputTwoDecimals(e.target.value),
     });
-    console.log(valuesPrices)
   };
 
-
-  const handlePriceChange = (setter: (v: string) => void) => (e: React.ChangeEvent<HTMLInputElement>) => {
-    const formatted = formatInputTwoDecimals(e.target.value);
-    setter(formatted);
+  const handleDeletePrice = 
+    (type: string) => {
+      console.log(type)
+      setSelectedPrices(prev => prev.filter(t => t !== type));
+      setValuesPrices(prev => {
+        const updated = { ...prev };
+        delete updated[type];
+        return updated;
+      });
+      
   };
 
   const availablePriceOptions = priceTypes.filter(
@@ -394,30 +399,40 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
               </select>
             </div>
 
-            {/* Inputs dinámicos */}
             {selectedPrices.map((type) => {
               const label = priceTypes.find(t => t.value === type)?.label;
 
               return (
-                <div key={type}>
+                <div key={type} className='mt-2'>
                   <label className="block text-xs text-lead-500">
-                    {label} (Bs.)
-                  </label>
-                  <input
-                    type="text"
-                    inputMode="decimal"
-                    value={valuesPrices[type] || ""}
-                    onChange={handlePriceTypeChange(type)}
-                    className="mt-1 block w-full rounded-lg border border-lead-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500"
-                    placeholder="0.00"
-                    pattern="^\d*(\.\d{0,2})?$"
-                    min={0}
-                    disabled={submitting}
-                  />
+                      {label} (Bs.)
+                    </label>
+                  <div className='flex gap-5'>
+                    <input
+                      type="text"
+                      inputMode="decimal"
+                      value={valuesPrices[type] || ""}
+                      onChange={handlePriceChange(type)}
+                      className="mt-1 block w-1/2 rounded-lg border border-lead-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500"
+                      placeholder="0.00"
+                      pattern="^\d*(\.\d{0,2})?$"
+                      min={0}
+                      disabled={submitting}
+                    />
+                    <button 
+                      type='button'
+                      className=" rounded-lg px-3 hover:bg-red-100 text-red-600"
+                      onClick={() => handleDeletePrice(type)}
+                      disabled={submitting}
+                      >
+                      <Trash2 size={18} />
+                    </button>
+                  </div>
                 </div>
               );
             })}
             {errors.prices && <p className="mt-1 text-sm text-red-600">{errors.prices}</p>}
+
           </div>
 
           <div>
