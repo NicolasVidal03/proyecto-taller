@@ -35,9 +35,10 @@ const ProductsTable: React.FC<ProductsTableProps> = ({
             <th className="px-4 py-4 text-left font-semibold">Nombre</th>
             <th className="px-4 py-4 text-left font-semibold">Categoría</th>
             <th className="px-4 py-4 text-left font-semibold">Marca</th>
-            <th className="px-4 py-4 text-left font-semibold">Mayorista</th>
-            <th className="px-4 py-4 text-left font-semibold">Minorista</th>
             <th className="px-4 py-4 text-left font-semibold">Regular</th>
+            <th className="px-4 py-4 text-left font-semibold">Minorista</th>
+            <th className="px-4 py-4 text-left font-semibold">Mayorista</th>
+            <th className="px-4 py-4 text-left font-semibold">Institucional</th>
             <th className="w-40 px-4 py-4 text-center align-middle font-semibold">Acciones</th>
           </tr>
         </thead>
@@ -69,13 +70,16 @@ const ProductsTable: React.FC<ProductsTableProps> = ({
                 {product.brandName || brandMap.get(product.brandId) || '—'}
               </td>
               <td className="px-4 py-3 text-lead-600 text-xs">
-                {product.prices?.find(p => p.priceTypeId === 3)?.price ? Number(product.prices.find(p => p.priceTypeId === 3)?.price).toFixed(2) : '—'}
+                {product.prices?.find(p => p.priceTypeId === 1)?.price ? Number(product.prices.find(p => p.priceTypeId === 1)?.price).toFixed(2) : '—'}
               </td>
               <td className="px-4 py-3 text-lead-600 text-xs">
                 {product.prices?.find(p => p.priceTypeId === 2)?.price ? Number(product.prices.find(p => p.priceTypeId === 2)?.price).toFixed(2) : '—'}
               </td>
               <td className="px-4 py-3 text-lead-600 text-xs">
-                {product.prices?.find(p => p.priceTypeId === 1)?.price ? Number(product.prices.find(p => p.priceTypeId === 1)?.price).toFixed(2) : '—'}
+                {product.prices?.find(p => p.priceTypeId === 3)?.price ? Number(product.prices.find(p => p.priceTypeId === 3)?.price).toFixed(2) : '—'}
+              </td>
+              <td className="px-4 py-3 text-lead-600 text-xs">
+                {product.prices?.find(p => p.priceTypeId === 4)?.price ? Number(product.prices.find(p => p.priceTypeId === 4)?.price).toFixed(2) : '—'}
               </td>
               {/* Estado removed: do not display product.state column */}
               <td className="px-4 py-3 text-center align-middle">
