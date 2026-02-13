@@ -49,9 +49,6 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
   const [colorId, setColorId] = useState<number>(0);
   const [categoryId, setCategoryId] = useState<number>(0);
   const [brandId, setBrandId] = useState<number>(0);
-  const [priceMayorista, setPriceMayorista] = useState('');
-  const [priceMinorista, setPriceMinorista] = useState('');
-  const [priceRegular, setPriceRegular] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null); 
@@ -70,13 +67,6 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
     mayorista: 3,
     institucional: 4,
   };
-  type TipoPrecio =
-    | "regular"
-    | "minorista"
-    | "mayorista"
-    | "institucional";
-
-
 
   useEffect(() => {
     if (open) {
@@ -90,10 +80,10 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
         setCategoryId(initialData.categoryId || 0);
         setBrandId(initialData.brandId || 0);
         if (initialData.prices && initialData.prices.length > 0) {
-          const selected: TipoPrecio[] = [];
-          const values = {} as Record<TipoPrecio, string>;
+          const selected: string[] = [];
+          const values = {} as Record<string, string>;
           initialData.prices.forEach((p) => {
-            const typeKey = p.priceTypeName as TipoPrecio;
+            const typeKey = p.priceTypeName as string;
             selected.push(typeKey);
             values[typeKey] = String(p.price);
           });
@@ -112,7 +102,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
         setCategoryId(categories.length > 0 ? categories[0].id : 0);
         setBrandId(brands.length > 0 ? brands[0].id : 0);
         setSelectedPrices([]);
-        setValuesPrices({} as Record<TipoPrecio, string>);
+        setValuesPrices({} as Record<string, string>);
         setImageFile(null);
         setPreviewUrl(null);
       }
