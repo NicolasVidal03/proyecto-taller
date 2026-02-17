@@ -63,8 +63,8 @@ function createFormData(data: any): FormData {
   if (data.categoryId !== undefined) formData.append('categoryId', String(data.categoryId));
   if (data.brandId !== undefined) formData.append('brandId', String(data.brandId));
   if (data.userId !== undefined) formData.append('userId', String(data.userId));
-  if (data.barcode !== undefined) formData.append('barcode', data.barcode === null ? '' : data.barcode);
-  if (data.internalCode !== undefined) formData.append('internalCode', data.internalCode === null ? '' : data.internalCode);
+  if (data.barcode !== undefined && data.barcode !== null) formData.append('barcode', data.barcode);
+  if (data.internalCode !== undefined && data.internalCode !== null) formData.append('internalCode', data.internalCode);
   if (data.presentationId !== undefined) formData.append('presentationId', data.presentationId === null ? '' : String(data.presentationId));
   if (data.colorId !== undefined) formData.append('colorId', data.colorId === null ? '' : String(data.colorId));
   if (data.prices) formData.append('prices', JSON.stringify(data.prices));

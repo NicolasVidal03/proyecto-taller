@@ -4,6 +4,7 @@ import { Category } from '../../../domain/entities/Category';
 import { Brand } from '../../../domain/entities/Brand';
 import { Presentation } from '../../../domain/entities/Presentation';
 import { Color } from '../../../domain/entities/Color';
+import { Trash2 } from 'lucide-react';
 
 export interface ProductFormValues {
   name: string;
@@ -49,12 +50,24 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
   const [colorId, setColorId] = useState<number>(0);
   const [categoryId, setCategoryId] = useState<number>(0);
   const [brandId, setBrandId] = useState<number>(0);
-  const [priceMayorista, setPriceMayorista] = useState('');
-  const [priceMinorista, setPriceMinorista] = useState('');
-  const [priceRegular, setPriceRegular] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [imageFile, setImageFile] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null); 
+  const [selectedPrices, setSelectedPrices] = useState<string[]>([]);
+  const [valuesPrices, setValuesPrices] = useState<Record<string, string>>({});
+
+  const priceTypes = [
+    { value: "regular", label: "Precio Regular" },
+    { value: "minorista", label: "Precio Minorista" },
+    { value: "mayorista", label: "Precio Mayorista" },
+    { value: "institucional", label: "Precio Institucional" },
+  ];
+  const priceTypeIdMap: Record<string, number> = {
+    regular: 1,
+    minorista: 2,
+    mayorista: 3,
+    institucional: 4,
+  };
 
   useEffect(() => {
     if (open) {
@@ -66,12 +79,18 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
         setColorId(initialData.colorId || 0);
         setCategoryId(initialData.categoryId || 0);
         setBrandId(initialData.brandId || 0);
-        const mayorista = initialData.prices?.find(p => p.priceTypeId === 3);
-        const minorista = initialData.prices?.find(p => p.priceTypeId === 2);
-        const regular = initialData.prices?.find(p => p.priceTypeId === 1);
-        setPriceMayorista(mayorista ? String(mayorista.price) : '');
-        setPriceMinorista(minorista ? String(minorista.price) : '');
-        setPriceRegular(regular ? String(regular.price) : '');
+        if (initialData.prices && initialData.prices.length > 0) {
+          const selected: string[] = [];
+          const values = {} as Record<string, string>;
+          initialData.prices.forEach((p) => {
+            const typeKey = p.priceTypeName as string;
+            selected.push(typeKey);
+            values[typeKey] = String(p.price);
+          });
+        setSelectedPrices(selected);
+        setValuesPrices(values);
+      }
+
         setImageFile(null);
         setPreviewUrl(null);
       } else {
@@ -82,9 +101,8 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
         setColorId(0);
         setCategoryId(categories.length > 0 ? categories[0].id : 0);
         setBrandId(brands.length > 0 ? brands[0].id : 0);
-        setPriceMayorista('');
-        setPriceMinorista('');
-        setPriceRegular('');
+        setSelectedPrices([]);
+        setValuesPrices({} as Record<string, string>);
         setImageFile(null);
         setPreviewUrl(null);
       }
@@ -98,9 +116,15 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
     if (!name.trim()) newErrors.name = 'El nombre es requerido';
     if (!categoryId) newErrors.categoryId = 'La categoría es requerida';
     if (!brandId) newErrors.brandId = 'La marca es requerida';
-    if (!priceMayorista && !priceMinorista && !priceRegular) {
+    const hasValidPrice = selectedPrices.some((type) => {
+      const value = valuesPrices[type];
+      return value && !isNaN(parseFloat(value)) && parseFloat(value) > 0;
+    });
+
+    if (!hasValidPrice) {
       newErrors.prices = 'Al menos un precio es requerido';
     }
+
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -118,21 +142,24 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
     return intPart + '.' + decPart;
   }
 
-  const handlePriceChange = (setter: (v: string) => void) => (e: React.ChangeEvent<HTMLInputElement>) => {
-    const formatted = formatInputTwoDecimals(e.target.value);
-    setter(formatted);
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
 
-    const prices: ProductPrice[] = [];
-    if (priceMayorista) prices.push({ priceTypeId: 3, price: Math.round(parseFloat(priceMayorista) * 100) / 100 });
-    if (priceMinorista) prices.push({ priceTypeId: 2, price: Math.round(parseFloat(priceMinorista) * 100) / 100 });
-    if (priceRegular) prices.push({ priceTypeId: 1, price: Math.round(parseFloat(priceRegular) * 100) / 100 });
+    const prices: ProductPrice[] = selectedPrices
+      .map((type) => {
+        const rawValue = valuesPrices[type];
+        if (!rawValue) return null;
+        const parsed = parseFloat(rawValue);
+        if (isNaN(parsed)) return null;
+        return {
+          priceTypeId: priceTypeIdMap[type],
+          price: Math.round(parsed * 100) / 100,
+        };
+      })
+      .filter((p): p is ProductPrice => p !== null);
 
-    onSubmit({
+    await onSubmit({
       name: name.trim(),
       barcode: barcode.trim() || null,
       internalCode: internalCode.trim() || null,
@@ -143,6 +170,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
       categoryId,
       brandId,
     });
+    onClose();
   };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -155,6 +183,43 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
       setPreviewUrl(null);
     }
   };
+
+  const handleSelectPriceType = (
+    e: React.ChangeEvent<HTMLSelectElement>
+  ) => {
+    const value = e.target.value;
+    if (!value) return;
+
+    setSelectedPrices([...selectedPrices, value]);
+    setValuesPrices({ ...valuesPrices, [value]: "" });
+
+    e.target.value = ""; // resetear select
+  };
+
+  const handlePriceChange = 
+    (type: string) => 
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+    setValuesPrices({
+      ...valuesPrices,
+      [type]: formatInputTwoDecimals(e.target.value),
+    });
+  };
+
+  const handleDeletePrice = 
+    (type: string) => {
+      console.log(type)
+      setSelectedPrices(prev => prev.filter(t => t !== type));
+      setValuesPrices(prev => {
+        const updated = { ...prev };
+        delete updated[type];
+        return updated;
+      });
+      
+  };
+
+  const availablePriceOptions = priceTypes.filter(
+    (type) => !selectedPrices.includes(type.value)
+  );
 
   // Filtrar solo elementos activos para los selects
   const activePresentations = presentations.filter(p => p.state);
@@ -316,63 +381,59 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
 
           {/* Precios */}
           <div>
-            <label className="block text-sm font-medium text-lead-700 mb-2">
-              Precios de Venta *
-            </label>
-            <div className="grid grid-cols-3 gap-4">
-              <div>
-                <label htmlFor="priceMayorista" className="block text-xs text-lead-500">
-                  Mayorista (Bs.)
-                </label>
-                <input
-                  type="text"
-                  inputMode="decimal"
-                  id="priceMayorista"
-                  value={priceMayorista}
-                  onChange={handlePriceChange(setPriceMayorista)}
-                  className="mt-1 block w-full rounded-lg border border-lead-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500"
-                  placeholder="0.00"
-                  pattern="^\d*(\.\d{0,2})?$"
-                  min={0}
-                  disabled={submitting}
-                />
-              </div>
-              <div>
-                <label htmlFor="priceMinorista" className="block text-xs text-lead-500">
-                  Minorista (Bs.)
-                </label>
-                <input
-                  type="text"
-                  inputMode="decimal"
-                  id="priceMinorista"
-                  value={priceMinorista}
-                  onChange={handlePriceChange(setPriceMinorista)}
-                  className="mt-1 block w-full rounded-lg border border-lead-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500"
-                  placeholder="0.00"
-                  pattern="^\d*(\.\d{0,2})?$"
-                  min={0}
-                  disabled={submitting}
-                />
-              </div>
-              <div>
-                <label htmlFor="priceRegular" className="block text-xs text-lead-500">
-                  Regular (Bs.)
-                </label>
-                <input
-                  type="text"
-                  inputMode="decimal"
-                  id="priceRegular"
-                  value={priceRegular}
-                  onChange={handlePriceChange(setPriceRegular)}
-                  className="mt-1 block w-full rounded-lg border border-lead-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500"
-                  placeholder="0.00"
-                  pattern="^\d*(\.\d{0,2})?$"
-                  min={0}
-                  disabled={submitting}
-                />
-              </div>
+            <div className='flex gap-10 items-center mb-2'>
+              <label className="block text-sm font-medium text-lead-700">
+                Precios de Venta *
+              </label>
+              <select
+                onChange={handleSelectPriceType}
+                className="mt-2 block rounded-lg border border-lead-300
+                          px-3 py-2 text-sm
+                          focus:outline-none focus:ring-1 focus:ring-brand-500"
+              >
+                <option key="">Añadir precio</option>
+                {availablePriceOptions.map((tipo) => (
+                  <option key={tipo.value} value={tipo.value}>
+                    {tipo.label}
+                  </option>
+                ))}
+              </select>
             </div>
+
+            {selectedPrices.map((type) => {
+              const label = priceTypes.find(t => t.value === type)?.label;
+
+              return (
+                <div key={type} className='mt-2 w-1/2'>
+                  <label className="block text-xs text-lead-500">
+                      {label} (Bs.)
+                    </label>
+                  <div className='flex gap-2'>
+                    <input
+                      type="text"
+                      inputMode="decimal"
+                      value={valuesPrices[type] || ""}
+                      onChange={handlePriceChange(type)}
+                      className="mt-1 block w-full rounded-lg border border-lead-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500"
+                      placeholder="0.00"
+                      pattern="^\d*(\.\d{0,2})?$"
+                      min={0}
+                      disabled={submitting}
+                    />
+                    <button 
+                      type='button'
+                      className=" rounded-lg px-3 hover:bg-red-100 text-red-600"
+                      onClick={() => handleDeletePrice(type)}
+                      disabled={submitting}
+                      >
+                      <Trash2 size={18} />
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
             {errors.prices && <p className="mt-1 text-sm text-red-600">{errors.prices}</p>}
+
           </div>
 
           <div>
@@ -387,7 +448,8 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
                 file:rounded-lg file:border-0
                 file:text-sm file:font-semibold
                 file:bg-brand-50 file:text-brand-700
-                hover:file:bg-brand-100"
+                hover:file:bg-brand-100
+                file:transition-colors duration-200"
               disabled={submitting}
             />
             {imageFile && (
