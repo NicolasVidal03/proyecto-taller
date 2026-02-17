@@ -142,7 +142,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
     return intPart + '.' + decPart;
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
 
@@ -159,7 +159,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
       })
       .filter((p): p is ProductPrice => p !== null);
 
-    onSubmit({
+    await onSubmit({
       name: name.trim(),
       barcode: barcode.trim() || null,
       internalCode: internalCode.trim() || null,
@@ -170,6 +170,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
       categoryId,
       brandId,
     });
+    onClose();
   };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -403,17 +404,17 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
               const label = priceTypes.find(t => t.value === type)?.label;
 
               return (
-                <div key={type} className='mt-2'>
+                <div key={type} className='mt-2 w-1/2'>
                   <label className="block text-xs text-lead-500">
                       {label} (Bs.)
                     </label>
-                  <div className='flex gap-5'>
+                  <div className='flex gap-2'>
                     <input
                       type="text"
                       inputMode="decimal"
                       value={valuesPrices[type] || ""}
                       onChange={handlePriceChange(type)}
-                      className="mt-1 block w-1/2 rounded-lg border border-lead-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500"
+                      className="mt-1 block w-full rounded-lg border border-lead-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500"
                       placeholder="0.00"
                       pattern="^\d*(\.\d{0,2})?$"
                       min={0}
