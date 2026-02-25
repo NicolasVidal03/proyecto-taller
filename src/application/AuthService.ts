@@ -1,3 +1,4 @@
+import { error } from 'console';
 import { User } from '../domain/entities/User';
 
 export interface LoginResult {
@@ -10,6 +11,7 @@ export interface IAuthRepository {
   login(username: string, password: string): Promise<{ user: User }>;
   logout(): Promise<void>;
   getMe(): Promise<User>;
+  updateUser(user: string): Promise<void>;
 }
 
 export class AuthService {
@@ -40,6 +42,14 @@ export class AuthService {
       return await this.authRepo.getMe();
     } catch {
       return null;
+    }
+  }
+
+  async updateUser(user: string): Promise<void> {
+    try {
+      return this.authRepo.updateUser(user)
+    } catch {
+      
     }
   }
 }
