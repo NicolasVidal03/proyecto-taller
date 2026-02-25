@@ -20,6 +20,7 @@ const ForcePasswordChangeModal: React.FC<ForcePasswordChangeModalProps> = ({
     confirmPassword: '',
   });
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+  const passwordRegex = /^(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>_\-\\[\]\\\/+=;']).{8,}$/;
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -44,6 +45,11 @@ const ForcePasswordChangeModal: React.FC<ForcePasswordChangeModalProps> = ({
       errors.newPassword = 'La nueva contraseña es obligatoria';
     } else if (form.newPassword === form.currentPassword) {
       errors.newPassword = 'La nueva contraseña debe ser diferente a la temporal';
+    } else {
+      if (!passwordRegex.test(form.newPassword)) {
+        errors.newPassword =
+          'Debe tener mínimo 8 caracteres, una mayúscula, un número y un símbolo';
+      }
     }
 
     if (!form.confirmPassword.trim()) {
