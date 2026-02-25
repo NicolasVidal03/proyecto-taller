@@ -86,7 +86,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       await container.user.changeFirstLoginPassword(currentPassword, newPassword);
       if (user) {
-        setUser({ ...user, isFirstLogin: false });
+        setUser(prev => {
+          if (!prev) return prev;
+          const updated = { ...prev, isFirstLogin: false };
+          // localStorage.setItem("auth_user", JSON.stringify(updated));
+          container.auth.updateUser(JSON.stringify(updated))
+          return updated;
+        });
       }
       setShowPasswordChangeModal(false);
     } catch (err: any) {
@@ -96,6 +102,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setPasswordChangeSubmitting(false);
     }
   }, [user]);
+
+
 
   const isAuthenticated = Boolean(user);
 

@@ -207,7 +207,6 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
 
   const handleDeletePrice = 
     (type: string) => {
-      console.log(type)
       setSelectedPrices(prev => prev.filter(t => t !== type));
       setValuesPrices(prev => {
         const updated = { ...prev };

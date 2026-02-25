@@ -38,4 +38,11 @@ export class HttpAuthRepository implements IAuthRepository {
     }
     return JSON.parse(storedUser) as User;
   }
+
+  async updateUser(user: string): Promise<void> {
+    if (!user) {
+      throw new Error('Error al actualizar usuario');
+    }
+    localStorage.setItem('auth_user', user)
+  }
 }
