@@ -142,7 +142,7 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
   };
 
   const validate = (): boolean => {
-    const nextErrors: Record<string, string> = { ...errors };
+    const nextErrors: Record<string, string> = {};
     if (!form.ciMain.trim()) {
       nextErrors.ciMain = 'La cédula (CI) es obligatoria';
     } else if (!/^\d{1,9}$/.test(form.ciMain)) {
@@ -180,17 +180,18 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
     }
 
     setErrors(nextErrors);
+    console.log(errors)
     return Object.keys(nextErrors).length === 0;
   };
 
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!validate()) return;
     const branchNumber = Number(form.branchId);
     const main = form.ciMain.trim();
     const ext = form.ciExt.trim();
     const composedCi = ext ? `${main}-${ext}` : main;
-    await onSubmit({
+    onSubmit({
       ci: composedCi,
       names: form.names.trim(),
       lastName: form.lastName.trim(),
@@ -199,7 +200,6 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
       role: form.role,
       email: form.email.trim(),
     });
-    onClose();
   };
 
   if (!open) return null;
