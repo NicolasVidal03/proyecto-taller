@@ -158,11 +158,6 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
     } else if (!/^[A-Z\s]+$/.test(form.lastName)) {
       nextErrors.lastName = 'El apellido sólo puede contener letras';
     }
-    if (!form.secondLastName.trim()) {
-      nextErrors.secondLastName = 'El segundo apellido es obligatorio';
-    } else if (!/^[A-Z\s]+$/.test(form.secondLastName)) {
-      nextErrors.secondLastName = 'El segundo apellido sólo puede contener letras';
-    }
     if (!form.branchId.trim()) {
       nextErrors.branchId = 'La sucursal es obligatoria';
     } else {
@@ -188,14 +183,14 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
     return Object.keys(nextErrors).length === 0;
   };
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!validate()) return;
     const branchNumber = Number(form.branchId);
     const main = form.ciMain.trim();
     const ext = form.ciExt.trim();
     const composedCi = ext ? `${main}-${ext}` : main;
-    onSubmit({
+    await onSubmit({
       ci: composedCi,
       names: form.names.trim(),
       lastName: form.lastName.trim(),
@@ -204,6 +199,7 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
       role: form.role,
       email: form.email.trim(),
     });
+    onClose();
   };
 
   if (!open) return null;
@@ -299,7 +295,7 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
             </div>
           </div>
           <div>
-            <label htmlFor="secondLastName" className="block text-sm font-medium text-lead-700">Segundo Apellido *</label>
+            <label htmlFor="secondLastName" className="block text-sm font-medium text-lead-700">Segundo Apellido</label>
             <input
               id="secondLastName"
               name="secondLastName"
