@@ -110,6 +110,7 @@ export const ProductsSection: React.FC<ProductsSectionProps> = ({
         });
         if (result) {
           onToast('success', 'Producto creado correctamente');
+          modal.setSubmitting(false);
           modal.close();
         }
       } else if (modal.modalState.entity) {
@@ -126,6 +127,7 @@ export const ProductsSection: React.FC<ProductsSectionProps> = ({
         });
         if (result) {
           onToast('success', 'Producto actualizado correctamente');
+          modal.setSubmitting(false);
           modal.close();
         }
       }

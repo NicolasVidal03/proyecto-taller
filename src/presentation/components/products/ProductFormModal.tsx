@@ -142,7 +142,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
     return intPart + '.' + decPart;
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
 
@@ -159,7 +159,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
       })
       .filter((p): p is ProductPrice => p !== null);
 
-    await onSubmit({
+    onSubmit({
       name: name.trim(),
       barcode: barcode.trim() || null,
       internalCode: internalCode.trim() || null,
@@ -170,7 +170,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
       categoryId,
       brandId,
     });
-    onClose();
+
   };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
