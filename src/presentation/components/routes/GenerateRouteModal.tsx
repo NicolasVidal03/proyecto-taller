@@ -74,6 +74,7 @@ const GenerateRouteModal: React.FC<GenerateRouteModalProps> = ({
     return Object.keys(newErrors).length === 0;
   };
 
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
@@ -81,7 +82,7 @@ const GenerateRouteModal: React.FC<GenerateRouteModalProps> = ({
     await onSubmit({
       assignedIdUser: selectedUserId as number,
       assignedIdArea: selectedAreaId as number,
-      assignedDate: new Date(assignedDate).toISOString(),
+      assignedDate:assignedDate
     });
   };
 
