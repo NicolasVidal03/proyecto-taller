@@ -68,7 +68,7 @@ const AreasPage: React.FC = () => {
     setSubmitting(true);
     try {
       if (modalMode === 'create') {
-        await createArea(data.name, data.area);
+        await createArea(data.name.trim().replace(/\s+/g, " "), data.area);
         toast.success('Área creada correctamente');
       } else if (editingArea && editingArea.id) {
         await updateArea(editingArea.id, data.name, data.area);

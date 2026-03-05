@@ -101,6 +101,7 @@ export const UsersSection: React.FC<UsersSectionProps> = ({
         });
         if (result) {
           onToast('success', 'Usuario creado correctamente. Las credenciales se enviarán por correo.');
+          modal.setSubmitting(false);
           modal.close();
         }
       } else if (modal.modalState.entity) {
@@ -115,6 +116,7 @@ export const UsersSection: React.FC<UsersSectionProps> = ({
         });
         if (result) {
           onToast('success', 'Usuario actualizado correctamente');
+          modal.setSubmitting(false);
           modal.close();
         }
       }

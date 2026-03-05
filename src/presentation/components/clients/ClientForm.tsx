@@ -58,7 +58,6 @@ const ClientForm: React.FC<ClientFormProps> = ({
     const newErrors: Record<string, string> = {};
     if (!formData.name.trim()) newErrors.name = 'El nombre es obligatorio';
     if (!formData.lastName.trim()) newErrors.lastName = 'El apellido paterno es obligatorio';
-    if (!formData.secondLastName.trim()) newErrors.secondLastName = 'El apellido materno es obligatorio';
     if (!formData.phone.trim()) newErrors.phone = 'El teléfono es obligatorio';
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -70,9 +69,9 @@ const ClientForm: React.FC<ClientFormProps> = ({
     if (!validate()) return;
 
     const baseData = {
-      name: formData.name.trim(),
-      lastName: formData.lastName.trim(),
-      secondLastName: formData.secondLastName.trim(),
+      name: formData.name.trim().replace(/\s+/g, " "),
+      lastName: formData.lastName.trim().replace(/\s+/g, " "),
+      secondLastName: formData.secondLastName.trim().replace(/\s+/g, " "),
       phone: formData.phone.trim(),
       ci: formData.ci.trim() || null,
       ciExt: formData.ciExt.trim() || null,
@@ -133,7 +132,7 @@ const ClientForm: React.FC<ClientFormProps> = ({
         {/* Apellido Materno */}
         <div>
           <label htmlFor="secondLastName" className="block text-sm font-medium text-lead-700">
-            Apellido materno <span className="text-red-500">*</span>
+            Apellido materno <span className="text-red-500"></span>
           </label>
           <input
             type="text"

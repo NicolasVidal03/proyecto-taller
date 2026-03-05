@@ -160,9 +160,9 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
       .filter((p): p is ProductPrice => p !== null);
 
     onSubmit({
-      name: name.trim(),
+      name: name.trim().replace(/\s+/g, " "),
       barcode: barcode.trim() || null,
-      internalCode: internalCode.trim() || null,
+      internalCode: internalCode.trim().replace(/\s+/g, " ") || null,
       presentationId: presentationId || null,
       colorId: colorId || null,
       prices,

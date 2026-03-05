@@ -180,7 +180,6 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
     }
 
     setErrors(nextErrors);
-    console.log(errors)
     return Object.keys(nextErrors).length === 0;
   };
 
@@ -193,9 +192,9 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
     const composedCi = ext ? `${main}-${ext}` : main;
     onSubmit({
       ci: composedCi,
-      names: form.names.trim(),
-      lastName: form.lastName.trim(),
-      secondLastName: form.secondLastName.trim() || null,
+      names: form.names.trim().replace(/\s+/g, " "),
+      lastName: form.lastName.trim().replace(/\s+/g, " "),
+      secondLastName: form.secondLastName.trim().replace(/\s+/g, " ") || null,
       branchId: branchNumber,
       role: form.role,
       email: form.email.trim(),

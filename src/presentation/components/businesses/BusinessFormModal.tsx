@@ -171,9 +171,9 @@ const BusinessFormModal: React.FC<BusinessFormModalProps> = ({
     if (!validate()) return;
 
     const dto: any = {
-      name: name.trim(),
+      name: name.trim().replace(/\s+/g, " "),
       nit: nit.trim() || null,
-      address: address.trim() || null,
+      address: address.trim().replace(/\s+/g, " ") || null,
       clientId: clientId ? Number(clientId) : undefined,
       businessTypeId: businessTypeId ? Number(businessTypeId) : undefined,
       priceTypeId: priceTypeId === '' ? null : Number(priceTypeId),
