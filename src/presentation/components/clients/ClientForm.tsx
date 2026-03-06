@@ -32,13 +32,15 @@ const ClientForm: React.FC<ClientFormProps> = ({
 
   useEffect(() => {
     if (initialData) {
+        const rawCi = initialData.ci ?? '';
+        const [mainPart, extPart] = rawCi.includes('-') ? rawCi.split('-', 2) : [rawCi, ''];
       setFormData({
         name: initialData.name || '',
         lastName: initialData.lastName || '',
         secondLastName: initialData.secondLastName || '',
         phone: initialData.phone || '',
-        ci: initialData.ci || '',
-        ciExt: initialData.ciExt || '',
+        ci: mainPart || '',
+        ciExt: extPart || '',
       });
     }
   }, [initialData]);
@@ -82,13 +84,16 @@ const ClientForm: React.FC<ClientFormProps> = ({
     e.preventDefault();
 
     if (!validate()) return;
+    const main = formData.ci.trim();
+    const ext = formData.ciExt.trim();
+    const composedCi = ext ? `${main}-${ext}` : main;
 
     const baseData = {
       name: formData.name.trim().replace(/\s+/g, " "),
       lastName: formData.lastName.trim().replace(/\s+/g, " "),
       secondLastName: formData.secondLastName.trim().replace(/\s+/g, " "),
       phone: formData.phone.trim(),
-      ci: formData.ci.trim() || null,
+      ci: composedCi.trim() || null,
       ciExt: formData.ciExt.trim() || null,
     };
 
