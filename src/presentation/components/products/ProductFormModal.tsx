@@ -97,8 +97,8 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
         setName('');
         setBarcode('');
         setInternalCode('');
-        setPresentationId(0);
-        setColorId(0);
+        setPresentationId(presentations.length > 0 ? presentations[0].id : 0);
+        setColorId(colors.length > 0 ? colors[0].id : 0);
         setCategoryId(categories.length > 0 ? categories[0].id : 0);
         setBrandId(brands.length > 0 ? brands[0].id : 0);
         setSelectedPrices([]);
@@ -116,6 +116,8 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
     if (!name.trim()) newErrors.name = 'El nombre es requerido';
     if (!categoryId) newErrors.categoryId = 'La categoría es requerida';
     if (!brandId) newErrors.brandId = 'La marca es requerida';
+    if (!presentationId) newErrors.presentationId = 'El tipo de presentación es requerido'
+    if (!colorId) newErrors.colorId = 'El color es requerido';
     const hasValidPrice = selectedPrices.some((type) => {
       const value = valuesPrices[type];
       return value && !isNaN(parseFloat(value)) && parseFloat(value) > 0;
@@ -142,7 +144,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
     return intPart + '.' + decPart;
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
 
@@ -159,10 +161,10 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
       })
       .filter((p): p is ProductPrice => p !== null);
 
-    await onSubmit({
-      name: name.trim(),
+    onSubmit({
+      name: name.trim().replace(/\s+/g, " "),
       barcode: barcode.trim() || null,
-      internalCode: internalCode.trim() || null,
+      internalCode: internalCode.trim().replace(/\s+/g, " ") || null,
       presentationId: presentationId || null,
       colorId: colorId || null,
       prices,
@@ -170,7 +172,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
       categoryId,
       brandId,
     });
-    onClose();
+
   };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -344,7 +346,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label htmlFor="presentationId" className="block text-sm font-medium text-lead-700">
-                Presentación
+                Presentación *
               </label>
               <select
                 id="presentationId"
@@ -358,10 +360,11 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
                   <option key={pres.id} value={pres.id}>{pres.name}</option>
                 ))}
               </select>
+              {errors.presentationId && <p className="mt-1 text-sm text-red-600">{errors.presentationId}</p>}
             </div>
             <div>
               <label htmlFor="colorId" className="block text-sm font-medium text-lead-700">
-                Color
+                Color *
               </label>
               <select
                 id="colorId"
@@ -375,6 +378,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
                   <option key={color.id} value={color.id}>{color.name}</option>
                 ))}
               </select>
+              {errors.colorId && <p className="mt-1 text-sm text-red-600">{errors.colorId}</p>}
             </div>
           </div>
 

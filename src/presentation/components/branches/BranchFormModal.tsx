@@ -15,7 +15,7 @@ interface BranchFormModalProps {
   onSubmit: (values: BranchFormValues) => void;
 }
 
-const BranchFormModal: React.FC<BranchFormModalProps> = ({
+const   BranchFormModal: React.FC<BranchFormModalProps> = ({
   open,
   mode,
   initialData,
@@ -43,7 +43,7 @@ const BranchFormModal: React.FC<BranchFormModalProps> = ({
       setError('El nombre es requerido');
       return;
     }
-    onSubmit({ name: name.trim() });
+    onSubmit({ name: name.trim().replace(/\s+/g, " ") });
   };
 
   if (!open) return null;

@@ -32,23 +32,37 @@ const ClientForm: React.FC<ClientFormProps> = ({
 
   useEffect(() => {
     if (initialData) {
+        const rawCi = initialData.ci ?? '';
+        const [mainPart, extPart] = rawCi.includes('-') ? rawCi.split('-', 2) : [rawCi, ''];
       setFormData({
         name: initialData.name || '',
         lastName: initialData.lastName || '',
         secondLastName: initialData.secondLastName || '',
         phone: initialData.phone || '',
-        ci: initialData.ci || '',
-        ciExt: initialData.ciExt || '',
+        ci: mainPart || '',
+        ciExt: extPart || '',
       });
     }
   }, [initialData]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    // For name fields, store uppercase
-    const upperFields = ['name', 'lastName', 'secondLastName'];
-    const nextValue = upperFields.includes(name) ? value.toUpperCase() : value;
+    let nextValue = value;
+
+    if (name === 'name' || name === 'lastName' || name === 'secondLastName') {
+      nextValue = value.replace(/[^A-Za-z\s]/g, '').toUpperCase();
+    }
+    if (name === 'phone') {
+      nextValue = value.replace(/\D/g, '');
+    }
+    if (name === 'ci') {
+      nextValue = value.replace(/\D/g, '').slice(0, 9);
+    }
+    if (name === 'ciExt') {
+      nextValue = value.replace(/[^0-9a-zA-Z]/g, '').slice(0, 2).toUpperCase();
+    }
     setFormData((prev) => ({ ...prev, [name]: nextValue }));
+
     if (errors[name]) {
       setErrors((prev) => ({ ...prev, [name]: '' }));
     }
@@ -58,8 +72,10 @@ const ClientForm: React.FC<ClientFormProps> = ({
     const newErrors: Record<string, string> = {};
     if (!formData.name.trim()) newErrors.name = 'El nombre es obligatorio';
     if (!formData.lastName.trim()) newErrors.lastName = 'El apellido paterno es obligatorio';
-    if (!formData.secondLastName.trim()) newErrors.secondLastName = 'El apellido materno es obligatorio';
     if (!formData.phone.trim()) newErrors.phone = 'El teléfono es obligatorio';
+    if (formData.ciExt.trim() && !/^\d[a-zA-Z]$/.test(formData.ciExt.trim())) {
+      newErrors.ciExt = 'Formato de ext inválido (ej: 1B)';
+    }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -68,13 +84,16 @@ const ClientForm: React.FC<ClientFormProps> = ({
     e.preventDefault();
 
     if (!validate()) return;
+    const main = formData.ci.trim();
+    const ext = formData.ciExt.trim();
+    const composedCi = ext ? `${main}-${ext}` : main;
 
     const baseData = {
-      name: formData.name.trim(),
-      lastName: formData.lastName.trim(),
-      secondLastName: formData.secondLastName.trim(),
+      name: formData.name.trim().replace(/\s+/g, " "),
+      lastName: formData.lastName.trim().replace(/\s+/g, " "),
+      secondLastName: formData.secondLastName.trim().replace(/\s+/g, " "),
       phone: formData.phone.trim(),
-      ci: formData.ci.trim() || null,
+      ci: composedCi.trim() || null,
       ciExt: formData.ciExt.trim() || null,
     };
 
@@ -133,7 +152,7 @@ const ClientForm: React.FC<ClientFormProps> = ({
         {/* Apellido Materno */}
         <div>
           <label htmlFor="secondLastName" className="block text-sm font-medium text-lead-700">
-            Apellido materno <span className="text-red-500">*</span>
+            Apellido materno <span className="text-red-500"></span>
           </label>
           <input
             type="text"
@@ -198,6 +217,7 @@ const ClientForm: React.FC<ClientFormProps> = ({
             className="mt-1 block w-full rounded-lg border-lead-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500"
             disabled={isSubmitting}
           />
+          {errors.ciExt && <p className="mt-1 text-xs text-red-600">{errors.ciExt}</p>}
         </div>
 
         {/* Tipo de cliente eliminado: ahora pertenece al negocio */}

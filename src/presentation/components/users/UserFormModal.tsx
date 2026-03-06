@@ -142,7 +142,7 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
   };
 
   const validate = (): boolean => {
-    const nextErrors: Record<string, string> = { ...errors };
+    const nextErrors: Record<string, string> = {};
     if (!form.ciMain.trim()) {
       nextErrors.ciMain = 'La cédula (CI) es obligatoria';
     } else if (!/^\d{1,9}$/.test(form.ciMain)) {
@@ -157,11 +157,6 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
       nextErrors.lastName = 'El apellido es obligatorio';
     } else if (!/^[A-Z\s]+$/.test(form.lastName)) {
       nextErrors.lastName = 'El apellido sólo puede contener letras';
-    }
-    if (!form.secondLastName.trim()) {
-      nextErrors.secondLastName = 'El segundo apellido es obligatorio';
-    } else if (!/^[A-Z\s]+$/.test(form.secondLastName)) {
-      nextErrors.secondLastName = 'El segundo apellido sólo puede contener letras';
     }
     if (!form.branchId.trim()) {
       nextErrors.branchId = 'La sucursal es obligatoria';
@@ -197,9 +192,9 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
     const composedCi = ext ? `${main}-${ext}` : main;
     onSubmit({
       ci: composedCi,
-      names: form.names.trim(),
-      lastName: form.lastName.trim(),
-      secondLastName: form.secondLastName.trim() || null,
+      names: form.names.trim().replace(/\s+/g, " "),
+      lastName: form.lastName.trim().replace(/\s+/g, " "),
+      secondLastName: form.secondLastName.trim().replace(/\s+/g, " ") || null,
       branchId: branchNumber,
       role: form.role,
       email: form.email.trim(),
@@ -299,7 +294,7 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
             </div>
           </div>
           <div>
-            <label htmlFor="secondLastName" className="block text-sm font-medium text-lead-700">Segundo Apellido *</label>
+            <label htmlFor="secondLastName" className="block text-sm font-medium text-lead-700">Segundo Apellido</label>
             <input
               id="secondLastName"
               name="secondLastName"

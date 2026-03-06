@@ -51,6 +51,8 @@ export const InventoryPage: React.FC = () => {
     }
   }, [branches, selectedBranchId, auth.user]);
 
+  console.log(inventory)
+
   useEffect(() => {
     if (selectedBranchId) {
       applyFilters(selectedBranchId, {
@@ -86,10 +88,7 @@ export const InventoryPage: React.FC = () => {
   const handleSaveStock = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editModal.item || !selectedBranchId) return;
-    
-    const previousHasStock = editModal.item.branch.hasStock;
-    const newHasStock = editHasStock;
-    
+
     setSaving(true);
     try {
       const result = await setStock(editModal.item.id, selectedBranchId, {
@@ -103,15 +102,7 @@ export const InventoryPage: React.FC = () => {
         );
         closeEditModal();
         
-        // Si el estado cambió, refrescar la vista para aplicar filtros del backend
-        if (previousHasStock !== newHasStock) {
-          await applyFilters(selectedBranchId, {
-            search: debouncedSearch || undefined,
-            onlyAvailable: stockFilter === 'available',
-            categoryId: categoryFilter !== 'all' ? categoryFilter : undefined,
-            brandId: brandFilter !== 'all' ? brandFilter : undefined,
-          });
-        }
+        goToPage(pagination.page)
       }
     } catch (err: any) {
       toast.error(err?.message || 'Error al actualizar stock');
