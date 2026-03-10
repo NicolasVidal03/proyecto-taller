@@ -15,6 +15,7 @@ import {
 import ClientsBusinessesPage from '../pages/ClientsBusinessesPage';
 import AreasPage from '../pages/AreasPage';
 import RoutesPage from '../pages/RoutesPage';
+import { PresalesPage } from '../pages/PresalesPage';
 
 const LayoutWrapper: React.FC = () => (
   <AppLayout>
@@ -39,6 +40,7 @@ export const AppRoutes: React.FC = () => {
           <Route path="/areas" element={<AreasPage />} />
           <Route path="/routes" element={<RoutesPage />} />
           <Route path="/activities" element={<ActivitiesPage />} />
+          <Route path="/presales" element={<PresalesPage />} />
         </Route>
       </Route>
       <Route path="*" element={<Navigate to="/users" replace />} />

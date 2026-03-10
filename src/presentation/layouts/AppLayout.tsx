@@ -61,6 +61,7 @@ const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     { label: 'Inventario', to: '/inventory', icon: '📊' },
     { label: 'Proveedores', to: '/suppliers', icon: '🚚' },
     { label: 'Usuarios', to: '/users', icon: '👤' },
+    { label: 'Preventas', to: '/presales', icon: '🤝🏻' },
   ];
 
   const handleLogout = async () => {
