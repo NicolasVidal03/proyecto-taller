@@ -17,6 +17,7 @@ import {
   RouteService,
   BusinessService,
   ActivityService,
+  PresaleService,
 } from '../../application';
 
 import {
@@ -37,6 +38,7 @@ import {
   HttpAreaRepository,
   HttpRouteRepository,
   HttpActivityRepository,
+  HttpPresaleRepository,
 } from '../http/repositories';
 
 const authRepository = new HttpAuthRepository();
@@ -56,6 +58,7 @@ const colorRepository = new HttpColorRepository();
 const routeRepository = new HttpRouteRepository();
 const businessRepository = new HttpBusinessRepository();
 const activityRepository = new HttpActivityRepository();
+const presaleRepository = new HttpPresaleRepository();
 
 
 export const container = {
@@ -77,5 +80,6 @@ export const container = {
   businesses: new BusinessService(businessRepository),
   routes: new RouteService(routeRepository),
   activities: new ActivityService(activityRepository),
+  presales: new PresaleService(presaleRepository),
 };
 export type Container = typeof container;

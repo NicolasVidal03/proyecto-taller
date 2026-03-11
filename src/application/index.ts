@@ -16,3 +16,4 @@ export { AreaService } from './AreaService';
 export { RouteService } from './RouteService';
 export { BusinessService } from './BusinessService';
 export { ActivityService } from './ActivityService';
+export { PresaleService } from './PresaleService';

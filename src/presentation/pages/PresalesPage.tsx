@@ -1,18 +1,72 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { ToastContainer, useToast } from '../components/shared/Toast';
-import { useBranches } from '@presentation/hooks';
+import { useBranches, useDebounce } from '@presentation/hooks';
+import { container } from '@infrastructure/config';
+import { PresaleFilters } from '@domain/ports';
+import { usePresales } from '@presentation/hooks/usePresales';
 
-export const PresalesPage: React.FC = () => {
+interface PresalesSectionProps {
+    searchTerm: string;
+    branchFilter: string | 'all';
+    onToast: (type: 'success' | 'error', message: string) => void;
+}
+
+export const PresalesPage: React.FC<PresalesSectionProps> = ({
+    onToast,
+    // branchFilter,
+}) => {
+    const {
+        presales,
+        isLoading,
+        error,
+        page,
+        total,
+        totalPages,
+        goToPage,
+        applyFilters,
+        clearError,
+    } = usePresales();
+
     const { branches, fetchBranches, isLoading: branchesLoading } = useBranches();
+    
 
+    const [search, setSearch] = useState<string>('');
     const [branchFilter, setBranchFilter] = useState<number | 'all'>('all');
+
+    const debouncedSearch = useDebounce(search, 500)
+
+    useEffect(() => {
+        Promise.all([fetchBranches()]);
+    }, [fetchBranches]);
+
+    useEffect(() => {
+        const filters: { search?: string; branchId?: number; } = {};
+        if (debouncedSearch.trim()) {
+            filters.search = debouncedSearch.trim();
+        }
+
+        if (branchFilter !== 'all') {
+            filters.branchId = branchFilter;
+        }
+
+        applyFilters(filters)
+        console.log("hola: ", presales)
+    }, [debouncedSearch, branchFilter, applyFilters])
+
+    useEffect(() => {
+        if (error) {
+          onToast('error', error);
+          clearError();
+        }
+      }, [error, onToast, clearError]);
 
 
     const stats = useMemo(() => ({
         cards: [
-            { label: 'Total Preventas', value: branches.length, accent: 'from-brand-900 to-brand-600' }
+            { label: 'Total Preventas', value: presales.length, accent: 'from-brand-900 to-brand-600' }
         ]
-    }), [branches.length])
+
+    }), [presales.length])
 
 
     return (
@@ -38,22 +92,22 @@ export const PresalesPage: React.FC = () => {
                                         <input
                                             className="input-plain flex-1"
                                             placeholder={'hola'}
-                                            value={'hola'}
-                                            onChange={e => console.log('hola')}
+                                            value={search}
+                                            onChange={e => setSearch(e.target.value)}
                                         />
                                     </div>
-                                        <div className="flex flex-wrap gap-3">
-                                            <select
-                                                className="rounded-full px-4 py-2 text-sm font-semibold bg-white/10 text-white/90 border border-white/20 focus:outline-none"
-                                                value={branchFilter}
-                                                onChange={(e) => setBranchFilter(e.target.value === 'all' ? 'all' : Number(e.target.value))}
-                                            >
-                                                <option value="all" className="text-lead-900">Todas las categorias</option>
-                                                {branches.filter(c => c.state).map(c => (
-                                                    <option key={c.id} value={c.id} className="text-lead-900">{c.name}</option>
-                                                ))}
-                                            </select>
-                                        </div>
+                                    <div className="flex flex-wrap gap-3">
+                                        <select
+                                            className="rounded-full px-4 py-2 text-sm font-semibold bg-white/10 text-white/90 border border-white/20 focus:outline-none"
+                                            value={branchFilter}
+                                            onChange={(e) => setBranchFilter(e.target.value === 'all' ? 'all' : Number(e.target.value))}
+                                        >
+                                            <option value="all" className="text-lead-900">Todas las categorias</option>
+                                            {branches.filter(b => b.state).map(c => (
+                                                <option key={c.id} value={c.id} className="text-lead-900">{c.name}</option>
+                                            ))}
+                                        </select>
+                                    </div>
                                 </div>
                             </div>
 
@@ -68,15 +122,6 @@ export const PresalesPage: React.FC = () => {
                                                 <p className="mt-2 text-3xl font-semibold text-white">{card.value}</p>
                                             </div>
                                         ))}
-                                    </div>
-                                    <div className="space-y-2 rounded-xl border border-white/20 bg-white/10 p-4 text-sm text-white/80">
-                                        <p className="text-xs uppercase tracking-[0.35em] text-white/60">Catalogo</p>
-                                        {/* {stats.breakdown.map(item => (
-                                            <div key={item.label} className="flex items-center justify-between">
-                                                <span>{item.label}</span>
-                                                <span className="font-semibold text-white">{item.value}</span>
-                                            </div>
-                                        ))} */}
                                     </div>
                                 </div>
                             </div>
