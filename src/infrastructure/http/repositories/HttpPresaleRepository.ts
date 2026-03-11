@@ -1,3 +1,4 @@
+import { Presale } from '@domain/entities';
 import { http } from '../httpClient';
 import { IPresaleRepository, PaginatedPresales, PresaleFilters } from "@domain/ports/IPresaleRepository";
 
@@ -14,6 +15,13 @@ export class HttpPresaleRepository implements IPresaleRepository {
         const queryString = params.toString();
         const url = queryString ? `/presales/presale?${queryString}` : '/presales/presale';
         const res = await http.get(url);
+        return res.data;
+    }
+
+    async assign(presaleId: number, distributorId: number): Promise<Presale | null> {
+        const url = `presales/presale/${presaleId}/assign`
+        console.log('body enviado:', { distributorId: distributorId });
+        const res = await http.patch(url, { distributorId: distributorId })
         return res.data;
     }
 } 

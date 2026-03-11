@@ -2,7 +2,7 @@ import { Presale } from "@domain/entities";
 import { PresaleFilters } from "@domain/ports";
 import { container } from "@infrastructure/config";
 import { useCallback, useState } from "react";
-import { usePagination } from "./shared";
+import { extractErrorMessage, usePagination } from "./shared";
 
 export interface UsePresalesReturn {
     presales: Presale[];
@@ -18,6 +18,8 @@ export interface UsePresalesReturn {
     error: string | null;
     clearError: () => void;
     clearCache: () => void;
+
+    assignDistributor: (presaleid: number, distributorId: number) => Promise<Presale | null>
 }
 
 const LIMIT = 10;
@@ -50,6 +52,23 @@ export const usePresales = (): UsePresalesReturn => {
         limit: LIMIT,
     });
 
+    const assignDistributor = useCallback(async (idPresale: number, idDistributor: number): Promise<Presale | null> => {
+        setCrudLoading(true);
+        setCrudError(null);
+        try {
+            const assigned = await container.presales.assign(idPresale, idDistributor);
+            clearCache();
+            await refreshCurrentPage();
+            return assigned;
+        } catch (e: any) {
+            console.log('error response:', e.response?.data);
+            setCrudError(extractErrorMessage(e));
+            return null;
+        } finally {
+            setCrudLoading(false)
+        }
+    }, [clearCache, refreshCurrentPage]);
+
 
     const clearError = useCallback(() => {
         clearPaginationError();
@@ -68,7 +87,7 @@ export const usePresales = (): UsePresalesReturn => {
         error: paginationError || crudError,
         clearError,
         clearCache,
-
+        assignDistributor,
     };
 };
 

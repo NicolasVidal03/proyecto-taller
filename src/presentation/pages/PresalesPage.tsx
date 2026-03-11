@@ -26,6 +26,7 @@ export const PresalesPage: React.FC<PresalesSectionProps> = ({
         goToPage,
         applyFilters,
         clearError,
+        assignDistributor,
     } = usePresales();
 
     const { branches, fetchBranches, branchMap, isLoading: branchesLoading } = useBranches();
@@ -56,7 +57,7 @@ export const PresalesPage: React.FC<PresalesSectionProps> = ({
 
     useEffect(() => {
         if (error) {
-            onToast('error', error);
+            // onToast('error', error);
             clearError();
         }
     }, [error, onToast, clearError]);
@@ -137,7 +138,7 @@ export const PresalesPage: React.FC<PresalesSectionProps> = ({
                                     <h3 className="text-xl font-bold text-brand-900">Listado de preventas</h3>
                                     <p className="text-sm text-lead-500">
                                         {totalPages > 0 && `Página ${page} de ${totalPages} • `}
-                                        {total.toLocaleString()} producto(s) total
+                                        {total.toLocaleString()} preventa(s) total
                                         {/* {(debouncedSearch || categoryFilter !== 'all' || brandFilter !== 'all') && ' (filtrados)'} */}
                                     </p>
                                 </div>
@@ -153,6 +154,7 @@ export const PresalesPage: React.FC<PresalesSectionProps> = ({
                             <PresalesTable
                                 presales={presales}
                                 branchMap={branchMap}
+                                assignDistributor={assignDistributor}
                                 // brandFilter={brandFilter}
                                 // onToast={handleToast}
                             />

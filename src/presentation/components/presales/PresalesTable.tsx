@@ -7,11 +7,13 @@ type PresalesTableProps = {
     // onDeactivate: (product: Presale) => void;
     // onView?: (product: Presale) => void;
     busyId?: number | null;
+    assignDistributor: (presaleId: number, distributorId: number) => Promise<Presale | null>
 };
 
 const PresalesTable: React.FC<PresalesTableProps> = ({
     presales,
     branchMap,
+    assignDistributor,
     // onEdit,
     // onDeactivate,
     // onView,
@@ -28,7 +30,7 @@ const PresalesTable: React.FC<PresalesTableProps> = ({
                         <th className="px-4 py-4 text-left font-semibold">Cliente</th>
                         <th className="px-4 py-4 text-left font-semibold">Sucursal</th>
                         <th className="px-4 py-4 text-left font-semibold">Prevendedor</th>
-                        <th className="px-4 py-4 text-left font-semibold">Regular</th>
+                        <th className="px-4 py-4 text-left font-semibold">Trans ID</th>
                         <th className="px-4 py-4 text-left font-semibold">Estado</th>
                         <th className="px-4 py-4 text-left font-semibold">Fecha de Entrega</th>
                         <th className="px-4 py-4 text-left font-semibold">Total</th>
@@ -63,10 +65,10 @@ const PresalesTable: React.FC<PresalesTableProps> = ({
                                 {p.presellerName || '—'}
                             </td>
                             <td className="px-4 py-3 text-lead-600 text-xs">
-                                {'—'}
+                                {p.distributorId || '—'}
                             </td>
                             <td className="px-4 py-3 text-lead-600 text-xs">
-                                {p.status || '—'}
+                                {p.status.toLocaleUpperCase() || '—'}
                             </td>
                             <td className="px-4 py-3 text-lead-600 text-xs">
                                 {p.deliveryDate || '—'}
@@ -79,10 +81,10 @@ const PresalesTable: React.FC<PresalesTableProps> = ({
                                 <div className="flex items-center justify-center gap-2">
                                     <button
                                         type="button"
-                                        // onClick={() => onView && onView(p)}
+                                        onClick={() => assignDistributor(p.id, 17)}
                                         className="rounded bg-lead-200 px-3 py-1.5 font-medium text-lead-800 transition hover:bg-lead-300 disabled:opacity-50"
                                     >
-                                        Ver
+                                        Asignar
                                     </button>
                                     <button
                                         type="button"
@@ -98,7 +100,7 @@ const PresalesTable: React.FC<PresalesTableProps> = ({
                                         className={`rounded px-3 py-1.5 font-medium transition disabled:opacity-50 bg-accent-100 text-accent-700 hover:bg-accent-200`}
                                         disabled={isBusy(p.id)}
                                     >
-                                        Eliminar
+                                        Cancelar
                                     </button>
                                 </div>
                             </td>

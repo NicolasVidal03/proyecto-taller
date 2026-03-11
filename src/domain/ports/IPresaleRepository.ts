@@ -19,4 +19,5 @@ export interface PaginatedPresales {
 
 export interface IPresaleRepository {
     getAll(filters?: PresaleFilters):  Promise<PaginatedPresales>;
+    assign(presaleId: number, distributorId: number): Promise<Presale | null>;
 }

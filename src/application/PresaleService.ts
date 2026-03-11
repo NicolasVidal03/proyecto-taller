@@ -7,4 +7,8 @@ export class PresaleService {
     async getAll(filters?: PresaleFilters): Promise<PaginatedPresales> {
         return this.repo.getAll()
     } 
+
+    async assign(presaleId: number, distributorId: number): Promise<Presale | null> {
+        return this.repo.assign(presaleId, distributorId)
+    }
 }
