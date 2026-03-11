@@ -13,14 +13,13 @@ export class HttpPresaleRepository implements IPresaleRepository {
         if (filters?.limit) params.append('limit', String(filters.limit));
 
         const queryString = params.toString();
-        const url = queryString ? `/presales/presale?${queryString}` : '/presales/presale';
+        const url = queryString ? `/presales?${queryString}` : '/presales';
         const res = await http.get(url);
         return res.data;
     }
 
     async assign(presaleId: number, distributorId: number): Promise<Presale | null> {
-        const url = `presales/presale/${presaleId}/assign`
-        console.log('body enviado:', { distributorId: distributorId });
+        const url = `presales/${presaleId}/assign`
         const res = await http.patch(url, { distributorId: distributorId })
         return res.data;
     }

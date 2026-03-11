@@ -61,7 +61,6 @@ export const usePresales = (): UsePresalesReturn => {
             await refreshCurrentPage();
             return assigned;
         } catch (e: any) {
-            console.log('error response:', e.response?.data);
             setCrudError(extractErrorMessage(e));
             return null;
         } finally {

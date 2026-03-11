@@ -51,8 +51,6 @@ export const InventoryPage: React.FC = () => {
     }
   }, [branches, selectedBranchId, auth.user]);
 
-  console.log(inventory)
-
   useEffect(() => {
     if (selectedBranchId) {
       applyFilters(selectedBranchId, {

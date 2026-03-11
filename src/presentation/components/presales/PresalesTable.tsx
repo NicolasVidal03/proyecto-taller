@@ -1,11 +1,12 @@
-import { Presale } from "@domain/entities";
+import { Presale, User } from "@domain/entities";
+import { useToast } from "../shared/Toast";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useUsers } from "@presentation/hooks";
+import PresalesDistributorSelector from "./PresalesDistributorSelector";
 
 type PresalesTableProps = {
     presales: Presale[];
     branchMap: Map<number, string>;
-    // onEdit: (product: Presale) => void;
-    // onDeactivate: (product: Presale) => void;
-    // onView?: (product: Presale) => void;
     busyId?: number | null;
     assignDistributor: (presaleId: number, distributorId: number) => Promise<Presale | null>
 };
@@ -14,13 +15,43 @@ const PresalesTable: React.FC<PresalesTableProps> = ({
     presales,
     branchMap,
     assignDistributor,
-    // onEdit,
-    // onDeactivate,
-    // onView,
     busyId
 }) => {
     const isEmpty = presales.length === 0;
     const isBusy = (id: number) => busyId != null && busyId === id;
+    const toast = useToast();
+
+    const {
+        users,
+        isLoading: usersLoading,
+        error: usersError,
+        fetchUsers,
+        clearError: clearUsersError,
+    } = useUsers();
+
+    useEffect(() => {
+        fetchUsers();
+    }, [fetchUsers]);
+
+
+    useEffect(() => {
+        if (usersError) {
+            toast.error(usersError.message);
+            clearUsersError();
+        }
+    }, [usersError, toast, clearUsersError]);
+
+    const distributorUser = useMemo(() => {
+        return users.filter(u =>
+            u.role?.toLowerCase() === 'transportista'
+        );
+    }, [users]);
+
+    const userMap = useMemo(() => {
+        return new Map(users.map(u => [u.id, u]));
+    }, [users]);
+
+
 
     return (
         <div className="overflow-x-auto rounded-lg border border-lead-200 bg-lead-50 shadow-lg">
@@ -65,7 +96,11 @@ const PresalesTable: React.FC<PresalesTableProps> = ({
                                 {p.presellerName || '—'}
                             </td>
                             <td className="px-4 py-3 text-lead-600 text-xs">
-                                {p.distributorId || '—'}
+                                <PresalesDistributorSelector
+                                    users={distributorUser}
+                                    initialUser={p.distributorId ? userMap.get(p.distributorId) ?? null : null}
+                                    onSelect={(user) => assignDistributor(p.id, user.id)}
+                                />
                             </td>
                             <td className="px-4 py-3 text-lead-600 text-xs">
                                 {p.status.toLocaleUpperCase() || '—'}
@@ -76,16 +111,16 @@ const PresalesTable: React.FC<PresalesTableProps> = ({
                             <td className="px-4 py-3 text-lead-600 text-xs">
                                 {p.total || '—'}
                             </td>
-                            {/* Estado removed: do not display product.state column */}
+
                             <td className="px-4 py-3 text-center align-middle">
                                 <div className="flex items-center justify-center gap-2">
-                                    <button
+                                    {/* <button
                                         type="button"
                                         onClick={() => assignDistributor(p.id, 17)}
                                         className="rounded bg-lead-200 px-3 py-1.5 font-medium text-lead-800 transition hover:bg-lead-300 disabled:opacity-50"
                                     >
                                         Asignar
-                                    </button>
+                                    </button> */}
                                     <button
                                         type="button"
                                         // onClick={() => onEdit(p)}

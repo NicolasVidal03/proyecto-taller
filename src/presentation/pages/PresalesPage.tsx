@@ -52,7 +52,6 @@ export const PresalesPage: React.FC<PresalesSectionProps> = ({
         }
 
         applyFilters(filters)
-        console.log("hola: ", presales)
     }, [debouncedSearch, branchFilter, applyFilters])
 
     useEffect(() => {
