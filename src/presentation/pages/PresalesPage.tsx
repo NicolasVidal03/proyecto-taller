@@ -14,7 +14,6 @@ interface PresalesSectionProps {
 
 export const PresalesPage: React.FC<PresalesSectionProps> = ({
     onToast,
-    // branchFilter,
 }) => {
     const {
         presales,
@@ -29,11 +28,13 @@ export const PresalesPage: React.FC<PresalesSectionProps> = ({
         assignDistributor,
     } = usePresales();
 
-    const { branches, fetchBranches, branchMap, isLoading: branchesLoading } = useBranches();
+    const { branches, fetchBranches, isLoading: branchesLoading } = useBranches();
+    const statusValues = ['Pendiente', 'Asignado', 'Entregado', 'Parcial', 'Cancelado']
 
 
     const [search, setSearch] = useState<string>('');
     const [branchFilter, setBranchFilter] = useState<number | 'all'>('all');
+    const [statusFilter, setStatusFilter] = useState<string | 'all'>('all');
 
     const debouncedSearch = useDebounce(search, 500)
 
@@ -108,6 +109,17 @@ export const PresalesPage: React.FC<PresalesSectionProps> = ({
                                                 <option key={c.id} value={c.id} className="text-lead-900">{c.name}</option>
                                             ))}
                                         </select>
+
+                                        <select
+                                            className="rounded-full px-4 py-2 text-sm font-semibold bg-white/10 text-white/90 border border-white/20 focus:outline-none"
+                                            value={statusFilter}
+                                            onChange={(e) => setStatusFilter(e.target.value === 'all' ? 'all' : e.target.value)}
+                                        >
+                                            <option value="all" className="text-lead-900">Todos los estados</option>
+                                            {statusValues.map(s => (
+                                                <option key={s.toLowerCase()} value={s.toLowerCase()} className="text-lead-900">{s}</option>
+                                            ))}
+                                        </select>
                                     </div>
                                 </div>
                             </div>
@@ -152,9 +164,9 @@ export const PresalesPage: React.FC<PresalesSectionProps> = ({
 
                             <PresalesTable
                                 presales={presales}
-                                branchMap={branchMap}
+                                branchFilter={branchFilter}
+                                statusFilter={statusFilter}
                                 assignDistributor={assignDistributor}
-                                // brandFilter={brandFilter}
                                 // onToast={handleToast}
                             />
 
