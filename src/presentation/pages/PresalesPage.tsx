@@ -4,6 +4,7 @@ import { useBranches, useDebounce } from '@presentation/hooks';
 import { container } from '@infrastructure/config';
 import { PresaleFilters } from '@domain/ports';
 import { usePresales } from '@presentation/hooks/usePresales';
+import PresalesTable from '@presentation/components/presales/PresalesTable';
 
 interface PresalesSectionProps {
     searchTerm: string;
@@ -27,8 +28,8 @@ export const PresalesPage: React.FC<PresalesSectionProps> = ({
         clearError,
     } = usePresales();
 
-    const { branches, fetchBranches, isLoading: branchesLoading } = useBranches();
-    
+    const { branches, fetchBranches, branchMap, isLoading: branchesLoading } = useBranches();
+
 
     const [search, setSearch] = useState<string>('');
     const [branchFilter, setBranchFilter] = useState<number | 'all'>('all');
@@ -55,10 +56,10 @@ export const PresalesPage: React.FC<PresalesSectionProps> = ({
 
     useEffect(() => {
         if (error) {
-          onToast('error', error);
-          clearError();
+            onToast('error', error);
+            clearError();
         }
-      }, [error, onToast, clearError]);
+    }, [error, onToast, clearError]);
 
 
     const stats = useMemo(() => ({
@@ -125,6 +126,37 @@ export const PresalesPage: React.FC<PresalesSectionProps> = ({
                                     </div>
                                 </div>
                             </div>
+                        </div>
+                    </section>
+
+
+                    <section className="grid gap-8 xl:grid-cols-[1fr]">
+                        <div className="card shadow-xl ring-1 ring-black/5">
+                            <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between border-b border-lead-100 pb-4">
+                                <div>
+                                    <h3 className="text-xl font-bold text-brand-900">Listado de preventas</h3>
+                                    <p className="text-sm text-lead-500">
+                                        {totalPages > 0 && `Página ${page} de ${totalPages} • `}
+                                        {total.toLocaleString()} producto(s) total
+                                        {/* {(debouncedSearch || categoryFilter !== 'all' || brandFilter !== 'all') && ' (filtrados)'} */}
+                                    </p>
+                                </div>
+                                <button
+                                    type="button"
+                                    className="btn-primary bg-accent-500 hover:bg-accent-600 border-transparent text-white shadow-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                                    // onClick={modal.openCreate}
+                                >
+                                    Crear preventa
+                                </button>
+                            </div>
+
+                            <PresalesTable
+                                presales={presales}
+                                branchMap={branchMap}
+                                // brandFilter={brandFilter}
+                                // onToast={handleToast}
+                            />
+
                         </div>
                     </section>
                 </div>

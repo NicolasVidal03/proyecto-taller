@@ -32,6 +32,12 @@ export interface Presale {
     clientId: number,
     businessId: number | null,
     branchId: number | null,
+    
+    branchName?: string | null,
+    clientName?: string | null,
+    clientLastName?: string | null,
+    presellerName?: string | null,
+
     createdAt?: string,
     updatedAt?: string,
     deliveryDate?: string,
