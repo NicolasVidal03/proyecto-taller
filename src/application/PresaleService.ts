@@ -5,8 +5,12 @@ export class PresaleService {
     constructor(private repo: IPresaleRepository) {}
 
     async getAll(filters?: PresaleFilters): Promise<PaginatedPresales> {
-        return this.repo.getAll()
+        return this.repo.getAll(filters)
     } 
+
+    async getById(id: number, details?: boolean): Promise<Presale> {
+        return this.repo.getById(id, details);
+    }
 
     async assign(presaleId: number, distributorId: number): Promise<Presale | null> {
         return this.repo.assign(presaleId, distributorId)

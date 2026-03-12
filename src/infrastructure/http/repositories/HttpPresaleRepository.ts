@@ -18,6 +18,12 @@ export class HttpPresaleRepository implements IPresaleRepository {
         return res.data;
     }
 
+    async getById(id: number, details?: boolean): Promise<Presale> {
+        const withDetails = details ? '?withDetails=true' : ''
+        const res = await http.get(`/presales/${id + withDetails}`)
+        return res.data;
+    }
+
     async assign(presaleId: number, distributorId: number): Promise<Presale | null> {
         const url = `/presales/${presaleId}/assign`
         const res = await http.patch(url, { distributorId: distributorId })
@@ -30,7 +36,14 @@ export class HttpPresaleRepository implements IPresaleRepository {
     }
 
     async update(id: number, data: UpdatePresaleDTO): Promise<Presale> {
-        const res = await http.put(`/presales/${id}`, data)
+    console.log('PUT /presales/', id, JSON.stringify(data, null, 2));
+    try {
+        const res = await http.put(`/presales/${id}`, data);
+        console.log('response:', res.data);
         return res.data;
+    } catch (err: any) {
+        console.log('error response:', err.response?.data); // ← agrega esto
+        throw err;
     }
+}
 } 

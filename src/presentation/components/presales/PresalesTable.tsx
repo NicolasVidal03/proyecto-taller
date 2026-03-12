@@ -57,7 +57,8 @@ const PresalesTable: React.FC<PresalesTableProps> = ({
             const matchesBranch = branchFilter === 'all' || p.branchId === branchFilter;
             const matchesStatus = statusFilter === 'all' || p.status === statusFilter;
             return matchesBranch && matchesStatus;
-        });
+        })
+        .sort((a, b) => b.id - a.id);
     }, [presales, branchFilter, statusFilter]);
 
     const isEmpty = filteredPresales.length === 0;
@@ -69,7 +70,7 @@ const PresalesTable: React.FC<PresalesTableProps> = ({
                 <table className="min-w-full text-sm">
                     <thead className="bg-brand-600 text-xs uppercase tracking-wider text-white">
                         <tr>
-                            <th className="px-4 py-4 text-left font-semibold">Cliente</th>
+                            <th className="px-4 py-4 text-left font-semibold">Negocio</th>
                             <th className="px-4 py-4 text-left font-semibold">Sucursal</th>
                             <th className="px-4 py-4 text-left font-semibold">Prevendedor</th>
                             <th className="px-4 py-4 text-left font-semibold">Trans ID</th>
@@ -89,7 +90,7 @@ const PresalesTable: React.FC<PresalesTableProps> = ({
                         ) : filteredPresales.map(p => (
                             <tr key={p.id} className="transition-colors hover:bg-white">
                                 <td className="px-4 py-3">
-                                    <p className="font-medium text-lead-800">{p.clientLastName}, {p.clientName}</p>
+                                    <p className="font-medium text-lead-800">{p.businessName ? p.businessName : p.clientLastName + ', ' + p.clientName}</p>
                                 </td>
                                 <td className="px-4 py-3 text-lead-600">
                                     {p.branchName || '—'}

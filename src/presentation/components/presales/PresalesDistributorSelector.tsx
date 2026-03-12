@@ -68,7 +68,7 @@ const PresalesDistributorSelector: React.FC<DistributorSelectorProps> = ({
                     if (!e.target.value) setSelectedId(null);
                 }}
                 onFocus={handleFocus}
-                placeholder="Buscar transportista..."
+                placeholder="Asignar transportista..."
                 className="input-plain w-full"
             />
 

@@ -6,6 +6,8 @@ import useBusinesses from '@presentation/hooks/useBusinesses';
 import { useInventory } from '@presentation/hooks';
 import { Business } from '@domain/entities/Business';
 import { ProductWithBranchInfo } from '@domain/entities/ProductBranch';
+import { container } from '@infrastructure/config';
+import { usePresales } from '@presentation/hooks/usePresales';
 
 export interface PresaleDetailsFormValues {
     productId: number,
@@ -45,12 +47,15 @@ const PresaleFormModal: React.FC<PresaleFormModalProps> = ({
     initialData,
     submitting,
     onClose,
-    //   onSubmit,
+    onSubmit,
 }) => {
+    const auth = useAuth();
     const { businesses, fetchBusinesses } = useBusinesses();
     const { inventory, applyFilters } = useInventory();
+    const { presaleById } = usePresales();
 
-    const [businessId, setBusiness] = useState('');
+    const [presale, setPresale] = useState<Presale | null>(null);
+    const [business, setBusiness] = useState('');
     const [productDetails, setProductDetails] = useState<ProductDetail[]>([]);
     const [deliveryDate, setDeliveryDate] = useState('');
     const [note, setNote] = useState('');
@@ -62,6 +67,8 @@ const PresaleFormModal: React.FC<PresaleFormModalProps> = ({
 
     const [searchProduct, setSearchProduct] = useState('');
     const [showProductDropdown, setShowProductDropdown] = useState(false);
+
+
 
     const filteredBusiness = useMemo(() => {
         const term = searchBusiness.trim().toLowerCase();
@@ -84,7 +91,6 @@ const PresaleFormModal: React.FC<PresaleFormModalProps> = ({
             });
     }, [inventory, searchProduct, productDetails]);
 
-    const auth = useAuth();
 
     useEffect(() => {
         Promise.all([fetchBusinesses()])
@@ -96,23 +102,69 @@ const PresaleFormModal: React.FC<PresaleFormModalProps> = ({
         }
     }, [applyFilters]);
 
+    useEffect(() => {
+        const fetchPresale = async () => {
+            if (open && mode === 'edit' && initialData) {
+                const data = await presaleById(initialData.id, true);
+                setPresale(data);
+            }
+        };
+
+        fetchPresale();
+    }, [open, mode, initialData, presaleById]);
+
 
     useEffect(() => {
-        if (open) {
-            if (mode === 'edit' && initialData) {
-                setBusiness(initialData.businessName || '');
-                // setProducts(initialData.products || '');
-                // setDeliveryDate(initialData.internalCode || '');
-                // setNote(initialData.note || 0);
-            }
-        } else {
+        if (!open) {
             setBusiness('');
-            // setProducts(null);
+            setProductDetails([]);
             setDeliveryDate('');
             setNote('');
+            setSearchBusiness('');
+            setSelectedBusiness(null);
+            setSearchProduct('');
+            setPresale(null);
+            setErrors({});
         }
-        setErrors({});
-    }, [open, mode, initialData]);
+    }, [open]);
+
+    useEffect(() => {
+        if (open && mode === 'edit' && presale) {
+            setBusiness(presale.businessName || '');
+            setSearchBusiness(presale.businessName || '');
+            setDeliveryDate(presale.deliveryDate || '');
+            setNote(presale.notes || '');
+
+            if (presale.businessId) {
+                const found = businesses.find(b => b.id === presale.businessId);
+                if (found) {
+                    setSelectedBusiness(found);
+                    setSearchBusiness(found.name);
+                }
+            }
+
+            if (presale.details?.length) {
+                const mapped: ProductDetail[] = presale.details.map(d => ({
+                    product: {
+                        id: d.productId,
+                        name: d.productName,
+                        branch: { stockQty: d.currentStock },
+                        prices: [{
+                            priceTypeId: d.priceTypeId,
+                            priceTypeName: d.priceTypeName,
+                            price: d.unitPrice,
+                        }],
+                    } as unknown as ProductWithBranchInfo,
+                    selectedPriceTypeId: d.priceTypeId,
+                    selectedPrice: d.unitPrice,
+                    productQuantity: d.quantityRequested,
+                }));
+                setProductDetails(mapped);
+            }
+        }
+    }, [open, mode, presale, businesses]);
+
+
 
     const handleSelectBusiness = useCallback((business: Business) => {
         setSelectedBusiness(business);
@@ -133,38 +185,45 @@ const PresaleFormModal: React.FC<PresaleFormModalProps> = ({
     }, []);
 
 
-
-
-
     const handleSubmit = (e: React.FormEvent) => {
-        // e.preventDefault();
-        // if (!validate()) return;
+        e.preventDefault();
 
-        // const prices: ProductPrice[] = selectedPrices
-        //   .map((type) => {
-        //     const rawValue = valuesPrices[type];
-        //     if (!rawValue) return null;
-        //     const parsed = parseFloat(rawValue);
-        //     if (isNaN(parsed)) return null;
-        //     return {
-        //       priceTypeId: priceTypeIdMap[type],
-        //       price: Math.round(parsed * 100) / 100,
-        //     };
-        //   })
-        //   .filter((p): p is ProductPrice => p !== null);
+        if (!selectedBusiness) {
+            setErrors(prev => ({ ...prev, business: 'Selecciona un negocio' }));
+            return;
+        }
+        if (productDetails.length === 0) {
+            setErrors(prev => ({ ...prev, products: 'Agrega al menos un producto' }));
+            return;
+        }
+        if (!deliveryDate) {
+            setErrors(prev => ({ ...prev, date: 'La fecha de entrega es requerida' }));
+            return;
+        }
+        const missingPrice = productDetails.some(d => !d.selectedPriceTypeId);
+        if (missingPrice) {
+            setErrors(prev => ({ ...prev, products: 'Todos los productos deben tener un precio seleccionado' }));
+            return;
+        }
 
-        // onSubmit({
-        //   name: name.trim().replace(/\s+/g, " "),
-        //   barcode: barcode.trim() || null,
-        //   internalCode: internalCode.trim().replace(/\s+/g, " ") || null,
-        //   presentationId: presentationId || null,
-        //   colorId: colorId || null,
-        //   prices,
-        //   imageFile: imageFile || undefined,
-        //   categoryId,
-        //   brandId,
-        // });
+        if (!auth.user?.branchId) {
+            setErrors(prev => ({ ...prev, branch: 'No se pudo determinar la sucursal' }));
+            return;
+        }
 
+        onSubmit({
+            clientId: selectedBusiness.clientId,
+            businessId: selectedBusiness.id,
+            branchId: auth.user.branchId,
+            deliveryDate,
+            notes: note || null,
+            details: productDetails.map(d => ({
+                productId: d.product.id,
+                quantityRequested: d.productQuantity ?? 1,
+                priceTypeId: d.selectedPriceTypeId!,
+                unitPrice: Number(d.selectedPrice),
+            })),
+        });
     };
 
 
@@ -206,6 +265,7 @@ const PresaleFormModal: React.FC<PresaleFormModalProps> = ({
                             placeholder="Buscar por nombre..."
                             className="input-plain w-full"
                         />
+                        {errors.business && <p className="mt-1 text-xs text-red-500">{errors.business}</p>}
 
                         {showBusinessDropdown && filteredBusiness.length > 0 && (
                             <div className="absolute z-50 mt-1 w-full max-h-60 overflow-auto rounded-xl bg-white border border-lead-200 shadow-lg">
@@ -407,6 +467,7 @@ const PresaleFormModal: React.FC<PresaleFormModalProps> = ({
                             </div>
                         </div>
                     )}
+                    {errors.products && <p className="mt-1 text-xs text-red-500">{errors.products}</p>}
 
                     <div className="grid grid-cols-2 gap-4">
                         <div>
@@ -414,13 +475,18 @@ const PresaleFormModal: React.FC<PresaleFormModalProps> = ({
                                 Fecha de entrega *
                             </label>
                             <input
-                                type="text"
-                                id="barcode"
+                                type="date"
                                 value={deliveryDate}
-                                onChange={(e) => setDeliveryDate(e.target.value)}
-                                className="mt-1 block w-full rounded-lg border border-lead-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500"
-                                placeholder="123456789012"
-                                disabled={submitting}
+                                onChange={(e) => {
+                                    setDeliveryDate(e.target.value);
+                                    // if (errors.date) setErrors(prev => ({ ...prev, date: undefined }));
+                                }}
+                                min={new Date().toISOString().split('T')[0]}
+                                className={`w-full px-4 py-3 rounded-xl border-2 ${errors.date
+                                    ? 'border-red-400 focus:ring-red-500 focus:border-red-500 bg-red-50'
+                                    : 'border-gray-200 focus:ring-brand-500 focus:border-brand-500'
+                                    } focus:outline-none focus:ring-2 transition-all`}
+                            // disabled={isSubmitting}
                             />
                         </div>
                         <div>

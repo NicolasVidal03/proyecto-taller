@@ -2,10 +2,11 @@ export interface PresaleDetails {
     id: number,
     presaleId?: number | null,
     productId: number,
-    productBranchId: number,
-    branchId: number,
     quantityRequested: number,
     quantityDelivered: number | null,
+    productBranchId: number,
+    branchId: number,
+    priceTypeName: string,
     priceTypeId: number,
     unitPrice: number,
     finalUnitPrice: number | null,
@@ -15,6 +16,9 @@ export interface PresaleDetails {
     state: boolean,
     createdAt?: string | null,
     updatedAt?: string | null,
+    productName: string,
+    productBarcode?: number | null,
+    currentStock: number | null
 }
 
 export interface PresaleStatusHistory {
@@ -32,14 +36,15 @@ export interface Presale {
     clientId: number,
     businessId: number | null,
     branchId: number | null,
-    
+    presellerId?: number | null,
     branchName?: string | null,
     clientName?: string | null,
     clientLastName?: string | null,
+    clientPhone?: number | null,
     presellerName?: string | null,
     distributorId: number | null,
+    distributorName?: string | null,
     businessName?: string | null,
-
     createdAt?: string,
     updatedAt?: string,
     deliveryDate?: string,
@@ -51,6 +56,6 @@ export interface Presale {
     deliveryNotes?: string | null,
     userId: number,
     state: boolean,
-    presaleDetails?: PresaleDetails,
+    details?: PresaleDetails[],
     presaleStatusHistory?: PresaleStatusHistory 
 }

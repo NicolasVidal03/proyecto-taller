@@ -7,15 +7,14 @@ import { usePresales } from '@presentation/hooks/usePresales';
 import PresalesTable from '@presentation/components/presales/PresalesTable';
 import PresaleFormModal, { PresaleFormValues } from '@presentation/components/presales/PresaleFromModal';
 import { Presale } from '@domain/entities';
+import { useAuth } from '@presentation/providers';
 
 interface PresalesSectionProps {
     searchTerm: string;
     branchFilter: string | 'all';
-    onToast: (type: 'success' | 'error', message: string) => void;
 }
 
 export const PresalesPage: React.FC<PresalesSectionProps> = ({
-    onToast,
 }) => {
     const {
         presales,
@@ -28,16 +27,20 @@ export const PresalesPage: React.FC<PresalesSectionProps> = ({
         applyFilters,
         clearError,
         assignDistributor,
+        createPresale,
+        updatePresale,
     } = usePresales();
 
     const { branches, fetchBranches, isLoading: branchesLoading } = useBranches();
+    const auth = useAuth();
     const statusValues = ['Pendiente', 'Asignado', 'Entregado', 'Parcial', 'Cancelado']
 
 
     const [search, setSearch] = useState<string>('');
-    const [branchFilter, setBranchFilter] = useState<number | 'all'>('all');
+    const [branchFilter, setBranchFilter] = useState<number | 'all'>(auth.user?.branchId ?? 'all');
     const [statusFilter, setStatusFilter] = useState<string | 'all'>('all');
 
+    const toast = useToast();
     const modal = useEntityModal<Presale>();
 
     const debouncedSearch = useDebounce(search, 500)
@@ -61,10 +64,10 @@ export const PresalesPage: React.FC<PresalesSectionProps> = ({
 
     useEffect(() => {
         if (error) {
-            // onToast('error', error);
+            toast.error(error);
             clearError();
         }
-    }, [error, onToast, clearError]);
+    }, [error, toast, clearError]);
 
 
     const stats = useMemo(() => ({
@@ -75,8 +78,72 @@ export const PresalesPage: React.FC<PresalesSectionProps> = ({
     }), [presales.length])
 
     const handleSubmit = async (values: PresaleFormValues) => {
-        console.log('hola')
-    }
+        if (!auth.user) return;
+        modal.setSubmitting(true);
+        try {
+            if (modal.modalState.mode === 'create') {
+                const result = await createPresale(values);
+                if (result) {
+                    toast.success('Preventa creada correctamente');
+                    modal.setSubmitting(false);
+                    modal.close();
+                }
+            } else if (modal.modalState.entity) {
+                const original = await container.presales.getById(modal.modalState.entity.id, true);
+                const originalDetails = original.details ?? [];
+
+                const originalIds = new Set(originalDetails.map(d => d.id));
+                const newProductIds = new Set(values.details.map(d => d.productId));
+
+                // Productos a eliminar: estaban antes y ya no están
+                const remove = originalDetails
+                    .filter(d => !newProductIds.has(d.productId))
+                    .map(d => d.id);
+
+                // Productos a actualizar: estaban antes y siguen estando
+                const update = values.details
+                    .filter(d => originalDetails.some(od => od.productId === d.productId))
+                    .map(d => {
+                        const original = originalDetails.find(od => od.productId === d.productId)!;
+                        return {
+                            detailId: original.id,
+                            quantityRequested: d.quantityRequested,
+                            unitPrice: d.unitPrice,
+                        };
+                    });
+
+                // Productos a agregar: no estaban antes
+                const add = values.details
+                    .filter(d => !originalDetails.some(od => od.productId === d.productId))
+                    .map(d => ({
+                        productId: d.productId,
+                        quantityRequested: d.quantityRequested,
+                        priceTypeId: d.priceTypeId,
+                        unitPrice: d.unitPrice,
+                    }));
+
+                const result = await updatePresale(modal.modalState.entity.id, {
+                    clientId: values.clientId,
+                    businessId: values.businessId,
+                    branchId: values.branchId,
+                    deliveryDate: values.deliveryDate,
+                    notes: values.notes,
+                    details: { update, add, remove },
+                });
+
+                if (result) {
+                    toast.success('Preventa actualizada correctamente');
+                    modal.setSubmitting(false);
+                    modal.close();
+                }
+            }
+        } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : 'No se pudo guardar la preventa';
+            toast.error(message);
+        } finally {
+            modal.setSubmitting(false);
+        }
+    };
 
 
     return (
@@ -112,7 +179,7 @@ export const PresalesPage: React.FC<PresalesSectionProps> = ({
                                             value={branchFilter}
                                             onChange={(e) => setBranchFilter(e.target.value === 'all' ? 'all' : Number(e.target.value))}
                                         >
-                                            <option value="all" className="text-lead-900">Todas las categorias</option>
+                                            <option value="all" className="text-lead-900">Todas las sucursales</option>
                                             {branches.filter(b => b.state).map(c => (
                                                 <option key={c.id} value={c.id} className="text-lead-900">{c.name}</option>
                                             ))}
@@ -176,7 +243,7 @@ export const PresalesPage: React.FC<PresalesSectionProps> = ({
                                 statusFilter={statusFilter}
                                 assignDistributor={assignDistributor}
                                 onEdit={modal.openEdit}
-                                // onToast={handleToast}
+                            // onToast={handleToast}
                             />
 
                         </div>
@@ -191,6 +258,7 @@ export const PresalesPage: React.FC<PresalesSectionProps> = ({
                     onClose={modal.close}
                     onSubmit={handleSubmit}
                 />
+                <ToastContainer toasts={toast.toasts} onDismiss={toast.dismissToast} />
 
             </div>
 

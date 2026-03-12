@@ -19,6 +19,7 @@ export interface UsePresalesReturn {
     clearError: () => void;
     clearCache: () => void;
 
+    presaleById: (presaleId: number, details?: boolean) => Promise<Presale | null>;
     assignDistributor: (presaleid: number, distributorId: number) => Promise<Presale | null>;
     createPresale: (data: CreatePresaleDTO) => Promise<Presale | null>;
     updatePresale: (id: number, data: UpdatePresaleDTO) => Promise<Presale | null>;
@@ -53,6 +54,22 @@ export const usePresales = (): UsePresalesReturn => {
         fetchFn: fetchPresales,
         limit: LIMIT,
     });
+
+    const presaleById = useCallback(async (idPresale: number, details?: boolean): Promise<Presale | null> => {
+        setCrudLoading(true);
+        setCrudError(null);
+        try {
+            const presale = await container.presales.getById(idPresale, details);
+            clearCache();
+            await refreshCurrentPage();
+            return presale;
+        } catch (e: any) {
+            setCrudError(extractErrorMessage(e));
+            return null;
+        } finally {
+            setCrudLoading(false)
+        }
+    }, []);
 
     const assignDistributor = useCallback(async (idPresale: number, idDistributor: number): Promise<Presale | null> => {
         setCrudLoading(true);
@@ -122,6 +139,7 @@ export const usePresales = (): UsePresalesReturn => {
         assignDistributor,
         createPresale,
         updatePresale,
+        presaleById,
     };
 };
 
