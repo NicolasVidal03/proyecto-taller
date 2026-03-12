@@ -1,5 +1,5 @@
 import { Presale } from "@domain/entities";
-import { PresaleFilters } from "@domain/ports";
+import { CreatePresaleDTO, PresaleFilters, UpdatePresaleDTO } from "@domain/ports";
 import { container } from "@infrastructure/config";
 import { useCallback, useState } from "react";
 import { extractErrorMessage, usePagination } from "./shared";
@@ -19,7 +19,9 @@ export interface UsePresalesReturn {
     clearError: () => void;
     clearCache: () => void;
 
-    assignDistributor: (presaleid: number, distributorId: number) => Promise<Presale | null>
+    assignDistributor: (presaleid: number, distributorId: number) => Promise<Presale | null>;
+    createPresale: (data: CreatePresaleDTO) => Promise<Presale | null>;
+    updatePresale: (id: number, data: UpdatePresaleDTO) => Promise<Presale | null>;
 }
 
 const LIMIT = 10;
@@ -68,6 +70,37 @@ export const usePresales = (): UsePresalesReturn => {
         }
     }, [clearCache, refreshCurrentPage]);
 
+    const createPresale = useCallback(async (data: CreatePresaleDTO): Promise<Presale | null> => {
+        setCrudLoading(true);
+        setCrudError(null);
+        try {
+            const newProduct = await container.presales.create(data);
+            clearCache();
+            await applyFilters();
+            return newProduct;
+        } catch (err) {
+            setCrudError(extractErrorMessage(err));
+            return null;
+        } finally {
+            setCrudLoading(false);
+        }
+    }, [clearCache, applyFilters]);
+
+    const updatePresale = useCallback(async (id: number, data: UpdatePresaleDTO): Promise<Presale | null> => {
+        setCrudLoading(true);
+        setCrudError(null);
+        try {
+          const updated = await container.presales.update(id, data);
+          clearCache();
+          await refreshCurrentPage();
+          return updated;
+        } catch (err) {
+          setCrudError(extractErrorMessage(err));
+          return null;
+        } finally {
+          setCrudLoading(false);
+        }
+      }, [clearCache, refreshCurrentPage]);
 
     const clearError = useCallback(() => {
         clearPaginationError();
@@ -87,6 +120,8 @@ export const usePresales = (): UsePresalesReturn => {
         clearError,
         clearCache,
         assignDistributor,
+        createPresale,
+        updatePresale,
     };
 };
 

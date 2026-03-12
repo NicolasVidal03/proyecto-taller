@@ -1,6 +1,6 @@
 import { Presale } from '@domain/entities';
 import { http } from '../httpClient';
-import { IPresaleRepository, PaginatedPresales, PresaleFilters } from "@domain/ports/IPresaleRepository";
+import { CreatePresaleDTO, IPresaleRepository, PaginatedPresales, PresaleFilters, UpdatePresaleDTO } from "@domain/ports/IPresaleRepository";
 
 export class HttpPresaleRepository implements IPresaleRepository {
     async getAll(filters?: PresaleFilters): Promise<PaginatedPresales> {
@@ -19,8 +19,18 @@ export class HttpPresaleRepository implements IPresaleRepository {
     }
 
     async assign(presaleId: number, distributorId: number): Promise<Presale | null> {
-        const url = `presales/${presaleId}/assign`
+        const url = `/presales/${presaleId}/assign`
         const res = await http.patch(url, { distributorId: distributorId })
+        return res.data;
+    }
+
+    async create(data: CreatePresaleDTO): Promise<Presale> {
+        const res = await http.post('/presales', data)
+        return res.data;
+    }
+
+    async update(id: number, data: UpdatePresaleDTO): Promise<Presale> {
+        const res = await http.put(`/presales/${id}`, data)
         return res.data;
     }
 } 

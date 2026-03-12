@@ -1,10 +1,12 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { ToastContainer, useToast } from '../components/shared/Toast';
-import { useBranches, useDebounce } from '@presentation/hooks';
+import { useBranches, useDebounce, useEntityModal } from '@presentation/hooks';
 import { container } from '@infrastructure/config';
 import { PresaleFilters } from '@domain/ports';
 import { usePresales } from '@presentation/hooks/usePresales';
 import PresalesTable from '@presentation/components/presales/PresalesTable';
+import PresaleFormModal, { PresaleFormValues } from '@presentation/components/presales/PresaleFromModal';
+import { Presale } from '@domain/entities';
 
 interface PresalesSectionProps {
     searchTerm: string;
@@ -35,6 +37,8 @@ export const PresalesPage: React.FC<PresalesSectionProps> = ({
     const [search, setSearch] = useState<string>('');
     const [branchFilter, setBranchFilter] = useState<number | 'all'>('all');
     const [statusFilter, setStatusFilter] = useState<string | 'all'>('all');
+
+    const modal = useEntityModal<Presale>();
 
     const debouncedSearch = useDebounce(search, 500)
 
@@ -70,6 +74,10 @@ export const PresalesPage: React.FC<PresalesSectionProps> = ({
 
     }), [presales.length])
 
+    const handleSubmit = async (values: PresaleFormValues) => {
+        console.log('hola')
+    }
+
 
     return (
         <>
@@ -93,7 +101,7 @@ export const PresalesPage: React.FC<PresalesSectionProps> = ({
                                     <div className="flex flex-col gap-3 md:flex-row">
                                         <input
                                             className="input-plain flex-1"
-                                            placeholder={'hola'}
+                                            placeholder={'Buscar por cliente, producto'}
                                             value={search}
                                             onChange={e => setSearch(e.target.value)}
                                         />
@@ -156,7 +164,7 @@ export const PresalesPage: React.FC<PresalesSectionProps> = ({
                                 <button
                                     type="button"
                                     className="btn-primary bg-accent-500 hover:bg-accent-600 border-transparent text-white shadow-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                                    // onClick={modal.openCreate}
+                                    onClick={modal.openCreate}
                                 >
                                     Crear preventa
                                 </button>
@@ -167,12 +175,23 @@ export const PresalesPage: React.FC<PresalesSectionProps> = ({
                                 branchFilter={branchFilter}
                                 statusFilter={statusFilter}
                                 assignDistributor={assignDistributor}
+                                onEdit={modal.openEdit}
                                 // onToast={handleToast}
                             />
 
                         </div>
                     </section>
                 </div>
+
+                <PresaleFormModal
+                    open={modal.modalState.isOpen}
+                    mode={modal.modalState.mode}
+                    initialData={modal.modalState.entity}
+                    submitting={modal.modalState.isSubmitting}
+                    onClose={modal.close}
+                    onSubmit={handleSubmit}
+                />
+
             </div>
 
         </>

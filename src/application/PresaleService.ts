@@ -1,5 +1,5 @@
 import { Presale } from "@domain/entities/Presale";
-import { IPresaleRepository, PaginatedPresales, PresaleFilters } from "@domain/ports/IPresaleRepository";
+import { CreatePresaleDTO, IPresaleRepository, PaginatedPresales, PresaleFilters, UpdatePresaleDTO } from "@domain/ports/IPresaleRepository";
 
 export class PresaleService {
     constructor(private repo: IPresaleRepository) {}
@@ -10,5 +10,13 @@ export class PresaleService {
 
     async assign(presaleId: number, distributorId: number): Promise<Presale | null> {
         return this.repo.assign(presaleId, distributorId)
+    }
+
+    async create(data: CreatePresaleDTO): Promise<Presale> {
+        return this.repo.create(data);
+    }
+
+    async update(id: number, data: UpdatePresaleDTO): Promise<Presale> {
+        return this.repo.update(id, data);
     }
 }

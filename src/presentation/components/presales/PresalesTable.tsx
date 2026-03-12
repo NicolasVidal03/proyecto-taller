@@ -8,6 +8,7 @@ type PresalesTableProps = {
     presales: Presale[];
     branchFilter?: number | string;
     statusFilter?: string;
+    onEdit: (presale: Presale) => void;
     busyId?: number | null;
     assignDistributor: (presaleId: number, distributorId: number) => Promise<Presale | null>
 };
@@ -17,6 +18,7 @@ const PresalesTable: React.FC<PresalesTableProps> = ({
     branchFilter,
     statusFilter,
     assignDistributor,
+    onEdit,
     busyId
 }) => {
 
@@ -115,6 +117,7 @@ const PresalesTable: React.FC<PresalesTableProps> = ({
                                     <div className="flex items-center justify-center gap-2">
                                         <button
                                             type="button"
+                                            onClick={() => onEdit(p)}
                                             className="rounded bg-brand-100 px-3 py-1.5 font-medium text-brand-700 transition hover:bg-brand-200 disabled:opacity-50"
                                             disabled={isBusy(p.id)}
                                         >

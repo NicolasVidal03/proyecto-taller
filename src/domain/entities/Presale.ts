@@ -38,6 +38,7 @@ export interface Presale {
     clientLastName?: string | null,
     presellerName?: string | null,
     distributorId: number | null,
+    businessName?: string | null,
 
     createdAt?: string,
     updatedAt?: string,
