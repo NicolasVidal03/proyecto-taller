@@ -23,6 +23,7 @@ export interface UsePresalesReturn {
     assignDistributor: (presaleid: number, distributorId: number) => Promise<Presale | null>;
     createPresale: (data: CreatePresaleDTO) => Promise<Presale | null>;
     updatePresale: (id: number, data: UpdatePresaleDTO) => Promise<Presale | null>;
+    cancelPresale: (id: number, reason?: string) => Promise<Presale | null>;
 }
 
 const LIMIT = 10;
@@ -107,17 +108,33 @@ export const usePresales = (): UsePresalesReturn => {
         setCrudLoading(true);
         setCrudError(null);
         try {
-          const updated = await container.presales.update(id, data);
-          clearCache();
-          await refreshCurrentPage();
-          return updated;
+            const updated = await container.presales.update(id, data);
+            clearCache();
+            await refreshCurrentPage();
+            return updated;
         } catch (err) {
-          setCrudError(extractErrorMessage(err));
-          return null;
+            setCrudError(extractErrorMessage(err));
+            return null;
         } finally {
-          setCrudLoading(false);
+            setCrudLoading(false);
         }
-      }, [clearCache, refreshCurrentPage]);
+    }, [clearCache, refreshCurrentPage]);
+
+    const cancelPresale = useCallback(async (id: number, reason?: string): Promise<Presale | null> => {
+        setCrudLoading(true);
+        setCrudError(null);
+        try {
+            const canceled = await container.presales.cancelPresale(id, reason);
+            clearCache();
+            await refreshCurrentPage();
+            return canceled;
+        } catch (err) {
+            setCrudError(extractErrorMessage(err));
+            return null;
+        } finally {
+            setCrudLoading(false);
+        }
+    }, [clearCache, refreshCurrentPage]);
 
     const clearError = useCallback(() => {
         clearPaginationError();
@@ -140,6 +157,7 @@ export const usePresales = (): UsePresalesReturn => {
         createPresale,
         updatePresale,
         presaleById,
+        cancelPresale,
     };
 };
 

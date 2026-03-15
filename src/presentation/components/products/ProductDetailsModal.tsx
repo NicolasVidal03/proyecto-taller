@@ -14,6 +14,8 @@ const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({ product, pres
 
   const apiUrl = env.apiBaseUrl || 'http://localhost:3000';
 
+  console.log(apiUrl, product.pathImage)
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto overflow-x-hidden bg-black/60 backdrop-blur-sm p-4 md:p-0">
       <div className="relative w-full max-w-3xl transform rounded-3xl bg-white shadow-2xl transition-all">

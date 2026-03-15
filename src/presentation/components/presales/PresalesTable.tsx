@@ -10,6 +10,7 @@ type PresalesTableProps = {
     statusFilter?: string;
     onEdit: (presale: Presale) => void;
     busyId?: number | null;
+    onCancel: (presale: Presale) => void;
     assignDistributor: (presaleId: number, distributorId: number) => Promise<Presale | null>
 };
 
@@ -19,6 +20,7 @@ const PresalesTable: React.FC<PresalesTableProps> = ({
     statusFilter,
     assignDistributor,
     onEdit,
+    onCancel,
     busyId
 }) => {
 
@@ -58,7 +60,7 @@ const PresalesTable: React.FC<PresalesTableProps> = ({
             const matchesStatus = statusFilter === 'all' || p.status === statusFilter;
             return matchesBranch && matchesStatus;
         })
-        .sort((a, b) => b.id - a.id);
+            .sort((a, b) => b.id - a.id);
     }, [presales, branchFilter, statusFilter]);
 
     const isEmpty = filteredPresales.length === 0;
@@ -116,21 +118,38 @@ const PresalesTable: React.FC<PresalesTableProps> = ({
                                 </td>
                                 <td className="px-4 py-3 text-center align-middle">
                                     <div className="flex items-center justify-center gap-2">
-                                        <button
-                                            type="button"
-                                            onClick={() => onEdit(p)}
-                                            className="rounded bg-brand-100 px-3 py-1.5 font-medium text-brand-700 transition hover:bg-brand-200 disabled:opacity-50"
-                                            disabled={isBusy(p.id)}
-                                        >
-                                            Editar
-                                        </button>
-                                        <button
-                                            type="button"
-                                            className="rounded px-3 py-1.5 font-medium transition disabled:opacity-50 bg-accent-100 text-accent-700 hover:bg-accent-200"
-                                            disabled={isBusy(p.id)}
-                                        >
-                                            Cancelar
-                                        </button>
+                                        {p.status === 'pendiente' && (
+                                            <>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => onEdit(p)}
+                                                    className="rounded bg-brand-100 px-3 py-1.5 font-medium text-brand-700 transition hover:bg-brand-200 disabled:opacity-50"
+                                                    disabled={isBusy(p.id)}
+                                                >
+                                                    Editar
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    className="rounded px-3 py-1.5 font-medium transition disabled:opacity-50 bg-accent-100 text-accent-700 hover:bg-accent-200"
+                                                    onClick={() => onCancel(p)}
+                                                    disabled={isBusy(p.id)}
+                                                >
+                                                    Cancelar
+                                                </button>
+                                            </>
+                                        )}
+                                        {p.status === 'parcial' && (
+                                            <button
+                                                type="button"
+                                                className="rounded px-3 py-1.5 font-medium transition disabled:opacity-50 bg-accent-100 text-accent-700 hover:bg-accent-200"
+                                                disabled={isBusy(p.id)}
+                                            >
+                                                Restaurar stock
+                                            </button>
+                                        )}
+                                        {p.status !== 'pendiente' && p.status !== 'parcial' && (
+                                            <span className="text-xs text-lead-400 italic">Sin acciones disponibles</span>
+                                        )}
                                     </div>
                                 </td>
                             </tr>

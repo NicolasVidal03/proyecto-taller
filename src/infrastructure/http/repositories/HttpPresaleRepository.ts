@@ -36,14 +36,16 @@ export class HttpPresaleRepository implements IPresaleRepository {
     }
 
     async update(id: number, data: UpdatePresaleDTO): Promise<Presale> {
-    console.log('PUT /presales/', id, JSON.stringify(data, null, 2));
-    try {
-        const res = await http.put(`/presales/${id}`, data);
-        console.log('response:', res.data);
-        return res.data;
-    } catch (err: any) {
-        console.log('error response:', err.response?.data); // ← agrega esto
-        throw err;
+        try {
+            const res = await http.put(`/presales/${id}`, data);
+            return res.data;
+        } catch (err: any) {
+            throw err;
+        }
     }
-}
+
+    async cancelPresale(id: number, reason?: string): Promise<Presale> {
+        const res = await http.patch(`/presales/${id}/cancel`, { reason: reason ?? null });
+        return res.data;
+    }
 } 

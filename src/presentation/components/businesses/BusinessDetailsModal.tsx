@@ -5,6 +5,7 @@ import { BusinessType } from '../../../domain/entities/BusinessType';
 import { Area } from '../../../domain/entities/Area';
 import { AreaMap, getAreaName } from '../../utils/areaHelpers';
 import { env } from '../../../infrastructure/config/env';
+import { url } from 'inspector';
 
 interface BusinessDetailsModalProps {
   business: Business | null;
@@ -21,6 +22,8 @@ const BusinessDetailsModal: React.FC<BusinessDetailsModalProps> = ({ business, c
 
   const client = clients.find((c) => c.id === business.clientId) || null;
   const businessType = businessTypes.find((bt) => bt.id === business.businessTypeId) || null;
+
+  console.log(apiUrl, business.pathImage)
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto overflow-x-hidden bg-black/60 backdrop-blur-sm p-4 md:p-0">

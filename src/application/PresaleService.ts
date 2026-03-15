@@ -23,4 +23,8 @@ export class PresaleService {
     async update(id: number, data: UpdatePresaleDTO): Promise<Presale> {
         return this.repo.update(id, data);
     }
+
+    async cancelPresale(id: number, reason?: string): Promise<Presale> {
+        return this.repo.cancelPresale(id, reason)
+    }
 }

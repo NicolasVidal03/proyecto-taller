@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { ToastContainer, useToast } from '../components/shared/Toast';
-import { useBranches, useDebounce, useEntityModal } from '@presentation/hooks';
+import { useBranches, useConfirmDialog, useDebounce, useEntityModal } from '@presentation/hooks';
 import { container } from '@infrastructure/config';
 import { PresaleFilters } from '@domain/ports';
 import { usePresales } from '@presentation/hooks/usePresales';
@@ -8,6 +8,7 @@ import PresalesTable from '@presentation/components/presales/PresalesTable';
 import PresaleFormModal, { PresaleFormValues } from '@presentation/components/presales/PresaleFromModal';
 import { Presale } from '@domain/entities';
 import { useAuth } from '@presentation/providers';
+import ConfirmDialog from '@presentation/components/shared/ConfirmDialog';
 
 interface PresalesSectionProps {
     searchTerm: string;
@@ -29,6 +30,7 @@ export const PresalesPage: React.FC<PresalesSectionProps> = ({
         assignDistributor,
         createPresale,
         updatePresale,
+        cancelPresale,
     } = usePresales();
 
     const { branches, fetchBranches, isLoading: branchesLoading } = useBranches();
@@ -42,6 +44,8 @@ export const PresalesPage: React.FC<PresalesSectionProps> = ({
 
     const toast = useToast();
     const modal = useEntityModal<Presale>();
+    const modalStock = useEntityModal<Presale>();
+    const confirm = useConfirmDialog<Presale>();
 
     const debouncedSearch = useDebounce(search, 500)
 
@@ -145,6 +149,20 @@ export const PresalesPage: React.FC<PresalesSectionProps> = ({
         }
     };
 
+    const handleCancelPresale = async () => {
+        console.log('hola')
+        if (!confirm.dialogState.entity || !auth.user) return;
+        const presale = confirm.dialogState.entity;
+        console.log('entra aca')
+        await confirm.executeWithLoading(async () => {
+            const success = await cancelPresale(presale.id);
+            console.log("antes del true")
+            if (success) {
+                toast.success(`Producto "${presale.businessName}" eliminado correctamente`);
+            }
+        }, presale.id);
+    };
+
 
     return (
         <>
@@ -243,6 +261,7 @@ export const PresalesPage: React.FC<PresalesSectionProps> = ({
                                 statusFilter={statusFilter}
                                 assignDistributor={assignDistributor}
                                 onEdit={modal.openEdit}
+                                onCancel={confirm.openConfirm}
                             // onToast={handleToast}
                             />
 
@@ -258,6 +277,17 @@ export const PresalesPage: React.FC<PresalesSectionProps> = ({
                     onClose={modal.close}
                     onSubmit={handleSubmit}
                 />
+                <ConfirmDialog
+                    open={confirm.dialogState.isOpen}
+                    title="Cancelar preventa"
+                    message='El stock será repuesto automáticamente.'
+                    confirmLabel="Confirmar"
+                    onConfirm={handleCancelPresale}
+                    onCancel={confirm.closeConfirm}
+                    disabled={confirm.dialogState.isLoading}
+                />
+
+
                 <ToastContainer toasts={toast.toasts} onDismiss={toast.dismissToast} />
 
             </div>

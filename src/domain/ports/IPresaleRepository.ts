@@ -10,31 +10,31 @@ export interface CreatePresaleDetailsDTO {
 export interface CreatePresaleDTO {
   clientId: number,
   businessId: number,
-  branchId:number,
+  branchId: number,
   deliveryDate: string,
   notes?: string | null,
   details: CreatePresaleDetailsDTO[],
 }
 
 export interface UpdatePresaleDetailDTO {
-    detailId: number;
-    quantityRequested: number;
-    unitPrice: number;
+  detailId: number;
+  quantityRequested: number;
+  unitPrice: number;
 }
 
 export interface UpdatePresaleDetailsDTO {
-    update: UpdatePresaleDetailDTO[];
-    add: CreatePresaleDetailsDTO[];
-    remove: number[];
+  update: UpdatePresaleDetailDTO[];
+  add: CreatePresaleDetailsDTO[];
+  remove: number[];
 }
 
 export interface UpdatePresaleDTO {
-    clientId?: number;
-    businessId?: number;
-    branchId?: number;
-    deliveryDate?: string;
-    notes?: string | null;
-    details?: UpdatePresaleDetailsDTO;
+  clientId?: number;
+  businessId?: number;
+  branchId?: number;
+  deliveryDate?: string;
+  notes?: string | null;
+  details?: UpdatePresaleDetailsDTO;
 }
 
 export interface PresaleFilters {
@@ -55,9 +55,10 @@ export interface PaginatedPresales {
 }
 
 export interface IPresaleRepository {
-    getAll(filters?: PresaleFilters):  Promise<PaginatedPresales>;
-    getById(id: number, details?: boolean): Promise<Presale>
-    assign(presaleId: number, distributorId: number): Promise<Presale | null>;
-    create(data:CreatePresaleDTO): Promise<Presale>;
-    update(id: number, data: UpdatePresaleDTO): Promise<Presale>;
+  getAll(filters?: PresaleFilters): Promise<PaginatedPresales>;
+  getById(id: number, details?: boolean): Promise<Presale>
+  assign(presaleId: number, distributorId: number): Promise<Presale | null>;
+  create(data: CreatePresaleDTO): Promise<Presale>;
+  update(id: number, data: UpdatePresaleDTO): Promise<Presale>;
+  cancelPresale(id: number, reason?: string): Promise<Presale>;
 }
