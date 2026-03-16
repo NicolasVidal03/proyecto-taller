@@ -157,6 +157,9 @@ const BusinessFormModal: React.FC<BusinessFormModalProps> = ({
     if (!name.trim()) next.name = 'El nombre es obligatorio';
     if (!clientId) next.clientId = 'Seleccione un cliente';
     if (!businessTypeId) next.businessTypeId = 'Seleccione tipo de negocio';
+    if (nit.trim() && !/^\d{9,15}$/.test(nit.trim())) {
+      next.nit = 'NIT inválido (entre 9 y 15 dígitos)';
+    }
     setErrors(next);
     return Object.keys(next).length === 0;
   };
@@ -190,7 +193,6 @@ const BusinessFormModal: React.FC<BusinessFormModalProps> = ({
   const title = isEdit ? 'Editar Negocio' : 'Nuevo Negocio';
   const submitLabel = isEdit ? 'Guardar cambios' : 'Crear negocio';
 
-  // Helper to get full client name
   const getClientFullName = (client: Client): string => {
     return `${client.lastName} ${client.secondLastName} ${client.name}`.trim();
   };
@@ -212,13 +214,15 @@ const BusinessFormModal: React.FC<BusinessFormModalProps> = ({
 
         <form onSubmit={handleSubmit} className="space-y-5 px-6 py-6">
           <div className="grid gap-4 md:grid-cols-2">
+
             {/* Nombre */}
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-lead-700">Nombre *</label>
               <input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className={`mt-1 block w-full rounded-lg border px-3 py-2 text-sm ${
+                placeholder='Ferretería San José'
+                className={`mt-1 block w-full rounded-lg border px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500 ${
                   errors.name ? 'border-red-500' : 'border-lead-300 bg-white'
                 }`}
                 disabled={saving}
@@ -231,10 +235,18 @@ const BusinessFormModal: React.FC<BusinessFormModalProps> = ({
               <label className="block text-sm font-medium text-lead-700">NIT</label>
               <input
                 value={nit}
-                onChange={(e) => setNit(e.target.value)}
-                className="mt-1 block w-full rounded-lg border-lead-300 bg-white px-3 py-2 text-sm"
+                onChange={(e) => {
+                  const val = e.target.value.replace(/\D/g, '').slice(0, 12);
+                  setNit(val);
+                  if (errors.nit) setErrors((prev) => ({ ...prev, nit: '' }));
+                }}
+                placeholder="Ej: 1234567891"
+                className={`mt-1 block w-full rounded-lg border px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500 ${
+                  errors.nit ? 'border-red-500' : 'border-lead-300 bg-white'
+                }`}
                 disabled={saving}
               />
+              {errors.nit && <p className="mt-1 text-xs text-red-600">{errors.nit}</p>}
             </div>
 
             {/* Cliente (dueño) - Buscador dinámico */}
@@ -247,7 +259,7 @@ const BusinessFormModal: React.FC<BusinessFormModalProps> = ({
                   onChange={(e) => handleClientSearchChange(e.target.value)}
                   onFocus={() => clientSearch && setShowClientDropdown(true)}
                   placeholder="Buscar cliente por apellidos y nombres..."
-                  className={`block w-full rounded-lg border px-3 py-2 text-sm pr-10 ${
+                  className={`block w-full rounded-lg border px-3 py-2 text-sm pr-10 shadow-sm focus:border-brand-500 focus:ring-brand-500 ${
                     errors.clientId ? 'border-red-500' : 'border-lead-300 bg-white'
                   }`}
                   disabled={saving}
@@ -315,7 +327,7 @@ const BusinessFormModal: React.FC<BusinessFormModalProps> = ({
                   setBusinessTypeId(e.target.value ? Number(e.target.value) : '');
                   if (errors.businessTypeId) setErrors((prev) => ({ ...prev, businessTypeId: '' }));
                 }}
-                className={`mt-1 block w-full rounded-lg border px-3 py-2 text-sm ${
+                className={`mt-1 block w-full rounded-lg border px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500 ${
                   errors.businessTypeId ? 'border-red-500' : 'border-lead-300 bg-white'
                 }`}
                 disabled={saving}
@@ -336,7 +348,7 @@ const BusinessFormModal: React.FC<BusinessFormModalProps> = ({
               <select
                 value={priceTypeId}
                 onChange={(e) => setPriceTypeId(e.target.value ? Number(e.target.value) : '')}
-                className="mt-1 block w-full rounded-lg border-lead-300 bg-white px-3 py-2 text-sm"
+                className="mt-1 block w-full rounded-lg border border-lead-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500"
                 disabled={saving}
               >
                 <option value="">Sin asignar</option>
@@ -354,7 +366,7 @@ const BusinessFormModal: React.FC<BusinessFormModalProps> = ({
               <select
                 value={areaId}
                 onChange={(e) => setAreaId(e.target.value ? Number(e.target.value) : '')}
-                className="mt-1 block w-full rounded-lg border-lead-300 bg-white px-3 py-2 text-sm"
+                className="mt-1 block w-full rounded-lg border border-lead-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500"
                 disabled={saving}
               >
                 <option value="">Sin asignar</option>
@@ -372,8 +384,9 @@ const BusinessFormModal: React.FC<BusinessFormModalProps> = ({
               <textarea
                 value={address}
                 onChange={(e) => setAddress(e.target.value)}
+                placeholder='Ej. Avenida América entre Jaime Mendoza y Daniel Albornos'
                 rows={2}
-                className="mt-1 block w-full rounded-lg border-lead-300 bg-white px-3 py-2 text-sm"
+                className="mt-1 block w-full rounded-lg border border-lead-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500"
                 disabled={saving}
               />
             </div>
@@ -387,7 +400,7 @@ const BusinessFormModal: React.FC<BusinessFormModalProps> = ({
                 value={lat}
                 onChange={(e) => setLat(e.target.value)}
                 placeholder="-17.393"
-                className="mt-1 block w-full rounded-lg border-lead-300 bg-white px-3 py-2 text-sm"
+                className="mt-1 block w-full rounded-lg border border-lead-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500"
                 disabled={saving}
               />
             </div>
@@ -400,7 +413,7 @@ const BusinessFormModal: React.FC<BusinessFormModalProps> = ({
                 value={lng}
                 onChange={(e) => setLng(e.target.value)}
                 placeholder="-66.157"
-                className="mt-1 block w-full rounded-lg border-lead-300 bg-white px-3 py-2 text-sm"
+                className="mt-1 block w-full rounded-lg border border-lead-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500"
                 disabled={saving}
               />
             </div>
