@@ -31,7 +31,7 @@ const defaultRole: AssignableRole = 'prevendedor';
 
 type FormState = {
   ciMain: string;
-  ciExt: string; 
+  ciExt: string;
   names: string;
   lastName: string;
   secondLastName: string;
@@ -62,15 +62,15 @@ const emptyForm: FormState = {
   email: '',
 };
 
-const UserFormModal: React.FC<UserFormModalProps> = ({ 
-  open, 
-  mode, 
-  initialUser, 
-  submitting, 
+const UserFormModal: React.FC<UserFormModalProps> = ({
+  open,
+  mode,
+  initialUser,
+  submitting,
   branches,
   branchesLoading = false,
-  onClose, 
-  onSubmit 
+  onClose,
+  onSubmit
 }) => {
   const [form, setForm] = useState<FormState>(emptyForm);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -113,7 +113,7 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
   const handleChange = (event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = event.target as HTMLInputElement;
     let nextValue = value;
-   
+
     if (name === 'names' || name === 'lastName' || name === 'secondLastName') {
       nextValue = value.replace(/[^A-Za-z\s]/g, '').toUpperCase();
     }
@@ -126,17 +126,17 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
     if (name === 'email') {
       nextValue = value.toLowerCase();
     }
-    
+
     // Validación inmediata
     const newErrors = { ...errors };
     if (name === 'email') {
-       if (nextValue.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(nextValue.trim())) {
-           newErrors.email = 'Formato de correo inválido';
-       } else {
-           delete newErrors.email;
-       }
+      if (nextValue.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(nextValue.trim())) {
+        newErrors.email = 'Formato de correo inválido';
+      } else {
+        delete newErrors.email;
+      }
     }
-    
+
     setForm(prev => ({ ...prev, [name]: nextValue }));
     setErrors(newErrors);
   };
@@ -145,8 +145,8 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
     const nextErrors: Record<string, string> = {};
     if (!form.ciMain.trim()) {
       nextErrors.ciMain = 'La cédula (CI) es obligatoria';
-    } else if (!/^\d{1,9}$/.test(form.ciMain)) {
-      nextErrors.ciMain = 'CI inválida (solo hasta 9 dígitos)';
+    } else if (!/^\d{7,9}$/.test(form.ciMain)) {
+      nextErrors.ciMain = 'CI inválida (entre 7 y 9 dígitos)';
     }
     if (!form.names.trim()) {
       nextErrors.names = 'El nombre es obligatorio';
@@ -169,7 +169,7 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
     if (!form.role) {
       nextErrors.role = 'Selecciona un rol';
     }
-    
+
     if (mode === 'create' && !form.email.trim()) {
       nextErrors.email = 'El correo electrónico es obligatorio';
     } else if (form.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
@@ -215,7 +215,7 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
           </button>
         </div>
         <form onSubmit={handleSubmit} className="space-y-5 px-6 py-6">
-          
+
           {mode === 'create' && (
             <div className="rounded-lg bg-blue-50 border border-blue-200 p-4">
               <div className="flex items-start gap-3">

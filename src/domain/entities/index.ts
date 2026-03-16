@@ -13,3 +13,4 @@ export type { Client, Position, BusinessType } from './Client';
 export type { PriceType } from './PriceType';
 export type { Country } from './Country';
 export type { Route } from './Route';
+export type { Presale } from './Presale';

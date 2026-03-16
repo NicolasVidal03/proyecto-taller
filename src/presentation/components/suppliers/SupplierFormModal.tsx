@@ -41,10 +41,14 @@ const SupplierFormModal: React.FC<SupplierFormModalProps> = ({ supplier, countri
 
   const validate = (): boolean => {
     const nextErrors: Record<string, string> = {};
-    if (!nit.trim()) nextErrors.nit = 'El NIT es obligatorio';
+    if (!nit.trim()) {
+      nextErrors.nit = 'El NIT es obligatorio';
+    } else if (!/^\d{9,15}$/.test(nit.trim())) {
+      nextErrors.nit = 'NIT inválido (entre 9 y 15 dígitos)';
+    }
     if (!name.trim()) nextErrors.name = 'El nombre es obligatorio';
     if (!countryId) nextErrors.countryId = 'El país es obligatorio';
-    
+
     setErrors(nextErrors);
     return Object.keys(nextErrors).length === 0;
   };
@@ -81,13 +85,19 @@ const SupplierFormModal: React.FC<SupplierFormModalProps> = ({ supplier, countri
         </div>
         <form onSubmit={handleSubmit} className="space-y-5 px-6 py-6">
           <div className="grid gap-4 md:grid-cols-2">
+
             <div className="md:col-span-2">
               <label htmlFor="nit" className="block text-sm font-medium text-lead-700">NIT *</label>
               <input
                 type="text"
                 id="nit"
                 value={nit}
-                onChange={(e) => setNit(e.target.value)}
+                onChange={(e) => {
+                  const val = e.target.value.replace(/\D/g, '').slice(0, 12);
+                  setNit(val);
+                  if (errors.nit) setErrors(prev => ({ ...prev, nit: '' }));
+                }}
+                placeholder="Ej: 1234567891"
                 className={`mt-1 block w-full rounded-lg border px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500 ${errors.nit ? 'border-red-500' : 'border-lead-300 bg-white'}`}
                 disabled={saving}
               />
@@ -101,6 +111,7 @@ const SupplierFormModal: React.FC<SupplierFormModalProps> = ({ supplier, countri
                 id="name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
+                placeholder='Electrolux'
                 className={`mt-1 block w-full rounded-lg border px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500 ${errors.name ? 'border-red-500' : 'border-lead-300 bg-white'}`}
                 disabled={saving}
               />
@@ -116,7 +127,6 @@ const SupplierFormModal: React.FC<SupplierFormModalProps> = ({ supplier, countri
                 className={`mt-1 block w-full rounded-lg border px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500 ${errors.countryId ? 'border-red-500' : 'border-lead-300 bg-white'}`}
                 disabled={saving}
               >
-                <option value="">—</option>
                 {countries.map(c => (
                   <option key={c.id} value={c.id}>{c.name}</option>
                 ))}
@@ -127,11 +137,16 @@ const SupplierFormModal: React.FC<SupplierFormModalProps> = ({ supplier, countri
             <div>
               <label htmlFor="phone" className="block text-sm font-medium text-lead-700">Teléfono</label>
               <input
-                type="tel"
+                type="text"
+                inputMode='numeric'
                 id="phone"
                 value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                className="mt-1 block w-full rounded-lg border-lead-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500"
+                onChange={(e) => {
+                  const val = e.target.value.replace(/\D/g, '').slice(0, 15);
+                  setPhone(val)
+                }}
+                placeholder='68723648'
+                className="mt-1 block w-full rounded-lg border border-lead-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500"
                 disabled={saving}
               />
             </div>
@@ -143,7 +158,7 @@ const SupplierFormModal: React.FC<SupplierFormModalProps> = ({ supplier, countri
                 id="contactName"
                 value={contactName}
                 onChange={(e) => setContactName(e.target.value)}
-                className="mt-1 block w-full rounded-lg border-lead-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500"
+                className="mt-1 block w-full rounded-lg border border-lead-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500"
                 disabled={saving}
               />
             </div>
@@ -154,7 +169,7 @@ const SupplierFormModal: React.FC<SupplierFormModalProps> = ({ supplier, countri
                 id="address"
                 value={address}
                 onChange={(e) => setAddress(e.target.value)}
-                className="mt-1 block w-full resize-none rounded-lg border-lead-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500"
+                className="mt-1 block w-full resize-none rounded-lg border border-lead-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500"
                 rows={2}
                 disabled={saving}
               />

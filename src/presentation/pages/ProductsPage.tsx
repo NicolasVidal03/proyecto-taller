@@ -16,7 +16,7 @@ import { ToastContainer, useToast } from '../components/shared/Toast';
 type ActiveSection = 'products' | 'brands' | 'categories' | 'presentations' | 'colors';
 
 export const ProductsPage: React.FC = () => {
-  const { total } = useProducts();
+  const { total, applyFilters } = useProducts();
   const { brands, fetchBrands } = useBrands();
   const { categories, fetchCategories } = useCategories();
   const { presentations, fetchPresentations } = usePresentations();
@@ -30,8 +30,8 @@ export const ProductsPage: React.FC = () => {
 
 
   useEffect(() => {
-    Promise.all([fetchCategories(), fetchBrands(), fetchPresentations(), fetchColors()]);
-  }, [fetchCategories, fetchBrands, fetchPresentations, fetchColors]);
+    Promise.all([fetchCategories(), fetchBrands(), fetchPresentations(), fetchColors(), applyFilters()]);
+  }, [fetchCategories, fetchBrands, fetchPresentations, fetchColors, applyFilters]);
 
   // Callback para toasts de las secciones
   const handleToast = useCallback((type: 'success' | 'error', message: string) => {

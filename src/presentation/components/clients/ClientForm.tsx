@@ -73,6 +73,9 @@ const ClientForm: React.FC<ClientFormProps> = ({
     if (!formData.name.trim()) newErrors.name = 'El nombre es obligatorio';
     if (!formData.lastName.trim()) newErrors.lastName = 'El apellido paterno es obligatorio';
     if (!formData.phone.trim()) newErrors.phone = 'El teléfono es obligatorio';
+    if (formData.ci.trim() && !/^\d{7,9}$/.test(formData.ci.trim())) {
+      newErrors.ci = 'CI inválida (entre 7 y 9 dígitos)';
+    }
     if (formData.ciExt.trim() && !/^\d[a-zA-Z]$/.test(formData.ciExt.trim())) {
       newErrors.ciExt = 'Formato de ext inválido (ej: 1B)';
     }
@@ -111,6 +114,7 @@ const ClientForm: React.FC<ClientFormProps> = ({
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+
         {/* Nombre */}
         <div>
           <label htmlFor="name" className="block text-sm font-medium text-lead-700">
@@ -121,6 +125,7 @@ const ClientForm: React.FC<ClientFormProps> = ({
             id="name"
             name="name"
             value={formData.name}
+            placeholder='JUAN CARLOS'
             onChange={handleChange}
             className={`mt-1 block w-full rounded-lg border px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500 ${
               errors.name ? 'border-red-500' : 'border-lead-300 bg-white'
@@ -133,13 +138,14 @@ const ClientForm: React.FC<ClientFormProps> = ({
         {/* Apellido Paterno */}
         <div>
           <label htmlFor="lastName" className="block text-sm font-medium text-lead-700">
-            Apellido paterno <span className="text-red-500">*</span>
+            Primer Apellido <span className="text-red-500">*</span>
           </label>
           <input
             type="text"
             id="lastName"
             name="lastName"
             value={formData.lastName}
+            placeholder='PEREZ'
             onChange={handleChange}
             className={`mt-1 block w-full rounded-lg border px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500 ${
               errors.lastName ? 'border-red-500' : 'border-lead-300 bg-white'
@@ -152,13 +158,14 @@ const ClientForm: React.FC<ClientFormProps> = ({
         {/* Apellido Materno */}
         <div>
           <label htmlFor="secondLastName" className="block text-sm font-medium text-lead-700">
-            Apellido materno <span className="text-red-500"></span>
+            Segundo Apellido
           </label>
           <input
             type="text"
             id="secondLastName"
             name="secondLastName"
             value={formData.secondLastName}
+            placeholder='FERNANDEZ'
             onChange={handleChange}
             className={`mt-1 block w-full rounded-lg border px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500 ${
               errors.secondLastName ? 'border-red-500' : 'border-lead-300 bg-white'
@@ -178,6 +185,7 @@ const ClientForm: React.FC<ClientFormProps> = ({
             id="phone"
             name="phone"
             value={formData.phone}
+            placeholder='67482012'
             onChange={handleChange}
             className={`mt-1 block w-full rounded-lg border px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500 ${
               errors.phone ? 'border-red-500' : 'border-lead-300 bg-white'
@@ -197,10 +205,14 @@ const ClientForm: React.FC<ClientFormProps> = ({
             id="ci"
             name="ci"
             value={formData.ci}
+            placeholder='876543789'
             onChange={handleChange}
-            className="mt-1 block w-full rounded-lg border-lead-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500"
+            className={`mt-1 block w-full rounded-lg border px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500 ${
+              errors.ci ? 'border-red-500' : 'border-lead-300 bg-white'
+            }`}
             disabled={isSubmitting}
           />
+          {errors.ci && <p className="mt-1 text-xs text-red-600">{errors.ci}</p>}
         </div>
 
         {/* Extensión CI (opcional) */}
@@ -213,14 +225,16 @@ const ClientForm: React.FC<ClientFormProps> = ({
             id="ciExt"
             name="ciExt"
             value={formData.ciExt}
+            placeholder='1B'
             onChange={handleChange}
-            className="mt-1 block w-full rounded-lg border-lead-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500"
+            className={`mt-1 block w-full rounded-lg border px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500 ${
+              errors.ciExt ? 'border-red-500' : 'border-lead-300 bg-white'
+            }`}
             disabled={isSubmitting}
           />
           {errors.ciExt && <p className="mt-1 text-xs text-red-600">{errors.ciExt}</p>}
         </div>
 
-        {/* Tipo de cliente eliminado: ahora pertenece al negocio */}
       </div>
 
       <div className="flex justify-end gap-3">

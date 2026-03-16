@@ -15,3 +15,4 @@ export { HttpAreaRepository } from './HttpAreaRepository';
 export { HttpRouteRepository } from './HttpRouteRepository';
 export { HttpBusinessRepository } from './HttpBusinessRepository';
 export { HttpActivityRepository } from './HttpActivityRepository';
+export { HttpPresaleRepository } from './HttpPresaleRepository'

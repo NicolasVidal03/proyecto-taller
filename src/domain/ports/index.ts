@@ -12,3 +12,4 @@ export * from './IBrandRepository';
 export * from './ICountryRepository';
 export * from './IProductBranchRepository';
 export * from './IRouteRepository';
+export * from './IPresaleRepository';
