@@ -138,16 +138,7 @@ const PresalesTable: React.FC<PresalesTableProps> = ({
                                                 </button>
                                             </>
                                         )}
-                                        {p.status === 'parcial' && (
-                                            <button
-                                                type="button"
-                                                className="rounded px-3 py-1.5 font-medium transition disabled:opacity-50 bg-accent-100 text-accent-700 hover:bg-accent-200"
-                                                disabled={isBusy(p.id)}
-                                            >
-                                                Restaurar stock
-                                            </button>
-                                        )}
-                                        {p.status !== 'pendiente' && p.status !== 'parcial' && (
+                                        {p.status !== 'pendiente' && (
                                             <span className="text-xs text-lead-400 italic">Sin acciones disponibles</span>
                                         )}
                                     </div>
