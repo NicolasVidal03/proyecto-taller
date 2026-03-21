@@ -9,6 +9,7 @@ import PresaleFormModal, { PresaleFormValues } from '@presentation/components/pr
 import { Presale } from '@domain/entities';
 import { useAuth } from '@presentation/providers';
 import ConfirmDialog from '@presentation/components/shared/ConfirmDialog';
+import Loader from '@presentation/components/shared/Loader';
 
 interface PresalesSectionProps {
     searchTerm: string;
@@ -254,8 +255,11 @@ export const PresalesPage: React.FC<PresalesSectionProps> = ({
                                     Crear preventa
                                 </button>
                             </div>
-
-                            <PresalesTable
+                            { isLoading && (
+                                <Loader/>
+                            )}
+                            { !isLoading && (
+<PresalesTable
                                 presales={presales}
                                 branchFilter={branchFilter}
                                 statusFilter={statusFilter}
@@ -264,6 +268,9 @@ export const PresalesPage: React.FC<PresalesSectionProps> = ({
                                 onCancel={confirm.openConfirm}
                             // onToast={handleToast}
                             />
+                            )}
+
+                            
 
                         </div>
                     </section>
