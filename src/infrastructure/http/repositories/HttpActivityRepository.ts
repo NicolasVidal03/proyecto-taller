@@ -1,12 +1,12 @@
 import { http } from '../httpClient';
-import { ActivityWork } from '../../../domain/entities/ActivityWork';
+import { Activity } from '../../../domain/entities/Activity';
 import { IActivityRepository } from '../../../domain/ports/IActivityRepository';
 
 export class HttpActivityRepository implements IActivityRepository {
-  async getBusinessActivities(userId: number, date: string): Promise<ActivityWork[]> {
-    const res = await http.get<ActivityWork[]>('/business-activity', {
-      params: { userId, date }
-    });
-    return res.data || [];
+  async getActivityByUserAndDate(userId: number, date: string): Promise<Activity> {
+    if( !userId ) throw Error("El userId es obligatorio");
+    if( !date ) throw Error("La fecha es obligatoria");
+    const res = await http.get(`/activity/preseller?userId=${userId}&date=${date}`);
+    return res.data;
   }
 }

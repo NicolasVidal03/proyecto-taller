@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useMemo } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { ActivityWork } from '../../../domain/entities/ActivityWork';
+import { Activity, ActivityBusinesses, ActivityDetails } from '../../../domain/entities/Activity';
 
 // Fix para iconos de Leaflet
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -41,12 +41,12 @@ const ICONS = {
   pending: createCustomIcon('#94a3b8', '#64748b'),  // Gris - sin actividad
 };
 
-const getActivityStatus = (activity: ActivityWork['activity']): keyof typeof ICONS => {
-  if (!activity.action) return 'pending';
-  const action = activity.action.toLowerCase();
-  if (action === 'sold' || action === 'venta') return 'sold';
-  if (action === 'rejected' || action === 'rechazado') return 'rejected';
-  if (action === 'visited' || action === 'visitado') return 'visited';
+const getActivityStatus = (activityDetail: ActivityDetails | null): keyof typeof ICONS => {
+  // if (!activity.action) return 'pending';
+  // const action = activity.action.toLowerCase();
+  // if (action === 'sold' || action === 'venta') return 'sold';
+  // if (action === 'rejected' || action === 'rechazado') return 'rejected';
+  // if (action === 'visited' || action === 'visitado') return 'visited';
   return 'visited';
 };
 
@@ -71,11 +71,11 @@ const getStatusColor = (status: keyof typeof ICONS): string => {
 };
 
 interface ActivityMapProps {
-  activities: ActivityWork[];
+  activities: Activity;
   height?: string;
   center?: [number, number];
   zoom?: number;
-  onMarkerClick?: (activity: ActivityWork) => void;
+  onMarkerClick?: (activity: ActivityBusinesses) => void;
 }
 
 const ActivityMap: React.FC<ActivityMapProps> = ({
@@ -112,6 +112,8 @@ const ActivityMap: React.FC<ActivityMapProps> = ({
     };
   }, []);
 
+  console.log(activities)
+
   // Actualizar marcadores cuando cambien las actividades
   useEffect(() => {
     const map = mapRef.current;
@@ -120,16 +122,16 @@ const ActivityMap: React.FC<ActivityMapProps> = ({
 
     markersLayer.clearLayers();
 
-    if (activities.length === 0) return;
+    if (!activities.businesses) return;
 
     const bounds: L.LatLngBounds = L.latLngBounds([]);
 
-    activities.forEach((activityWork) => {
-      const { business, activity } = activityWork;
+    activities.businesses.forEach((Activity) => {
+      const { business, activityDetail } = Activity;
       
       if (!business.position || !business.position.lat || !business.position.lng) return;
 
-      const status = getActivityStatus(activity);
+      const status = getActivityStatus(activityDetail);
       const icon = ICONS[status];
       
       const marker = L.marker([business.position.lat, business.position.lng], { icon });
@@ -156,9 +158,9 @@ const ActivityMap: React.FC<ActivityMapProps> = ({
               ${getStatusLabel(status)}
             </span>
           </div>
-          ${activity.createdAt ? `
+          ${activityDetail ? `
             <p style="margin: 6px 0 0 0; font-size: 11px; color: #94a3b8;">
-              ${new Date(activity.createdAt).toLocaleString('es-BO', { dateStyle: 'short', timeStyle: 'short' })}
+              ${new Date(activityDetail.createdAt).toLocaleString('es-BO', { dateStyle: 'short', timeStyle: 'short' })}
             </p>
           ` : ''}
         </div>
@@ -170,7 +172,7 @@ const ActivityMap: React.FC<ActivityMapProps> = ({
       });
 
       if (onMarkerClick) {
-        marker.on('click', () => onMarkerClick(activityWork));
+        marker.on('click', () => onMarkerClick(Activity));
       }
 
       markersLayer.addLayer(marker);
@@ -185,11 +187,11 @@ const ActivityMap: React.FC<ActivityMapProps> = ({
 
   // Calcular estadísticas
   const stats = useMemo(() => {
-    const total = activities.length;
-    const visited = activities.filter(a => getActivityStatus(a.activity) === 'visited').length;
-    const sold = activities.filter(a => getActivityStatus(a.activity) === 'sold').length;
-    const rejected = activities.filter(a => getActivityStatus(a.activity) === 'rejected').length;
-    const pending = activities.filter(a => getActivityStatus(a.activity) === 'pending').length;
+    const total = activities.businesses?.length;
+    const visited = activities.businesses?.filter(a => getActivityStatus(a.activityDetail) === 'visited').length;
+    const sold = activities.businesses?.filter(a => getActivityStatus(a.activityDetail) === 'sold').length;
+    const rejected = activities.businesses?.filter(a => getActivityStatus(a.activityDetail) === 'rejected').length;
+    const pending = activities.businesses?.filter(a => getActivityStatus(a.activityDetail) === 'pending').length;
     
     return { total, visited, sold, rejected, pending };
   }, [activities]);

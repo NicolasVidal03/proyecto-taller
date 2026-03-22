@@ -5,7 +5,7 @@ import ActivityMap from '../components/activities/ActivityMap';
 import Loader from '../components/shared/Loader';
 import { ToastContainer, useToast } from '../components/shared/Toast';
 import { User } from '../../domain/entities/User';
-import { ActivityWork } from '../../domain/entities/ActivityWork';
+import { Activity, ActivityBusinesses } from '../../domain/entities/Activity';
 
 // Formatear fecha a YYYY-MM-DD
 const formatDateForInput = (date: Date): string => {
@@ -31,7 +31,7 @@ export const ActivitiesPage: React.FC = () => {
     activities,
     isLoading: activitiesLoading,
     error: activitiesError,
-    fetchActivities,
+    getActivityByUserAndDate,
     clearActivities,
     clearError: clearActivitiesError,
   } = useActivities();
@@ -49,7 +49,7 @@ export const ActivitiesPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
   const [showUserDropdown, setShowUserDropdown] = useState(false);
-  const [selectedActivity, setSelectedActivity] = useState<ActivityWork | null>(null);
+  const [selectedActivity, setSelectedActivity] = useState<ActivityBusinesses | null>(null);
 
   // Cargar usuarios al montar
   useEffect(() => {
@@ -117,13 +117,13 @@ export const ActivitiesPage: React.FC = () => {
     const today = getToday();
     today.setHours(0, 0, 0, 0);
     
-    if (selected > today) {
-      toast.error('No puedes ver actividades de fechas futuras');
-      return;
-    }
+    // if (selected > today) {
+    //   toast.error('No puedes ver actividades de fechas futuras');
+    //   return;
+    // }
 
-    fetchActivities(selectedUserId, selectedDate);
-  }, [selectedUserId, selectedDate, fetchActivities, toast]);
+    getActivityByUserAndDate(selectedUserId, selectedDate);
+  }, [selectedUserId, selectedDate, getActivityByUserAndDate, toast]);
 
   // Limpiar búsqueda
   const handleClear = useCallback(() => {
@@ -135,17 +135,18 @@ export const ActivitiesPage: React.FC = () => {
   }, [clearActivities]);
 
   // Manejar clic en marcador del mapa
-  const handleMarkerClick = useCallback((activity: ActivityWork) => {
+  const handleMarkerClick = useCallback((activity: any) => {
     setSelectedActivity(activity);
   }, []);
 
   // Calcular estadísticas
   const stats = useMemo(() => {
-    const total = activities.length;
-    const visited = activities.filter(a => a.activity.action && a.activity.action.toLowerCase() !== 'rejected').length;
-    const sales = activities.filter(a => a.activity.action?.toLowerCase() === 'sold' || a.activity.action?.toLowerCase() === 'venta').length;
-    const rejected = activities.filter(a => a.activity.action?.toLowerCase() === 'rejected' || a.activity.action?.toLowerCase() === 'rechazado').length;
-    const pending = activities.filter(a => !a.activity.action).length;
+    if(!activities) return
+    const total = activities.businesses?.length;
+    const visited = activities.businesses?.filter(a => a.activityDetail?.action && a.activityDetail?.action.toLowerCase() !== 'rejected').length;
+    const sales = activities.businesses?.filter(a => a.activityDetail?.action?.toLowerCase() === 'sold' || a.activityDetail?.action?.toLowerCase() === 'venta').length;
+    const rejected = activities.businesses?.filter(a => a.activityDetail?.action?.toLowerCase() === 'rejected' || a.activityDetail?.action?.toLowerCase() === 'rechazado').length;
+    const pending = activities.businesses?.filter(a => !a.activityDetail?.action).length;
     
     return { total, visited, sales, rejected, pending };
   }, [activities]);
@@ -177,7 +178,7 @@ export const ActivitiesPage: React.FC = () => {
               </div>
               
               {/* Stats Card */}
-              {activities.length > 0 && (
+              {activities?.businesses?.length && activities?.businesses?.length > 0 && (
                 <div className="relative">
                   <div className="absolute inset-0 rounded-[2rem] bg-white/10 blur-xl" />
                   <div className="relative space-y-4 rounded-[2rem] border border-white/20 bg-white/10 px-6 py-6 backdrop-blur">
@@ -185,19 +186,19 @@ export const ActivitiesPage: React.FC = () => {
                     <div className="grid grid-cols-2 gap-3">
                       <div className="rounded-xl bg-white/10 px-4 py-3">
                         <p className="text-xs text-white/70">Total</p>
-                        <p className="text-2xl font-bold">{stats.total}</p>
+                        <p className="text-2xl font-bold">{stats?.total}</p>
                       </div>
                       <div className="rounded-xl bg-green-500/30 px-4 py-3">
                         <p className="text-xs text-white/70">Visitados</p>
-                        <p className="text-2xl font-bold">{stats.visited}</p>
+                        <p className="text-2xl font-bold">{stats?.visited}</p>
                       </div>
                       <div className="rounded-xl bg-blue-500/30 px-4 py-3">
                         <p className="text-xs text-white/70">Ventas</p>
-                        <p className="text-2xl font-bold">{stats.sales}</p>
+                        <p className="text-2xl font-bold">{stats?.sales}</p>
                       </div>
                       <div className="rounded-xl bg-red-500/30 px-4 py-3">
                         <p className="text-xs text-white/70">Rechazos</p>
-                        <p className="text-2xl font-bold">{stats.rejected}</p>
+                        <p className="text-2xl font-bold">{stats?.rejected}</p>
                       </div>
                     </div>
                   </div>
@@ -329,7 +330,7 @@ export const ActivitiesPage: React.FC = () => {
               <div className="h-[500px] flex items-center justify-center">
                 <Loader />
               </div>
-            ) : activities.length > 0 ? (
+            ) : activities?.businesses?.length && activities.businesses.length > 0 ? (
               <ActivityMap
                 activities={activities}
                 height="600px"
@@ -362,8 +363,8 @@ export const ActivitiesPage: React.FC = () => {
               </div>
               
               <div className="grid md:grid-cols-2 gap-6">
-                <div>
-                  <h4 className="font-semibold text-lead-800 mb-3">{selectedActivity.business.name}</h4>
+                {/* <div>
+                  <h4 className="font-semibold text-lead-800 mb-3">{selectedActivity.businesse.name}</h4>
                   <div className="space-y-2 text-sm text-lead-600">
                     {selectedActivity.business.nit && (
                       <p><span className="font-medium">NIT:</span> {selectedActivity.business.nit}</p>
@@ -378,14 +379,14 @@ export const ActivitiesPage: React.FC = () => {
                       </p>
                     )}
                   </div>
-                </div>
+                </div> */}
                 
                 <div>
                   <h4 className="font-semibold text-lead-800 mb-3">Estado de Actividad</h4>
                   <div className="space-y-2">
-                    {selectedActivity.activity.action ? (
+                    {selectedActivity.activityDetail?.action ? (
                       <>
-                        <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium ${
+                        {/* <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium ${
                           selectedActivity.activity.action.toLowerCase() === 'sold' || selectedActivity.activity.action.toLowerCase() === 'venta'
                             ? 'bg-blue-100 text-blue-700'
                             : selectedActivity.activity.action.toLowerCase() === 'rejected' || selectedActivity.activity.action.toLowerCase() === 'rechazado'
@@ -405,7 +406,7 @@ export const ActivitiesPage: React.FC = () => {
                           <p className="text-sm text-lead-500">
                             Registrado: {new Date(selectedActivity.activity.createdAt).toLocaleString('es-BO')}
                           </p>
-                        )}
+                        )} */}
                       </>
                     ) : (
                       <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium bg-gray-100 text-gray-600">

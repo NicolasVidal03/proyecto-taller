@@ -1,47 +1,62 @@
 import { useState, useCallback } from 'react';
-import { ActivityWork } from '../../domain/entities/ActivityWork';
+import { Activity } from '../../domain/entities/Activity';
 import { container } from '../../infrastructure/config/container';
 import { AppError, extractErrorMessage } from './shared';
 
 export type ActivityError = AppError;
 
 export interface UseActivitiesReturn {
-  activities: ActivityWork[];
+  activities: Activity | undefined;
   isLoading: boolean;
   error: ActivityError | null;
   
-  fetchActivities: (userId: number, date: string) => Promise<void>;
+  // fetchActivities: (userId: number, date: string) => Promise<void>;
+  getActivityByUserAndDate: (userId: number, date: string) => Promise<void>;
   clearActivities: () => void;
   clearError: () => void;
 }
 
 export const useActivities = (): UseActivitiesReturn => {
-  const [activities, setActivities] = useState<ActivityWork[]>([]);
+  const [activities, setActivities] = useState<Activity>();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<ActivityError | null>(null);
 
   const clearError = useCallback(() => setError(null), []);
-  const clearActivities = useCallback(() => setActivities([]), []);
+  const clearActivities = useCallback(() => setActivities(undefined), []);
 
-  const fetchActivities = useCallback(async (userId: number, date: string) => {
+  // const fetchActivities = useCallback(async (userId: number, date: string) => {
+  //   setIsLoading(true);
+  //   setError(null);
+  //   try {
+  //     const data = await container.activities.getActivityByUserAndDate(userId, date);
+  //     setActivity(data);
+  //   } catch (err) {
+  //     setError({ message: extractErrorMessage(err), code: 'FETCH_ERROR' });
+  //     setActivity(undefined);
+  //   } finally {
+  //     setIsLoading(false);
+  //   }
+  // }, []);
+
+  const getActivityByUserAndDate = useCallback(async (userId: number, date: string): Promise<void> => {
     setIsLoading(true);
     setError(null);
     try {
-      const data = await container.activities.getBusinessActivities(userId, date);
+      const data = await container.activities.getActivityByUserAndDate(userId, date);
       setActivities(data);
-    } catch (err) {
-      setError({ message: extractErrorMessage(err), code: 'FETCH_ERROR' });
-      setActivities([]);
+    } catch (e) {
+      setError({ message: extractErrorMessage(e), code: 'FETCH_ERROR' });
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [activities])
 
   return {
     activities,
     isLoading,
     error,
-    fetchActivities,
+    // fetchActivities,
+    getActivityByUserAndDate,
     clearActivities,
     clearError,
   };
