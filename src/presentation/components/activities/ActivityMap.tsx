@@ -37,23 +37,23 @@ const createCustomIcon = (color: string, borderColor: string) => {
 const ICONS = {
   visited: createCustomIcon('#22c55e', '#166534'),   // Verde - visitado
   sold: createCustomIcon('#3b82f6', '#1d4ed8'),      // Azul - vendido
-  rejected: createCustomIcon('#ef4444', '#b91c1c'), // Rojo - rechazado
+  presale: createCustomIcon('#ef4444', '#b91c1c'), // Rojo - rechazado
   pending: createCustomIcon('#94a3b8', '#64748b'),  // Gris - sin actividad
 };
 
 const getActivityStatus = (activityDetail: ActivityDetails | null): keyof typeof ICONS => {
-  // if (!activity.action) return 'pending';
-  // const action = activity.action.toLowerCase();
-  // if (action === 'sold' || action === 'venta') return 'sold';
-  // if (action === 'rejected' || action === 'rechazado') return 'rejected';
-  // if (action === 'visited' || action === 'visitado') return 'visited';
+  if (!activityDetail) return 'pending';
+  const action = activityDetail.action.toLowerCase();
+  if (action === 'venta' || action === 'venta') return 'sold';
+  if (action === 'preventa' || action === 'preventa') return 'presale';
+  if (action === 'visitado' || action === 'visitado') return 'visited';
   return 'visited';
 };
 
 const getStatusLabel = (status: keyof typeof ICONS): string => {
   switch (status) {
     case 'sold': return 'Venta realizada';
-    case 'rejected': return 'Rechazado';
+    case 'presale': return 'Preventa';
     case 'visited': return 'Visitado';
     case 'pending': return 'Sin visitar';
     default: return 'Desconocido';
@@ -63,7 +63,7 @@ const getStatusLabel = (status: keyof typeof ICONS): string => {
 const getStatusColor = (status: keyof typeof ICONS): string => {
   switch (status) {
     case 'sold': return 'text-blue-600';
-    case 'rejected': return 'text-red-600';
+    case 'presale': return 'text-red-600';
     case 'visited': return 'text-green-600';
     case 'pending': return 'text-gray-500';
     default: return 'text-gray-500';
@@ -152,9 +152,9 @@ const ActivityMap: React.FC<ActivityMapProps> = ({
               width: 10px; 
               height: 10px; 
               border-radius: 50%; 
-              background: ${status === 'sold' ? '#3b82f6' : status === 'rejected' ? '#ef4444' : status === 'visited' ? '#22c55e' : '#94a3b8'};
+              background: ${status === 'sold' ? '#3b82f6' : status === 'presale' ? '#ef4444' : status === 'visited' ? '#22c55e' : '#94a3b8'};
             "></span>
-            <span style="font-size: 12px; font-weight: 600; color: ${status === 'sold' ? '#1d4ed8' : status === 'rejected' ? '#b91c1c' : status === 'visited' ? '#166534' : '#64748b'};">
+            <span style="font-size: 12px; font-weight: 600; color: ${status === 'sold' ? '#1d4ed8' : status === 'presale' ? '#b91c1c' : status === 'visited' ? '#166534' : '#64748b'};">
               ${getStatusLabel(status)}
             </span>
           </div>
@@ -190,7 +190,7 @@ const ActivityMap: React.FC<ActivityMapProps> = ({
     const total = activities.businesses?.length;
     const visited = activities.businesses?.filter(a => getActivityStatus(a.activityDetail) === 'visited').length;
     const sold = activities.businesses?.filter(a => getActivityStatus(a.activityDetail) === 'sold').length;
-    const rejected = activities.businesses?.filter(a => getActivityStatus(a.activityDetail) === 'rejected').length;
+    const rejected = activities.businesses?.filter(a => getActivityStatus(a.activityDetail) === 'presale').length;
     const pending = activities.businesses?.filter(a => getActivityStatus(a.activityDetail) === 'pending').length;
     
     return { total, visited, sold, rejected, pending };
