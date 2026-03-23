@@ -155,9 +155,9 @@ const ActivityMap: React.FC<ActivityMapProps> = ({
               width: 10px; 
               height: 10px; 
               border-radius: 50%; 
-              background: ${status === 'sold' ? '#3b82f6' : status === 'presale' ? '#ef4444' : status === 'visited' ? '#22c55e' : '#94a3b8'};
+              background: ${status === 'sold' ? '#3b82f6' : status === 'presale' ? '#962bd4' : status === 'visited' ? '#22c55e' : status === 'rejected' ? '#ef4444' : '#94a3b8'};
             "></span>
-            <span style="font-size: 12px; font-weight: 600; color: ${status === 'sold' ? '#1d4ed8' : status === 'presale' ? '#b91c1c' : status === 'visited' ? '#166534' : '#64748b'};">
+            <span style="font-size: 12px; font-weight: 600; color: ${status === 'sold' ? '#1d4ed8' : status === 'presale' ? '#741ba8' : status === 'visited' ? '#166534' : status === 'rejected' ? '#b91c1c' : '#64748b'};">
               ${getStatusLabel(status)}
             </span>
           </div>
@@ -193,10 +193,11 @@ const ActivityMap: React.FC<ActivityMapProps> = ({
     const total = activities.businesses?.length;
     const visited = activities.businesses?.filter(a => getActivityStatus(a.activityDetail) === 'visited').length;
     const sold = activities.businesses?.filter(a => getActivityStatus(a.activityDetail) === 'sold').length;
+    const presale = activities.businesses?.filter(a => getActivityStatus(a.activityDetail) === 'presale').length;
     const rejected = activities.businesses?.filter(a => getActivityStatus(a.activityDetail) === 'presale').length;
     const pending = activities.businesses?.filter(a => getActivityStatus(a.activityDetail) === 'pending').length;
     
-    return { total, visited, sold, rejected, pending };
+    return { total, visited, sold, rejected, pending, presale };
   }, [activities]);
 
   return (
@@ -218,6 +219,10 @@ const ActivityMap: React.FC<ActivityMapProps> = ({
           <div className="flex items-center gap-2">
             <span className="w-3 h-3 rounded-full bg-blue-500 border-2 border-blue-700"></span>
             <span className="text-xs text-gray-600">Venta ({stats.sold})</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="w-3 h-3 rounded-full bg-purple-500 border-2 border-purple-700"></span>
+            <span className="text-xs text-gray-600">Preventa ({stats.presale})</span>
           </div>
           <div className="flex items-center gap-2">
             <span className="w-3 h-3 rounded-full bg-red-500 border-2 border-red-700"></span>

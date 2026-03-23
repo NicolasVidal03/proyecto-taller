@@ -144,10 +144,11 @@ export const ActivitiesPage: React.FC = () => {
     const total = activities.businesses?.length;
     const visited = activities.businesses?.filter(a => a.activityDetail?.action && a.activityDetail?.action.toLowerCase() !== 'rejected').length;
     const sales = activities.businesses?.filter(a => a.activityDetail?.action?.toLowerCase() === 'sold' || a.activityDetail?.action?.toLowerCase() === 'venta').length;
+    const presales = activities.businesses?.filter(a => a.activityDetail?.action?.toLowerCase() === 'presale' || a.activityDetail?.action?.toLowerCase() === 'preventa').length;
     const rejected = activities.businesses?.filter(a => a.activityDetail?.rejectionId).length;
     const pending = activities.businesses?.filter(a => !a.activityDetail?.action).length;
 
-    return { total, visited, sales, rejected, pending };
+    return { total, visited, sales, rejected, pending, presales };
   }, [activities]);
 
   const isLoading = activitiesLoading || usersLoading;
@@ -191,10 +192,19 @@ export const ActivitiesPage: React.FC = () => {
                         <p className="text-xs text-white/70">Visitados</p>
                         <p className="text-2xl font-bold">{stats?.visited}</p>
                       </div>
-                      <div className="rounded-xl bg-blue-500/30 px-4 py-3">
-                        <p className="text-xs text-white/70">Ventas</p>
-                        <p className="text-2xl font-bold">{stats?.sales}</p>
-                      </div>
+                      { selectedUser?.role === 'prevendedor' ? (
+                        <div className="rounded-xl bg-purple-500/30 px-4 py-3">
+                          <p className="text-xs text-white/70">Preventas</p>
+                          <p className="text-2xl font-bold">{stats?.presales}</p>
+                        </div>
+                      ) : (
+                        <div className="rounded-xl bg-blue-500/30 px-4 py-3">
+                          <p className="text-xs text-white/70">Ventas</p>
+                          <p className="text-2xl font-bold">{stats?.sales}</p>
+                        </div>
+                      )}
+                        
+                        
                       <div className="rounded-xl bg-red-500/30 px-4 py-3">
                         <p className="text-xs text-white/70">Rechazos</p>
                         <p className="text-2xl font-bold">{stats?.rejected}</p>
@@ -361,8 +371,8 @@ export const ActivitiesPage: React.FC = () => {
               </div>
 
               <div className="grid md:grid-cols-2 gap-6">
-                {/* <div>
-                  <h4 className="font-semibold text-lead-800 mb-3">{selectedActivity.businesse.name}</h4>
+                <div>
+                  <h4 className="font-semibold text-lead-800 mb-3">{selectedActivity.business.name}</h4>
                   <div className="space-y-2 text-sm text-lead-600">
                     {selectedActivity.business.nit && (
                       <p><span className="font-medium">NIT:</span> {selectedActivity.business.nit}</p>
@@ -377,34 +387,38 @@ export const ActivitiesPage: React.FC = () => {
                       </p>
                     )}
                   </div>
-                </div> */}
+                </div>
 
                 <div>
                   <h4 className="font-semibold text-lead-800 mb-3">Estado de Actividad</h4>
                   <div className="space-y-2">
                     {selectedActivity.activityDetail?.action ? (
                       <>
-                        {/* <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium ${
-                          selectedActivity.activity.action.toLowerCase() === 'sold' || selectedActivity.activity.action.toLowerCase() === 'venta'
+                        <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium ${
+                          selectedActivity.activityDetail.action.toLowerCase() === 'venta'
                             ? 'bg-blue-100 text-blue-700'
-                            : selectedActivity.activity.action.toLowerCase() === 'rejected' || selectedActivity.activity.action.toLowerCase() === 'rechazado'
+                            : selectedActivity.activityDetail.rejectionId
                             ? 'bg-red-100 text-red-700'
+                            : selectedActivity.activityDetail.action.toLowerCase() === 'preventa'
+                            ? 'bg-purple-100 text-purple-700'
                             : 'bg-green-100 text-green-700'
                         }`}>
                           <span className={`w-2 h-2 rounded-full ${
-                            selectedActivity.activity.action.toLowerCase() === 'sold' || selectedActivity.activity.action.toLowerCase() === 'venta'
+                            selectedActivity.activityDetail.action.toLowerCase() === 'venta'
                               ? 'bg-blue-500'
-                              : selectedActivity.activity.action.toLowerCase() === 'rejected' || selectedActivity.activity.action.toLowerCase() === 'rechazado'
+                              : selectedActivity.activityDetail.rejectionId
                               ? 'bg-red-500'
+                              : selectedActivity.activityDetail.action.toLowerCase() === 'preventa'
+                              ? 'bg-purple-500'
                               : 'bg-green-500'
                           }`}></span>
-                          {selectedActivity.activity.action}
+                          {!selectedActivity.activityDetail.rejectionId ? selectedActivity.activityDetail.action : "Cancelado"}
                         </div>
-                        {selectedActivity.activity.createdAt && (
+                        {selectedActivity.activityDetail.createdAt && (
                           <p className="text-sm text-lead-500">
-                            Registrado: {new Date(selectedActivity.activity.createdAt).toLocaleString('es-BO')}
+                            Registrado: {new Date(selectedActivity.activityDetail.createdAt).toLocaleString('es-BO')}
                           </p>
-                        )} */}
+                        )}
                       </>
                     ) : (
                       <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium bg-gray-100 text-gray-600">
