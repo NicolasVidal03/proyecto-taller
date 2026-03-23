@@ -37,17 +37,19 @@ const createCustomIcon = (color: string, borderColor: string) => {
 const ICONS = {
   visited: createCustomIcon('#22c55e', '#166534'),   // Verde - visitado
   sold: createCustomIcon('#3b82f6', '#1d4ed8'),      // Azul - vendido
-  presale: createCustomIcon('#ef4444', '#b91c1c'), // Rojo - rechazado
+  rejected: createCustomIcon('#ef4444', '#b91c1c'),  // Rojo - rechazado
+  presale: createCustomIcon('#962bd4', '#741ba8'),
   pending: createCustomIcon('#94a3b8', '#64748b'),  // Gris - sin actividad
 };
 
 const getActivityStatus = (activityDetail: ActivityDetails | null): keyof typeof ICONS => {
   if (!activityDetail) return 'pending';
+  if (activityDetail.rejectionId) return 'rejected';
   const action = activityDetail.action.toLowerCase();
-  if (action === 'venta' || action === 'venta') return 'sold';
-  if (action === 'preventa' || action === 'preventa') return 'presale';
-  if (action === 'visitado' || action === 'visitado') return 'visited';
-  return 'visited';
+  if (action === 'venta') return 'sold';
+  if (action === 'preventa') return 'presale';
+  if (action === 'visitado') return 'visited';
+  return 'pending';
 };
 
 const getStatusLabel = (status: keyof typeof ICONS): string => {
@@ -56,19 +58,20 @@ const getStatusLabel = (status: keyof typeof ICONS): string => {
     case 'presale': return 'Preventa';
     case 'visited': return 'Visitado';
     case 'pending': return 'Sin visitar';
+    case 'rejected': return 'Cancelado';
     default: return 'Desconocido';
   }
 };
 
-const getStatusColor = (status: keyof typeof ICONS): string => {
-  switch (status) {
-    case 'sold': return 'text-blue-600';
-    case 'presale': return 'text-red-600';
-    case 'visited': return 'text-green-600';
-    case 'pending': return 'text-gray-500';
-    default: return 'text-gray-500';
-  }
-};
+// const getStatusColor = (status: keyof typeof ICONS): string => {
+//   switch (status) {
+//     case 'sold': return 'text-blue-600';
+//     case 'presale': return 'text-red-600';
+//     case 'visited': return 'text-green-600';
+//     case 'pending': return 'text-gray-500';
+//     default: return 'text-gray-500';
+//   }
+// };
 
 interface ActivityMapProps {
   activities: Activity;

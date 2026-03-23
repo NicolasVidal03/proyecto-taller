@@ -47,7 +47,7 @@ export const ActivitiesPage: React.FC = () => {
   // Estado del filtro
   const [selectedDate, setSelectedDate] = useState<string>(formatDateForInput(getYesterday()));
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [showUserDropdown, setShowUserDropdown] = useState(false);
   const [selectedActivity, setSelectedActivity] = useState<ActivityBusinesses | null>(null);
 
@@ -75,7 +75,7 @@ export const ActivitiesPage: React.FC = () => {
   const prevendedorUsers = useMemo(() => {
     return users.filter(u => 
       u.role?.toLowerCase() === 'prevendedor' || 
-      u.role?.toLowerCase() === 'vendedor'
+      u.role?.toLowerCase() === 'transportista'
     );
   }, [users]);
 
@@ -89,22 +89,21 @@ export const ActivitiesPage: React.FC = () => {
     });
   }, [prevendedorUsers, searchTerm]);
 
-  // Usuario seleccionado
-  const selectedUser = useMemo(() => {
-    return users.find(u => u.id === selectedUserId) || null;
-  }, [users, selectedUserId]);
-
   // Manejar selección de usuario
   const handleSelectUser = useCallback((user: User) => {
-    setSelectedUserId(user.id);
+    setSelectedUser(user);
     setSearchTerm(`${user.names} ${user.lastName}`);
     setShowUserDropdown(false);
   }, []);
 
   // Buscar actividades
   const handleSearch = useCallback(() => {
-    if (!selectedUserId) {
+    if (!selectedUser) {
       toast.error('Selecciona un prevendedor');
+      return;
+    }
+    if(selectedUser.role != 'transportista' && selectedUser.role != 'prevendedor') {
+      toast.error('Rol de usuario inválido');
       return;
     }
     if (!selectedDate) {
@@ -121,13 +120,12 @@ export const ActivitiesPage: React.FC = () => {
     //   toast.error('No puedes ver actividades de fechas futuras');
     //   return;
     // }
-
-    getActivityByUserAndDate(selectedUserId, selectedDate);
-  }, [selectedUserId, selectedDate, getActivityByUserAndDate, toast]);
+    getActivityByUserAndDate(selectedUser.id, selectedDate, selectedUser.role);
+  }, [selectedUser, selectedDate, getActivityByUserAndDate, toast]);
 
   // Limpiar búsqueda
   const handleClear = useCallback(() => {
-    setSelectedUserId(null);
+    setSelectedUser(null);
     setSearchTerm('');
     setSelectedDate(formatDateForInput(getYesterday()));
     clearActivities();
@@ -145,7 +143,7 @@ export const ActivitiesPage: React.FC = () => {
     const total = activities.businesses?.length;
     const visited = activities.businesses?.filter(a => a.activityDetail?.action && a.activityDetail?.action.toLowerCase() !== 'rejected').length;
     const sales = activities.businesses?.filter(a => a.activityDetail?.action?.toLowerCase() === 'sold' || a.activityDetail?.action?.toLowerCase() === 'venta').length;
-    const rejected = activities.businesses?.filter(a => a.activityDetail?.action?.toLowerCase() === 'rejected' || a.activityDetail?.action?.toLowerCase() === 'rechazado').length;
+    const rejected = activities.businesses?.filter(a => a.activityDetail?.rejectionId).length;
     const pending = activities.businesses?.filter(a => !a.activityDetail?.action).length;
     
     return { total, visited, sales, rejected, pending };
@@ -235,7 +233,7 @@ export const ActivitiesPage: React.FC = () => {
                   onChange={(e) => {
                     setSearchTerm(e.target.value);
                     setShowUserDropdown(true);
-                    if (!e.target.value) setSelectedUserId(null);
+                    if (!e.target.value) setSelectedUser(null);
                   }}
                   onFocus={() => setShowUserDropdown(true)}
                   placeholder="Buscar por nombre..."
@@ -251,7 +249,7 @@ export const ActivitiesPage: React.FC = () => {
                         type="button"
                         onClick={() => handleSelectUser(user)}
                         className={`w-full text-left px-4 py-3 hover:bg-lead-50 transition-colors border-b border-lead-100 last:border-b-0 ${
-                          selectedUserId === user.id ? 'bg-brand-50 text-brand-700' : ''
+                          selectedUser === user ? 'bg-brand-50 text-brand-700' : ''
                         }`}
                       >
                         <p className="font-medium text-sm text-lead-800">
@@ -275,7 +273,7 @@ export const ActivitiesPage: React.FC = () => {
                 <button
                   type="button"
                   onClick={handleSearch}
-                  disabled={isLoading || !selectedUserId}
+                  disabled={isLoading || !selectedUser}
                   className="btn-primary bg-accent-500 hover:bg-accent-600 border-transparent text-white shadow-md flex items-center gap-2 disabled:opacity-50"
                 >
                   {activitiesLoading ? (
