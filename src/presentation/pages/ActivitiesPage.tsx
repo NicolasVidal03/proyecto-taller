@@ -26,7 +26,7 @@ const getToday = (): Date => {
 
 export const ActivitiesPage: React.FC = () => {
   const toast = useToast();
-  
+
   const {
     activities,
     isLoading: activitiesLoading,
@@ -60,6 +60,7 @@ export const ActivitiesPage: React.FC = () => {
   useEffect(() => {
     if (activitiesError) {
       toast.error(activitiesError.message);
+      clearActivities();
       clearActivitiesError();
     }
   }, [activitiesError, toast, clearActivitiesError]);
@@ -71,10 +72,10 @@ export const ActivitiesPage: React.FC = () => {
     }
   }, [usersError, toast, clearUsersError]);
 
-  // Filtrar usuarios prevendedores para búsqueda
+
   const prevendedorUsers = useMemo(() => {
-    return users.filter(u => 
-      u.role?.toLowerCase() === 'prevendedor' || 
+    return users.filter(u =>
+      u.role?.toLowerCase() === 'prevendedor' ||
       u.role?.toLowerCase() === 'transportista'
     );
   }, [users]);
@@ -99,10 +100,10 @@ export const ActivitiesPage: React.FC = () => {
   // Buscar actividades
   const handleSearch = useCallback(() => {
     if (!selectedUser) {
-      toast.error('Selecciona un prevendedor');
+      toast.error('Selecciona un usuario');
       return;
     }
-    if(selectedUser.role != 'transportista' && selectedUser.role != 'prevendedor') {
+    if (selectedUser.role != 'transportista' && selectedUser.role != 'prevendedor') {
       toast.error('Rol de usuario inválido');
       return;
     }
@@ -110,12 +111,12 @@ export const ActivitiesPage: React.FC = () => {
       toast.error('Selecciona una fecha');
       return;
     }
-    
+
     // Validar que la fecha no sea futura
     const selected = new Date(selectedDate);
     const today = getToday();
     today.setHours(0, 0, 0, 0);
-    
+
     // if (selected > today) {
     //   toast.error('No puedes ver actividades de fechas futuras');
     //   return;
@@ -139,13 +140,13 @@ export const ActivitiesPage: React.FC = () => {
 
   // Calcular estadísticas
   const stats = useMemo(() => {
-    if(!activities) return
+    if (!activities) return
     const total = activities.businesses?.length;
     const visited = activities.businesses?.filter(a => a.activityDetail?.action && a.activityDetail?.action.toLowerCase() !== 'rejected').length;
     const sales = activities.businesses?.filter(a => a.activityDetail?.action?.toLowerCase() === 'sold' || a.activityDetail?.action?.toLowerCase() === 'venta').length;
     const rejected = activities.businesses?.filter(a => a.activityDetail?.rejectionId).length;
     const pending = activities.businesses?.filter(a => !a.activityDetail?.action).length;
-    
+
     return { total, visited, sales, rejected, pending };
   }, [activities]);
 
@@ -156,7 +157,7 @@ export const ActivitiesPage: React.FC = () => {
       <div className="relative overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(17,93,216,0.12),transparent_60%),radial-gradient(circle_at_80%_0%,rgba(255,100,27,0.08),transparent_55%)]" />
         <div className="relative space-y-8 px-6 py-8 lg:px-10 lg:py-12">
-          
+
           {/* Header */}
           <section className="relative overflow-hidden rounded-[2.5rem] bg-gradient-to-r from-brand-900 via-brand-700 to-brand-500 text-white shadow-2xl">
             <div
@@ -168,13 +169,13 @@ export const ActivitiesPage: React.FC = () => {
             <div className="grid gap-8 px-8 py-10 md:px-12 lg:grid-cols-[2fr,1.2fr]">
               <div className="space-y-6">
                 <p className="text-xs uppercase tracking-[0.45em] text-white/70">Panel de Seguimiento</p>
-                <h2 className="text-3xl font-semibold leading-tight md:text-4xl">Actividades de Prevendedores</h2>
+                <h2 className="text-3xl font-semibold leading-tight md:text-4xl">Actividades de Prevendedores y Transportistas</h2>
                 <p className="text-sm text-white/80 max-w-lg">
-                  Visualiza la actividad diaria de tus prevendedores en el mapa. 
+                  Visualiza la actividad diaria de tus trabajadores en el mapa.
                   Selecciona una fecha pasada y un usuario para ver sus visitas, ventas y rechazos.
                 </p>
               </div>
-              
+
               {/* Stats Card */}
               {activities?.businesses?.length && activities?.businesses?.length > 0 && (
                 <div className="relative">
@@ -225,7 +226,7 @@ export const ActivitiesPage: React.FC = () => {
               {/* Búsqueda de usuario */}
               <div className="flex-1 max-w-md relative">
                 <label className="block text-sm font-medium text-lead-700 mb-2">
-                  Prevendedor
+                  Usuario
                 </label>
                 <input
                   type="text"
@@ -239,7 +240,7 @@ export const ActivitiesPage: React.FC = () => {
                   placeholder="Buscar por nombre..."
                   className="input-plain w-full"
                 />
-                
+
                 {/* Dropdown de usuarios */}
                 {showUserDropdown && filteredUsers.length > 0 && (
                   <div className="absolute z-50 mt-1 w-full max-h-60 overflow-auto rounded-xl bg-white border border-lead-200 shadow-lg">
@@ -248,22 +249,21 @@ export const ActivitiesPage: React.FC = () => {
                         key={user.id}
                         type="button"
                         onClick={() => handleSelectUser(user)}
-                        className={`w-full text-left px-4 py-3 hover:bg-lead-50 transition-colors border-b border-lead-100 last:border-b-0 ${
-                          selectedUser === user ? 'bg-brand-50 text-brand-700' : ''
-                        }`}
+                        className={`w-full text-left px-4 py-3 hover:bg-lead-50 transition-colors border-b border-lead-100 last:border-b-0 ${selectedUser === user ? 'bg-brand-50 text-brand-700' : ''
+                          }`}
                       >
                         <p className="font-medium text-sm text-lead-800">
                           {user.names} {user.lastName} {user.secondLastName}
                         </p>
-                        <p className="text-xs text-lead-500">@{user.userName} • {user.role}</p>
+                        <p className="text-xs text-lead-500">@{user.userName} • {user.role.toUpperCase()}</p>
                       </button>
                     ))}
                   </div>
                 )}
-                
+
                 {showUserDropdown && filteredUsers.length === 0 && searchTerm && (
                   <div className="absolute z-50 mt-1 w-full rounded-xl bg-white border border-lead-200 shadow-lg p-4">
-                    <p className="text-sm text-lead-500 text-center">No se encontraron prevendedores</p>
+                    <p className="text-sm text-lead-500 text-center">No se encontraron usuarios</p>
                   </div>
                 )}
               </div>
@@ -293,7 +293,7 @@ export const ActivitiesPage: React.FC = () => {
                     </>
                   )}
                 </button>
-                
+
                 <button
                   type="button"
                   onClick={handleClear}
@@ -315,7 +315,7 @@ export const ActivitiesPage: React.FC = () => {
                     {selectedUser.names} {selectedUser.lastName} {selectedUser.secondLastName}
                   </p>
                   <p className="text-xs text-brand-600">
-                    @{selectedUser.userName} • {selectedUser.role}
+                    @{selectedUser.userName} • {selectedUser.role.toUpperCase()}
                   </p>
                 </div>
               </div>
@@ -323,7 +323,7 @@ export const ActivitiesPage: React.FC = () => {
           </section>
 
           {/* Mapa */}
-          <section className="card shadow-xl ring-1 ring-black/5 p-0 overflow-hidden">
+          <section className="card shadow-xl ring-1 ring-black/5 p-0 overflow-hidden relative z-0">
             {isLoading ? (
               <div className="h-[500px] flex items-center justify-center">
                 <Loader />
@@ -340,7 +340,7 @@ export const ActivitiesPage: React.FC = () => {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
                 </svg>
                 <p className="text-lg font-medium">No hay actividades para mostrar</p>
-                <p className="text-sm mt-1">Selecciona una fecha y un prevendedor para ver sus actividades</p>
+                <p className="text-sm mt-1">Selecciona una fecha y un usuario para ver sus actividades</p>
               </div>
             )}
           </section>
@@ -359,7 +359,7 @@ export const ActivitiesPage: React.FC = () => {
                   </svg>
                 </button>
               </div>
-              
+
               <div className="grid md:grid-cols-2 gap-6">
                 {/* <div>
                   <h4 className="font-semibold text-lead-800 mb-3">{selectedActivity.businesse.name}</h4>
@@ -378,7 +378,7 @@ export const ActivitiesPage: React.FC = () => {
                     )}
                   </div>
                 </div> */}
-                
+
                 <div>
                   <h4 className="font-semibold text-lead-800 mb-3">Estado de Actividad</h4>
                   <div className="space-y-2">
@@ -422,8 +422,8 @@ export const ActivitiesPage: React.FC = () => {
 
       {/* Click outside handler for dropdown */}
       {showUserDropdown && (
-        <div 
-          className="fixed inset-0 z-40" 
+        <div
+          className="fixed inset-0 z-40"
           onClick={() => setShowUserDropdown(false)}
         />
       )}
