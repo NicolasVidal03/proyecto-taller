@@ -131,12 +131,12 @@ const ActivityMap: React.FC<ActivityMapProps> = ({
 
     activities.businesses.forEach((Activity) => {
       const { business, activityDetail } = Activity;
-      
+
       if (!business.position || !business.position.lat || !business.position.lng) return;
 
       const status = getActivityStatus(activityDetail);
       const icon = ICONS[status];
-      
+
       const marker = L.marker([business.position.lat, business.position.lng], { icon });
 
       // Crear contenido del popup
@@ -172,6 +172,13 @@ const ActivityMap: React.FC<ActivityMapProps> = ({
       marker.bindPopup(popupContent, {
         closeButton: true,
         className: 'activity-popup',
+        autoClose: true,
+      });
+
+      marker.on('popupopen', () => {
+        setTimeout(() => {
+          marker.closePopup();
+        }, 2500);
       });
 
       if (onMarkerClick) {
@@ -196,7 +203,7 @@ const ActivityMap: React.FC<ActivityMapProps> = ({
     const presale = activities.businesses?.filter(a => getActivityStatus(a.activityDetail) === 'presale').length;
     const rejected = activities.businesses?.filter(a => getActivityStatus(a.activityDetail) === 'presale').length;
     const pending = activities.businesses?.filter(a => getActivityStatus(a.activityDetail) === 'pending').length;
-    
+
     return { total, visited, sold, rejected, pending, presale };
   }, [activities]);
 
@@ -207,7 +214,7 @@ const ActivityMap: React.FC<ActivityMapProps> = ({
         style={{ height, width: '100%' }}
         className="rounded-xl overflow-hidden border border-gray-200 shadow-sm"
       />
-      
+
       {/* Leyenda */}
       <div className="absolute bottom-4 left-4 z-[1000] bg-white/95 backdrop-blur rounded-xl shadow-lg border border-gray-200 p-3">
         <p className="text-xs font-semibold text-gray-700 mb-2">Leyenda</p>

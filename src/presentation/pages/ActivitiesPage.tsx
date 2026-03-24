@@ -192,7 +192,7 @@ export const ActivitiesPage: React.FC = () => {
                         <p className="text-xs text-white/70">Visitados</p>
                         <p className="text-2xl font-bold">{stats?.visited}</p>
                       </div>
-                      { selectedUser?.role === 'prevendedor' ? (
+                      {selectedUser?.role === 'prevendedor' ? (
                         <div className="rounded-xl bg-purple-500/30 px-4 py-3">
                           <p className="text-xs text-white/70">Preventas</p>
                           <p className="text-2xl font-bold">{stats?.presales}</p>
@@ -203,8 +203,8 @@ export const ActivitiesPage: React.FC = () => {
                           <p className="text-2xl font-bold">{stats?.sales}</p>
                         </div>
                       )}
-                        
-                        
+
+
                       <div className="rounded-xl bg-red-500/30 px-4 py-3">
                         <p className="text-xs text-white/70">Rechazos</p>
                         <p className="text-2xl font-bold">{stats?.rejected}</p>
@@ -332,105 +332,106 @@ export const ActivitiesPage: React.FC = () => {
             )}
           </section>
 
-          {/* Mapa */}
-          <section className="card shadow-xl ring-1 ring-black/5 p-0 overflow-hidden relative z-0">
-            {isLoading ? (
-              <div className="h-[500px] flex items-center justify-center">
-                <Loader />
-              </div>
-            ) : activities?.businesses?.length && activities.businesses.length > 0 ? (
-              <ActivityMap
-                activities={activities}
-                height="600px"
-                onMarkerClick={handleMarkerClick}
-              />
-            ) : (
-              <div className="h-[400px] flex flex-col items-center justify-center text-lead-500">
-                <svg className="w-16 h-16 mb-4 text-lead-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
-                </svg>
-                <p className="text-lg font-medium">No hay actividades para mostrar</p>
-                <p className="text-sm mt-1">Selecciona una fecha y un usuario para ver sus actividades</p>
-              </div>
-            )}
-          </section>
-
-          {/* Detalle de actividad seleccionada */}
-          {selectedActivity && (
-            <section className="card shadow-xl ring-1 ring-black/5">
-              <div className="flex items-start justify-between mb-4">
-                <h3 className="text-lg font-bold text-brand-900">Detalle del Negocio</h3>
-                <button
-                  onClick={() => setSelectedActivity(null)}
-                  className="text-lead-400 hover:text-lead-600 transition-colors"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          <div className="flex gap-6 items-start overflow-hidden">
+            {/* Mapa */}
+            <section className="card shadow-xl ring-1 ring-black/5 p-0 overflow-hidden relative z-0 shrink-0 w-[calc(100%-31rem)]">
+              {isLoading ? (
+                <div className="h-[500px] flex items-center justify-center">
+                  <Loader />
+                </div>
+              ) : activities?.businesses?.length && activities.businesses.length > 0 ? (
+                <ActivityMap
+                  activities={activities}
+                  height="600px"
+                  onMarkerClick={handleMarkerClick}
+                />
+              ) : (
+                <div className="h-[400px] flex flex-col items-center justify-center text-lead-500">
+                  <svg className="w-16 h-16 mb-4 text-lead-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
                   </svg>
-                </button>
-              </div>
-
-              <div className="grid md:grid-cols-2 gap-6">
-                <div>
-                  <h4 className="font-semibold text-lead-800 mb-3">{selectedActivity.business.name}</h4>
-                  <div className="space-y-2 text-sm text-lead-600">
-                    {selectedActivity.business.nit && (
-                      <p><span className="font-medium">NIT:</span> {selectedActivity.business.nit}</p>
-                    )}
-                    {selectedActivity.business.address && (
-                      <p><span className="font-medium">Dirección:</span> {selectedActivity.business.address}</p>
-                    )}
-                    {selectedActivity.business.position && (
-                      <p>
-                        <span className="font-medium">Coordenadas:</span>{' '}
-                        {selectedActivity.business.position.lat.toFixed(6)}, {selectedActivity.business.position.lng.toFixed(6)}
-                      </p>
-                    )}
-                  </div>
+                  <p className="text-lg font-medium">No hay actividades para mostrar</p>
+                  <p className="text-sm mt-1">Selecciona una fecha y un usuario para ver sus actividades</p>
                 </div>
-
-                <div>
-                  <h4 className="font-semibold text-lead-800 mb-3">Estado de Actividad</h4>
-                  <div className="space-y-2">
-                    {selectedActivity.activityDetail?.action ? (
-                      <>
-                        <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium ${
-                          selectedActivity.activityDetail.action.toLowerCase() === 'venta'
-                            ? 'bg-blue-100 text-blue-700'
-                            : selectedActivity.activityDetail.rejectionId
-                            ? 'bg-red-100 text-red-700'
-                            : selectedActivity.activityDetail.action.toLowerCase() === 'preventa'
-                            ? 'bg-purple-100 text-purple-700'
-                            : 'bg-green-100 text-green-700'
-                        }`}>
-                          <span className={`w-2 h-2 rounded-full ${
-                            selectedActivity.activityDetail.action.toLowerCase() === 'venta'
-                              ? 'bg-blue-500'
-                              : selectedActivity.activityDetail.rejectionId
-                              ? 'bg-red-500'
-                              : selectedActivity.activityDetail.action.toLowerCase() === 'preventa'
-                              ? 'bg-purple-500'
-                              : 'bg-green-500'
-                          }`}></span>
-                          {!selectedActivity.activityDetail.rejectionId ? selectedActivity.activityDetail.action : "Cancelado"}
-                        </div>
-                        {selectedActivity.activityDetail.createdAt && (
-                          <p className="text-sm text-lead-500">
-                            Registrado: {new Date(selectedActivity.activityDetail.createdAt).toLocaleString('es-BO')}
-                          </p>
-                        )}
-                      </>
-                    ) : (
-                      <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium bg-gray-100 text-gray-600">
-                        <span className="w-2 h-2 rounded-full bg-gray-400"></span>
-                        Sin visitar
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
+              )}
             </section>
-          )}
+
+            {/* Detalle de actividad seleccionada */}
+            {selectedActivity && (
+              <section className="card shadow-xl ring-1 ring-black/5">
+                <div className="flex items-start justify-between mb-4">
+                  <h3 className="text-lg font-bold text-brand-900">Detalle del Negocio</h3>
+                  <button
+                    onClick={() => setSelectedActivity(null)}
+                    className="text-lead-400 hover:text-lead-600 transition-colors"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div>
+                    <h4 className="font-semibold text-lead-800 mb-3">{selectedActivity.business.name}</h4>
+                    <div className="space-y-2 text-sm text-lead-600">
+                      {selectedActivity.business.nit && (
+                        <p><span className="font-medium">NIT:</span> {selectedActivity.business.nit}</p>
+                      )}
+                      {selectedActivity.business.address && (
+                        <p><span className="font-medium">Dirección:</span> {selectedActivity.business.address}</p>
+                      )}
+                      {selectedActivity.business.position && (
+                        <p>
+                          <span className="font-medium">Coordenadas:</span>{' '}
+                          {selectedActivity.business.position.lat.toFixed(6)}, {selectedActivity.business.position.lng.toFixed(6)}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div>
+                    <h4 className="font-semibold text-lead-800 mb-3">Estado de Actividad</h4>
+                    <div className="space-y-2">
+                      {selectedActivity.activityDetail?.action ? (
+                        <>
+                          <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium ${selectedActivity.activityDetail.action.toLowerCase() === 'venta'
+                              ? 'bg-blue-100 text-blue-700'
+                              : selectedActivity.activityDetail.rejectionId
+                                ? 'bg-red-100 text-red-700'
+                                : selectedActivity.activityDetail.action.toLowerCase() === 'preventa'
+                                  ? 'bg-purple-100 text-purple-700'
+                                  : 'bg-green-100 text-green-700'
+                            }`}>
+                            <span className={`w-2 h-2 rounded-full ${selectedActivity.activityDetail.action.toLowerCase() === 'venta'
+                                ? 'bg-blue-500'
+                                : selectedActivity.activityDetail.rejectionId
+                                  ? 'bg-red-500'
+                                  : selectedActivity.activityDetail.action.toLowerCase() === 'preventa'
+                                    ? 'bg-purple-500'
+                                    : 'bg-green-500'
+                              }`}></span>
+                            {!selectedActivity.activityDetail.rejectionId ? selectedActivity.activityDetail.action : "Cancelado"}
+                          </div>
+                          {selectedActivity.activityDetail.createdAt && (
+                            <p className="text-sm text-lead-500">
+                              Registrado: {new Date(selectedActivity.activityDetail.createdAt).toLocaleString('es-BO')}
+                            </p>
+                          )}
+                        </>
+                      ) : (
+                        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium bg-gray-100 text-gray-600">
+                          <span className="w-2 h-2 rounded-full bg-gray-400"></span>
+                          Sin visitar
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+            )}
+          </div>
         </div>
       </div>
 
