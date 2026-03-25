@@ -116,7 +116,7 @@ export const ActivitiesPage: React.FC = () => {
     const selected = new Date(selectedDate);
     const today = getToday();
     today.setHours(0, 0, 0, 0);
-
+    setSelectedActivity(null);
     // if (selected > today) {
     //   toast.error('No puedes ver actividades de fechas futuras');
     //   return;

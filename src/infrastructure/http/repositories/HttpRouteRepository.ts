@@ -12,4 +12,9 @@ export class HttpRouteRepository implements IRouteRepository {
     const response = await http.post<Route>(this.basePath, data);
     return response.data;
   }
+
+  async getRoutes(): Promise<Route[]> {
+    const resp = await http.get(this.basePath);
+    return resp.data;
+  }
 }
