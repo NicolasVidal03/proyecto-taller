@@ -113,9 +113,9 @@ export const ActivitiesPage: React.FC = () => {
     }
 
     // Validar que la fecha no sea futura
-    const selected = new Date(selectedDate);
-    const today = getToday();
-    today.setHours(0, 0, 0, 0);
+    // const selected = new Date(selectedDate);
+    // const today = getToday();
+    // today.setHours(0, 0, 0, 0);
     setSelectedActivity(null);
     // if (selected > today) {
     //   toast.error('No puedes ver actividades de fechas futuras');
@@ -173,7 +173,7 @@ export const ActivitiesPage: React.FC = () => {
                 <h2 className="text-3xl font-semibold leading-tight md:text-4xl">Actividades de Prevendedores y Transportistas</h2>
                 <p className="text-sm text-white/80 max-w-lg">
                   Visualiza la actividad diaria de tus trabajadores en el mapa.
-                  Selecciona una fecha pasada y un usuario para ver sus visitas, ventas y rechazos.
+                  Selecciona una fecha y un usuario para ver sus visitas, ventas y rechazos.
                 </p>
               </div>
 
@@ -227,7 +227,7 @@ export const ActivitiesPage: React.FC = () => {
                 <input
                   type="date"
                   value={selectedDate}
-                  max={formatDateForInput(getToday())}
+                  // max={formatDateForInput(getToday())}
                   onChange={(e) => setSelectedDate(e.target.value)}
                   className="input-plain w-full"
                 />
