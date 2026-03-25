@@ -8,4 +8,5 @@ export interface CreateRouteDTO {
 
 export interface IRouteRepository {
   create(data: CreateRouteDTO): Promise<Route>;
+  getRoutes(): Promise<Route[]>;
 }

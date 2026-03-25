@@ -1,5 +1,5 @@
-import { ActivityWork } from '../entities/ActivityWork';
+import { Activity } from '../entities/Activity';
 
 export interface IActivityRepository {
-  getBusinessActivities(userId: number, date: string): Promise<ActivityWork[]>;
+  getActivityByUserAndDate(userId: number, date: string, role: string): Promise<Activity>;
 }

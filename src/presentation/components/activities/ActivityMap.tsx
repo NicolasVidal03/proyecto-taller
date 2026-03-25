@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useMemo } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { ActivityWork } from '../../../domain/entities/ActivityWork';
+import { Activity, ActivityBusinesses, ActivityDetails } from '../../../domain/entities/Activity';
 
 // Fix para iconos de Leaflet
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -37,45 +37,48 @@ const createCustomIcon = (color: string, borderColor: string) => {
 const ICONS = {
   visited: createCustomIcon('#22c55e', '#166534'),   // Verde - visitado
   sold: createCustomIcon('#3b82f6', '#1d4ed8'),      // Azul - vendido
-  rejected: createCustomIcon('#ef4444', '#b91c1c'), // Rojo - rechazado
+  rejected: createCustomIcon('#ef4444', '#b91c1c'),  // Rojo - rechazado
+  presale: createCustomIcon('#962bd4', '#741ba8'),
   pending: createCustomIcon('#94a3b8', '#64748b'),  // Gris - sin actividad
 };
 
-const getActivityStatus = (activity: ActivityWork['activity']): keyof typeof ICONS => {
-  if (!activity.action) return 'pending';
-  const action = activity.action.toLowerCase();
-  if (action === 'sold' || action === 'venta') return 'sold';
-  if (action === 'rejected' || action === 'rechazado') return 'rejected';
-  if (action === 'visited' || action === 'visitado') return 'visited';
-  return 'visited';
+const getActivityStatus = (activityDetail: ActivityDetails | null): keyof typeof ICONS => {
+  if (!activityDetail) return 'pending';
+  if (activityDetail.rejectionId) return 'rejected';
+  const action = activityDetail.action.toLowerCase();
+  if (action === 'venta') return 'sold';
+  if (action === 'preventa') return 'presale';
+  if (action === 'visitado') return 'visited';
+  return 'pending';
 };
 
 const getStatusLabel = (status: keyof typeof ICONS): string => {
   switch (status) {
     case 'sold': return 'Venta realizada';
-    case 'rejected': return 'Rechazado';
+    case 'presale': return 'Preventa';
     case 'visited': return 'Visitado';
     case 'pending': return 'Sin visitar';
+    case 'rejected': return 'Cancelado';
     default: return 'Desconocido';
   }
 };
 
-const getStatusColor = (status: keyof typeof ICONS): string => {
-  switch (status) {
-    case 'sold': return 'text-blue-600';
-    case 'rejected': return 'text-red-600';
-    case 'visited': return 'text-green-600';
-    case 'pending': return 'text-gray-500';
-    default: return 'text-gray-500';
-  }
-};
+// const getStatusColor = (status: keyof typeof ICONS): string => {
+//   switch (status) {
+//     case 'sold': return 'text-blue-600';
+//     case 'presale': return 'text-red-600';
+//     case 'visited': return 'text-green-600';
+//     case 'pending': return 'text-gray-500';
+//     default: return 'text-gray-500';
+//   }
+// };
 
 interface ActivityMapProps {
-  activities: ActivityWork[];
+  activities: Activity;
   height?: string;
   center?: [number, number];
   zoom?: number;
-  onMarkerClick?: (activity: ActivityWork) => void;
+  onMarkerClick?: (activity: ActivityBusinesses) => void;
 }
 
 const ActivityMap: React.FC<ActivityMapProps> = ({
@@ -112,6 +115,8 @@ const ActivityMap: React.FC<ActivityMapProps> = ({
     };
   }, []);
 
+  console.log(activities)
+
   // Actualizar marcadores cuando cambien las actividades
   useEffect(() => {
     const map = mapRef.current;
@@ -120,18 +125,18 @@ const ActivityMap: React.FC<ActivityMapProps> = ({
 
     markersLayer.clearLayers();
 
-    if (activities.length === 0) return;
+    if (!activities.businesses) return;
 
     const bounds: L.LatLngBounds = L.latLngBounds([]);
 
-    activities.forEach((activityWork) => {
-      const { business, activity } = activityWork;
-      
+    activities.businesses.forEach((Activity) => {
+      const { business, activityDetail } = Activity;
+
       if (!business.position || !business.position.lat || !business.position.lng) return;
 
-      const status = getActivityStatus(activity);
+      const status = getActivityStatus(activityDetail);
       const icon = ICONS[status];
-      
+
       const marker = L.marker([business.position.lat, business.position.lng], { icon });
 
       // Crear contenido del popup
@@ -150,15 +155,15 @@ const ActivityMap: React.FC<ActivityMapProps> = ({
               width: 10px; 
               height: 10px; 
               border-radius: 50%; 
-              background: ${status === 'sold' ? '#3b82f6' : status === 'rejected' ? '#ef4444' : status === 'visited' ? '#22c55e' : '#94a3b8'};
+              background: ${status === 'sold' ? '#3b82f6' : status === 'presale' ? '#962bd4' : status === 'visited' ? '#22c55e' : status === 'rejected' ? '#ef4444' : '#94a3b8'};
             "></span>
-            <span style="font-size: 12px; font-weight: 600; color: ${status === 'sold' ? '#1d4ed8' : status === 'rejected' ? '#b91c1c' : status === 'visited' ? '#166534' : '#64748b'};">
+            <span style="font-size: 12px; font-weight: 600; color: ${status === 'sold' ? '#1d4ed8' : status === 'presale' ? '#741ba8' : status === 'visited' ? '#166534' : status === 'rejected' ? '#b91c1c' : '#64748b'};">
               ${getStatusLabel(status)}
             </span>
           </div>
-          ${activity.createdAt ? `
+          ${activityDetail ? `
             <p style="margin: 6px 0 0 0; font-size: 11px; color: #94a3b8;">
-              ${new Date(activity.createdAt).toLocaleString('es-BO', { dateStyle: 'short', timeStyle: 'short' })}
+              ${new Date(activityDetail.createdAt).toLocaleString('es-BO', { dateStyle: 'short', timeStyle: 'short' })}
             </p>
           ` : ''}
         </div>
@@ -167,10 +172,17 @@ const ActivityMap: React.FC<ActivityMapProps> = ({
       marker.bindPopup(popupContent, {
         closeButton: true,
         className: 'activity-popup',
+        autoClose: true,
+      });
+
+      marker.on('popupopen', () => {
+        setTimeout(() => {
+          marker.closePopup();
+        }, 2500);
       });
 
       if (onMarkerClick) {
-        marker.on('click', () => onMarkerClick(activityWork));
+        marker.on('click', () => onMarkerClick(Activity));
       }
 
       markersLayer.addLayer(marker);
@@ -185,13 +197,14 @@ const ActivityMap: React.FC<ActivityMapProps> = ({
 
   // Calcular estadísticas
   const stats = useMemo(() => {
-    const total = activities.length;
-    const visited = activities.filter(a => getActivityStatus(a.activity) === 'visited').length;
-    const sold = activities.filter(a => getActivityStatus(a.activity) === 'sold').length;
-    const rejected = activities.filter(a => getActivityStatus(a.activity) === 'rejected').length;
-    const pending = activities.filter(a => getActivityStatus(a.activity) === 'pending').length;
-    
-    return { total, visited, sold, rejected, pending };
+    const total = activities.businesses?.length;
+    const visited = activities.businesses?.filter(a => getActivityStatus(a.activityDetail) === 'visited').length;
+    const sold = activities.businesses?.filter(a => getActivityStatus(a.activityDetail) === 'sold').length;
+    const presale = activities.businesses?.filter(a => getActivityStatus(a.activityDetail) === 'presale').length;
+    const rejected = activities.businesses?.filter(a => getActivityStatus(a.activityDetail) === 'presale').length;
+    const pending = activities.businesses?.filter(a => getActivityStatus(a.activityDetail) === 'pending').length;
+
+    return { total, visited, sold, rejected, pending, presale };
   }, [activities]);
 
   return (
@@ -201,7 +214,7 @@ const ActivityMap: React.FC<ActivityMapProps> = ({
         style={{ height, width: '100%' }}
         className="rounded-xl overflow-hidden border border-gray-200 shadow-sm"
       />
-      
+
       {/* Leyenda */}
       <div className="absolute bottom-4 left-4 z-[1000] bg-white/95 backdrop-blur rounded-xl shadow-lg border border-gray-200 p-3">
         <p className="text-xs font-semibold text-gray-700 mb-2">Leyenda</p>
@@ -213,6 +226,10 @@ const ActivityMap: React.FC<ActivityMapProps> = ({
           <div className="flex items-center gap-2">
             <span className="w-3 h-3 rounded-full bg-blue-500 border-2 border-blue-700"></span>
             <span className="text-xs text-gray-600">Venta ({stats.sold})</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="w-3 h-3 rounded-full bg-purple-500 border-2 border-purple-700"></span>
+            <span className="text-xs text-gray-600">Preventa ({stats.presale})</span>
           </div>
           <div className="flex items-center gap-2">
             <span className="w-3 h-3 rounded-full bg-red-500 border-2 border-red-700"></span>

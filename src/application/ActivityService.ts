@@ -1,10 +1,10 @@
 import { IActivityRepository } from '../domain/ports/IActivityRepository';
-import { ActivityWork } from '../domain/entities/ActivityWork';
+import { Activity } from '../domain/entities/Activity';
 
 export class ActivityService {
   constructor(private repository: IActivityRepository) {}
 
-  async getBusinessActivities(userId: number, date: string): Promise<ActivityWork[]> {
-    return this.repository.getBusinessActivities(userId, date);
+  async getActivityByUserAndDate(userId: number, date: string, role: string): Promise<Activity> {
+    return this.repository.getActivityByUserAndDate(userId, date, role);
   }
 }

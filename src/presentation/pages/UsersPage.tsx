@@ -16,7 +16,7 @@ const ROLE_FILTERS: Array<{ value: RoleFilter; label: string }> = [
 ];
 
 export const UsersPage: React.FC = () => {
-  const { users } = useUsers();
+  const { users, fetchUsers } = useUsers();
   const { branches, branchMap, isLoading: branchesLoading, fetchBranches } = useBranches();
   const toast = useToast();
 
@@ -25,8 +25,8 @@ export const UsersPage: React.FC = () => {
   const [roleFilter, setRoleFilter] = useState<RoleFilter>('all');
 
   useEffect(() => {
-    fetchBranches();
-  }, [fetchBranches]);
+    Promise.all([ fetchUsers(), fetchBranches()])
+  }, [fetchBranches, fetchUsers]);
 
   const handleToast = useCallback((type: 'success' | 'error', message: string) => {
     if (type === 'success') {

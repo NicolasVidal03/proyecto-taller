@@ -7,4 +7,8 @@ export class RouteService {
   async create(data: CreateRouteDTO): Promise<Route> {
     return this.repository.create(data);
   }
+
+  async getRoutes(): Promise<Route[]> {
+    return this.repository.getRoutes();
+  }
 }

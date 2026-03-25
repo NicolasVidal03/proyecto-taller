@@ -7,13 +7,17 @@ import { useUsers } from '../hooks/useUsers';
 import { useAreasSimple } from '../hooks/useAreas';
 import GenerateRouteModal from '../components/routes/GenerateRouteModal';
 import { ToastContainer, useToast } from '../components/shared/Toast';
+import RoutesTable from '@presentation/components/routes/RoutesTable';
+import { useConfirmDialog } from '@presentation/hooks';
+import { Route } from '@domain/entities';
 
 export const RoutesPage: React.FC = () => {
-  const { isLoading: routesLoading, error: routesError, createRoute, clearError } = useRoutes();
+  const { routes, isLoading: routesLoading, error: routesError, fetchRoutes, createRoute, clearError } = useRoutes();
   const { users, isLoading: usersLoading, fetchUsers } = useUsers();
   const { areas, isLoading: areasLoading, fetchAreas } = useAreasSimple();
   
   const toast = useToast();
+  const confirm = useConfirmDialog<Route>();
 
   
   const [modalOpen, setModalOpen] = useState(false);
@@ -21,13 +25,12 @@ export const RoutesPage: React.FC = () => {
   const [lastRouteInfo, setLastRouteInfo] = useState<{userStr: string, areaStr: string, date: string} | null>(null);
 
   const loadData = useCallback(async () => {
-    await Promise.all([fetchUsers(), fetchAreas()]);
-  }, [fetchUsers, fetchAreas]);
+    await Promise.all([fetchUsers(), fetchAreas(), fetchRoutes()]);
+  }, [fetchUsers, fetchAreas, fetchRoutes]);
 
   useEffect(() => {
     loadData();
   }, [loadData]);
-
   
   useEffect(() => {
     if (routesError) {
@@ -191,6 +194,15 @@ export const RoutesPage: React.FC = () => {
             </div>
           </div>
         </section>
+
+
+        <RoutesTable
+          routes={routes}
+          users={users}
+          areas={areas}
+          busyId={confirm.busyId}
+        />
+
       </div>
 
       {/* Modal */}
