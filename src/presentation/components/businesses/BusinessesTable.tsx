@@ -91,7 +91,7 @@ const BusinessesTable: React.FC<BusinessesTableProps> = ({
                 <td className="px-4 py-3 text-lead-600">
                   {onChangeArea ? (
                     <select
-                      className="rounded border border-lead-200 bg-white px-2 py-1 text-sm"
+                      className="input-plain text-sm w-full transition-opacity "
                       value={b.areaId ?? ''}
                       onChange={(e) => {
                         const v = e.target.value === '' ? null : Number(e.target.value);

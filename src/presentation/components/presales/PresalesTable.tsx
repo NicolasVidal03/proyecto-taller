@@ -93,8 +93,8 @@ const PresalesTable: React.FC<PresalesTableProps> = ({
                                         };
                                         const style = statusStyles[p.status.toLowerCase()] ?? 'bg-lead-100 text-lead-600';
                                         return (
-                                            <span className={`inline-flex items-center rounded-full px-2.5 py-1 font-semibold uppercase tracking-wide ${style}`}>
-                                                {p.status}
+                                            <span className={`inline-flex items-center rounded-full px-2.5 py-1 font-semibold tracking-wide ${style}`}>
+                                                {p.status.charAt(0).toUpperCase() + p.status.slice(1).toLowerCase()}
                                             </span>
                                         );
                                     })()}

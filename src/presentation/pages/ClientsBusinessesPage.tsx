@@ -292,7 +292,7 @@ export const ClientsBusinessesPage: React.FC = () => {
       <div className="relative overflow-hidden min-h-screen">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(17,93,216,0.12),transparent_60%),radial-gradient(circle_at_80%_0%,rgba(255,100,27,0.08),transparent_55%)]" />
         <div className="relative space-y-8 px-6 py-8 lg:px-10 lg:py-12">
-          
+
           {/* Header Section */}
           <section className="relative overflow-hidden rounded-[2.5rem] bg-gradient-to-r from-brand-900 via-brand-700 to-brand-500 text-white shadow-2xl">
             <div
@@ -305,7 +305,7 @@ export const ClientsBusinessesPage: React.FC = () => {
               <p className="text-xs uppercase tracking-[0.45em] text-white/70">Panel de Gestión</p>
               <h2 className="mt-2 text-3xl font-semibold leading-tight md:text-4xl">Clientes y Negocios</h2>
               <p className="mt-2 text-white/80">Administra tu cartera de clientes y sus negocios asociados</p>
-              
+
               {/* Search */}
               <div className="mt-6 max-w-3xl">
                 <div className="space-y-3 rounded-2xl bg-white/10 p-4 backdrop-blur border border-white/10">
@@ -326,22 +326,20 @@ export const ClientsBusinessesPage: React.FC = () => {
           <div className="flex gap-3">
             <button
               type="button"
-              className={`rounded-full px-8 py-3 text-sm font-semibold transition-all shadow-md ${
-                activeSection === 'clients'
+              className={`rounded-full px-8 py-3 text-sm font-semibold transition-all shadow-md ${activeSection === 'clients'
                   ? 'bg-white text-brand-700 ring-2 ring-brand-300'
                   : 'bg-white/80 text-lead-600 hover:bg-white hover:shadow-lg'
-              }`}
+                }`}
               onClick={() => setActiveSection('clients')}
             >
               Clientes
             </button>
             <button
               type="button"
-              className={`rounded-full px-8 py-3 text-sm font-semibold transition-all shadow-md ${
-                activeSection === 'businesses'
+              className={`rounded-full px-8 py-3 text-sm font-semibold transition-all shadow-md ${activeSection === 'businesses'
                   ? 'bg-white text-brand-700 ring-2 ring-brand-300'
                   : 'bg-white/80 text-lead-600 hover:bg-white hover:shadow-lg'
-              }`}
+                }`}
               onClick={() => setActiveSection('businesses')}
             >
               Negocios
@@ -403,14 +401,14 @@ export const ClientsBusinessesPage: React.FC = () => {
                               <td className="px-4 py-3 text-lead-600">{client.phone}</td>
                               <td className="px-4 py-3 text-lead-600">{client.ci || '-'}</td>
                               <td className="px-4 py-3 text-center align-middle">
-                                                <div className="flex items-center justify-center gap-2">
-                                                <button
-                                                  onClick={() => setSelectedClient(client)}
-                                                  className="rounded bg-blue-100 px-3 py-1.5 font-medium text-blue-700 transition hover:bg-blue-200"
-                                                  title="Ver"
-                                                >
-                                                  Ver
-                                                </button>
+                                <div className="flex items-center justify-center gap-2">
+                                  <button
+                                    onClick={() => setSelectedClient(client)}
+                                    className="rounded bg-blue-100 px-3 py-1.5 font-medium text-blue-700 transition hover:bg-blue-200"
+                                    title="Ver"
+                                  >
+                                    Ver
+                                  </button>
                                   <button
                                     onClick={() => setEditingClient(client)}
                                     className="rounded bg-brand-100 px-3 py-1.5 font-medium text-brand-700 transition hover:bg-brand-200"
@@ -452,14 +450,16 @@ export const ClientsBusinessesPage: React.FC = () => {
 
                 {/* Pagination */}
                 {totalPages > 0 && (
-                  <Pagination
-                    currentPage={page}
-                    totalPages={totalPages}
-                    totalItems={totalItems}
-                    itemsPerPage={pageSize}
-                    onPageChange={setPage}
-                    isLoading={activeSection === 'clients' ? clientsLoading : businessesLoading}
-                  />
+                  <div className='mt-6'>
+                    <Pagination
+                      currentPage={page}
+                      totalPages={totalPages}
+                      totalItems={totalItems}
+                      itemsPerPage={pageSize}
+                      onPageChange={setPage}
+                      isLoading={activeSection === 'clients' ? clientsLoading : businessesLoading}
+                    />
+                  </div>
                 )}
               </>
             )}
@@ -490,8 +490,8 @@ export const ClientsBusinessesPage: React.FC = () => {
               </button>
             </div>
             <div className="px-6 py-6">
-                <ClientForm
-                  onSubmit={handleSaveClient}
+              <ClientForm
+                onSubmit={handleSaveClient}
                 onCancel={() => {
                   setCreatingClient(false);
                   setEditingClient(null);
@@ -538,11 +538,10 @@ export const ClientsBusinessesPage: React.FC = () => {
         <ConfirmDialog
           open={!!toToggleBusiness}
           title={`${toToggleBusiness.isActive ? 'Desactivar' : 'Activar'} negocio`}
-          description={`¿Confirmas ${toToggleBusiness.isActive ? 'desactivar' : 'activar'} el negocio "${toToggleBusiness.name}"? ${
-            toToggleBusiness.isActive
+          description={`¿Confirmas ${toToggleBusiness.isActive ? 'desactivar' : 'activar'} el negocio "${toToggleBusiness.name}"? ${toToggleBusiness.isActive
               ? 'El negocio se marcará como inactivo pero seguirá visible en el sistema.'
               : 'El negocio se marcará como activo nuevamente.'
-          }`}
+            }`}
           confirmLabel={toToggleBusiness.isActive ? 'Desactivar' : 'Activar'}
           onConfirm={confirmToggleBusiness}
           onCancel={() => setToToggleBusiness(null)}
