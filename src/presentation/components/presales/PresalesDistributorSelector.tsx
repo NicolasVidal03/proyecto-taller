@@ -6,12 +6,14 @@ type DistributorSelectorProps = {
     users: User[];
     onSelect: (user: User) => void;
     initialUser?: User | null;
+    status: string;
 };
 
 const PresalesDistributorSelector: React.FC<DistributorSelectorProps> = ({
     users,
     onSelect,
-    initialUser
+    initialUser,
+    status
 }) => {
     const [search, setSearch] = useState('');
     const [selectedId, setSelectedId] = useState<number | null>(null);
@@ -69,7 +71,12 @@ const PresalesDistributorSelector: React.FC<DistributorSelectorProps> = ({
                 }}
                 onFocus={handleFocus}
                 placeholder="Asignar transportista..."
-                className="input-plain w-full"
+                className={`input-plain w-full transition-opacity 
+                    ${status === 'pendiente' || status === 'asignado'
+                        ? 'opacity-100'
+                        : 'opacity-60 cursor-not-allowed bg-lead-100'
+                    }`}
+                disabled={status === 'pendiente' || status === 'asignado' ? false : true}
             />
 
             {/* Portal — se renderiza directo en el body */}

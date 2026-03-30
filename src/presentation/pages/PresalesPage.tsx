@@ -96,7 +96,7 @@ export const PresalesPage: React.FC = () => {
     const presellers = useMemo(() => users.filter(u => u.role?.toLowerCase() === 'prevendedor'), [users]);
     const distributors = useMemo(() => users.filter(u => u.role?.toLowerCase() === 'transportista'), [users]);
 
-    const hasActiveFilters = !!(search || branchFilter !== 'all' || statusFilter !== 'all' ||
+    const hasActiveFilters = !!(search || branchFilter !== (auth.user?.branchId ?? 'all') || statusFilter !== 'all' ||
         presellerFilter !== 'all' || distributorFilter !== 'all' || deliveryDateFrom || deliveryDateTo);
 
     const handleSubmit = async (values: PresaleFormValues) => {
@@ -321,7 +321,7 @@ export const PresalesPage: React.FC = () => {
                                         onEdit={modal.openEdit}
                                         onCancel={confirm.openConfirm}
                                     />
-                                    {totalPages > 1 && (
+                                    {totalPages > 0 && (
                                         <div className="mt-6">
                                             <Pagination
                                                 currentPage={page}

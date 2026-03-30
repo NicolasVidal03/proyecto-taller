@@ -370,7 +370,7 @@ const PresaleFormModal: React.FC<PresaleFormModalProps> = ({
                                                                 : 'bg-brand-50 text-brand-700 border-brand-100 hover:bg-brand-100'
                                                             }`}
                                                     >
-                                                        {price.priceTypeName}: {Number(price.price).toFixed(2)}
+                                                        {price.priceTypeName}: {Number(price.price).toFixed(2)} Bs.
                                                     </button>
                                                 ))}
                                             </div>
@@ -437,7 +437,7 @@ const PresaleFormModal: React.FC<PresaleFormModalProps> = ({
                                         <div className="mx-3 flex items-center justify-end min-w-[90px]">
                                             {detail.selectedPrice && detail.productQuantity ? (
                                                 <p className="text-base font-semibold text-brand-700">
-                                                    {(Number(detail.selectedPrice) * detail.productQuantity).toFixed(2)}
+                                                    {(Number(detail.selectedPrice) * detail.productQuantity).toFixed(2)} Bs.
                                                 </p>
                                             ) : (
                                                 <p className="text-base text-lead-300">—</p>

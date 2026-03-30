@@ -50,7 +50,7 @@ const PresalesTable: React.FC<PresalesTableProps> = ({
                             <th className="px-4 py-4 text-left font-semibold">Transportista</th>
                             <th className="px-4 py-4 text-left font-semibold">Estado</th>
                             <th className="px-4 py-4 text-left font-semibold">Fecha de Entrega</th>
-                            <th className="px-4 py-4 text-left font-semibold">Total</th>
+                            <th className="px-4 py-4 text-left font-semibold">Total Bs.</th>
                             <th className="w-40 px-4 py-4 text-center align-middle font-semibold">Acciones</th>
                         </tr>
                     </thead>
@@ -76,13 +76,28 @@ const PresalesTable: React.FC<PresalesTableProps> = ({
                                             users={distributorUsers}
                                             initialUser={p.distributorId ? userMap.get(p.distributorId) ?? null : null}
                                             onSelect={user => assignDistributor(p.id, user.id)}
+                                            status={p.status}
                                         />
                                     ) : (
                                         <span className="text-xs text-lead-400 italic">Cargando...</span>
                                     )}
                                 </td>
-                                <td className="px-4 py-3 text-lead-600 text-xs">
-                                    {p.status.toLocaleUpperCase() || '—'}
+                                <td className="px-4 py-3 text-xs">
+                                    {(() => {
+                                        const statusStyles: Record<string, string> = {
+                                            pendiente: 'bg-yellow-100 text-yellow-700',
+                                            asignado: 'bg-blue-100 text-blue-700',
+                                            entregado: 'bg-green-100 text-green-700',
+                                            parcial: 'bg-orange-100 text-orange-700',
+                                            cancelado: 'bg-red-100 text-red-700',
+                                        };
+                                        const style = statusStyles[p.status.toLowerCase()] ?? 'bg-lead-100 text-lead-600';
+                                        return (
+                                            <span className={`inline-flex items-center rounded-full px-2.5 py-1 font-semibold uppercase tracking-wide ${style}`}>
+                                                {p.status}
+                                            </span>
+                                        );
+                                    })()}
                                 </td>
                                 <td className="px-4 py-3 text-lead-600 text-xs">{p.deliveryDate || '—'}</td>
                                 <td className="px-4 py-3 text-lead-600 text-xs">{p.total || '—'}</td>
