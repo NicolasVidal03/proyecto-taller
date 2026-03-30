@@ -67,7 +67,6 @@ const PresalesTable: React.FC<PresalesTableProps> = ({
 
     return (
         <div className="space-y-3">
-
             <div className="overflow-x-auto rounded-lg border border-lead-200 bg-lead-50 shadow-lg">
                 <table className="min-w-full text-sm">
                     <thead className="bg-brand-600 text-xs uppercase tracking-wider text-white">
@@ -101,11 +100,16 @@ const PresalesTable: React.FC<PresalesTableProps> = ({
                                     {p.presellerName || '—'}
                                 </td>
                                 <td className="px-4 py-3 text-lead-600 text-xs">
-                                    <PresalesDistributorSelector
-                                        users={distributorUser}
-                                        initialUser={p.distributorId ? userMap.get(p.distributorId) ?? null : null}
-                                        onSelect={(user) => assignDistributor(p.id, user.id)}
-                                    />
+                                    {!usersLoading ? (
+                                        <PresalesDistributorSelector
+                                            users={distributorUser}
+                                            initialUser={p.distributorId ? userMap.get(p.distributorId) ?? null : null}
+                                            onSelect={(user) => assignDistributor(p.id, user.id)}
+                                        />
+                                    ) :
+                                        (
+                                            <span className=" relative w-full text-xs text-lead-400 italic">Cargando...</span>
+                                        )}
                                 </td>
                                 <td className="px-4 py-3 text-lead-600 text-xs">
                                     {p.status.toLocaleUpperCase() || '—'}
