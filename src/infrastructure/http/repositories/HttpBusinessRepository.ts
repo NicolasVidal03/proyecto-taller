@@ -6,7 +6,7 @@ export class HttpBusinessRepository implements IBusinessRepository {
   async getAll(): Promise<Business[]> {
     const res = await http.get('/business');
     const data = res.data || [];
-    return data.map(this.mapBusinessResponse);
+    return data.data.map(this.mapBusinessResponse);
   }
 
   async getByClientId(clientId: number): Promise<Business[]> {

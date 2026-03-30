@@ -37,10 +37,17 @@ export interface UpdatePresaleDTO {
   details?: UpdatePresaleDetailsDTO;
 }
 
+export type PresaleStatus = 'pendiente' | 'asignado' | 'entregado' | 'parcial' | 'cancelado' | 'no entregado';
+
 export interface PresaleFilters {
-  status?: string;
+  status?: PresaleStatus;
+  presellerId?: number;
+  distributorId?: number;
+  clientId?: number;
   branchId?: number;
-  state?: boolean;
+  deliveryDate?: string;
+  deliveryDateFrom?: string;
+  deliveryDateTo?: string;
   search?: string;
   page?: number;
   limit?: number;

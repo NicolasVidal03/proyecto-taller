@@ -7,7 +7,10 @@ export class HttpPresaleRepository implements IPresaleRepository {
         const params = new URLSearchParams();
         if (filters?.status) params.append('status', String(filters.status));
         if (filters?.branchId) params.append('branchId', String(filters.branchId));
-        if (filters?.state !== undefined) params.append('state', String(filters.state));
+        if (filters?.presellerId) params.append('presellerId', String(filters.presellerId));
+        if (filters?.distributorId) params.append('distributorId', String(filters.distributorId));
+        if (filters?.deliveryDateFrom) params.append('deliveryDateFrom', String(filters.deliveryDateFrom));
+        if (filters?.deliveryDateTo) params.append('deliveryDateTo', String(filters.deliveryDateTo));
         if (filters?.search) params.append('search', filters.search);
         if (filters?.page) params.append('page', String(filters.page));
         if (filters?.limit) params.append('limit', String(filters.limit));

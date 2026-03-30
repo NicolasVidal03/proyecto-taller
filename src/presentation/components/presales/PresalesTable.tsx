@@ -1,43 +1,30 @@
-import { Presale, User } from "@domain/entities";
+import { Presale } from "@domain/entities";
 import { useToast } from "../shared/Toast";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo } from "react";
 import { useUsers } from "@presentation/hooks";
 import PresalesDistributorSelector from "./PresalesDistributorSelector";
 
 type PresalesTableProps = {
     presales: Presale[];
-    branchFilter?: number | string;
-    statusFilter?: string;
     onEdit: (presale: Presale) => void;
     busyId?: number | null;
     onCancel: (presale: Presale) => void;
-    assignDistributor: (presaleId: number, distributorId: number) => Promise<Presale | null>
+    assignDistributor: (presaleId: number, distributorId: number) => Promise<Presale | null>;
 };
 
 const PresalesTable: React.FC<PresalesTableProps> = ({
     presales,
-    branchFilter,
-    statusFilter,
     assignDistributor,
     onEdit,
     onCancel,
-    busyId
+    busyId,
 }) => {
-
     const isBusy = (id: number) => busyId != null && busyId === id;
     const toast = useToast();
 
-    const {
-        users,
-        isLoading: usersLoading,
-        error: usersError,
-        fetchUsers,
-        clearError: clearUsersError,
-    } = useUsers();
+    const { users, isLoading: usersLoading, error: usersError, fetchUsers, clearError: clearUsersError } = useUsers();
 
-    useEffect(() => {
-        fetchUsers();
-    }, [fetchUsers]);
+    useEffect(() => { fetchUsers(); }, [fetchUsers]);
 
     useEffect(() => {
         if (usersError) {
@@ -46,24 +33,10 @@ const PresalesTable: React.FC<PresalesTableProps> = ({
         }
     }, [usersError, toast, clearUsersError]);
 
-    const distributorUser = useMemo(() => {
-        return users.filter(u => u.role?.toLowerCase() === 'transportista');
-    }, [users]);
+    const distributorUsers = useMemo(() => users.filter(u => u.role?.toLowerCase() === 'transportista'), [users]);
+    const userMap = useMemo(() => new Map(users.map(u => [u.id, u])), [users]);
 
-    const userMap = useMemo(() => {
-        return new Map(users.map(u => [u.id, u]));
-    }, [users]);
-
-    const filteredPresales = useMemo(() => {
-        return presales.filter(p => {
-            const matchesBranch = branchFilter === 'all' || p.branchId === branchFilter;
-            const matchesStatus = statusFilter === 'all' || p.status === statusFilter;
-            return matchesBranch && matchesStatus;
-        })
-            .sort((a, b) => b.id - a.id);
-    }, [presales, branchFilter, statusFilter]);
-
-    const isEmpty = filteredPresales.length === 0;
+    const isEmpty = presales.length === 0;
 
     return (
         <div className="space-y-3">
@@ -88,41 +61,34 @@ const PresalesTable: React.FC<PresalesTableProps> = ({
                                     No hay preventas para mostrar.
                                 </td>
                             </tr>
-                        ) : filteredPresales.map(p => (
+                        ) : presales.map(p => (
                             <tr key={p.id} className="transition-colors hover:bg-white">
                                 <td className="px-4 py-3">
-                                    <p className="font-medium text-lead-800">{p.businessName ? p.businessName : p.clientLastName + ', ' + p.clientName}</p>
+                                    <p className="font-medium text-lead-800">
+                                        {p.businessName ? p.businessName : `${p.clientLastName}, ${p.clientName}`}
+                                    </p>
                                 </td>
-                                <td className="px-4 py-3 text-lead-600">
-                                    {p.branchName || '—'}
-                                </td>
-                                <td className="px-4 py-3 text-lead-600">
-                                    {p.presellerName || '—'}
-                                </td>
+                                <td className="px-4 py-3 text-lead-600">{p.branchName || '—'}</td>
+                                <td className="px-4 py-3 text-lead-600">{p.presellerName || '—'}</td>
                                 <td className="px-4 py-3 text-lead-600 text-xs">
                                     {!usersLoading ? (
                                         <PresalesDistributorSelector
-                                            users={distributorUser}
+                                            users={distributorUsers}
                                             initialUser={p.distributorId ? userMap.get(p.distributorId) ?? null : null}
-                                            onSelect={(user) => assignDistributor(p.id, user.id)}
+                                            onSelect={user => assignDistributor(p.id, user.id)}
                                         />
-                                    ) :
-                                        (
-                                            <span className=" relative w-full text-xs text-lead-400 italic">Cargando...</span>
-                                        )}
+                                    ) : (
+                                        <span className="text-xs text-lead-400 italic">Cargando...</span>
+                                    )}
                                 </td>
                                 <td className="px-4 py-3 text-lead-600 text-xs">
                                     {p.status.toLocaleUpperCase() || '—'}
                                 </td>
-                                <td className="px-4 py-3 text-lead-600 text-xs">
-                                    {p.deliveryDate || '—'}
-                                </td>
-                                <td className="px-4 py-3 text-lead-600 text-xs">
-                                    {p.total || '—'}
-                                </td>
+                                <td className="px-4 py-3 text-lead-600 text-xs">{p.deliveryDate || '—'}</td>
+                                <td className="px-4 py-3 text-lead-600 text-xs">{p.total || '—'}</td>
                                 <td className="px-4 py-3 text-center align-middle">
                                     <div className="flex items-center justify-center gap-2">
-                                        {p.status === 'pendiente' && (
+                                        {p.status === 'pendiente' ? (
                                             <>
                                                 <button
                                                     type="button"
@@ -141,8 +107,7 @@ const PresalesTable: React.FC<PresalesTableProps> = ({
                                                     Cancelar
                                                 </button>
                                             </>
-                                        )}
-                                        {p.status !== 'pendiente' && (
+                                        ) : (
                                             <span className="text-xs text-lead-400 italic">Sin acciones disponibles</span>
                                         )}
                                     </div>
