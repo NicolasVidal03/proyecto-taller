@@ -6,6 +6,7 @@ import { PriceType } from '../../../domain/entities/PriceType';
 import { Area } from '../../../domain/entities/Area';
 import { CreateBusinessDTO, UpdateBusinessDTO } from '../../../domain/ports/IBusinessRepository';
 import { container } from '../../../infrastructure/config/container';
+import { BusinessMapLocationPicker } from './BusinessMapLocationPicker';
 
 type BusinessFormModalProps = {
   business: Business | null;
@@ -125,7 +126,7 @@ const BusinessFormModal: React.FC<BusinessFormModalProps> = ({
         setLng('');
       }
       setImageFile(null);
-      
+
       // Set selected client from clients list if editing
       if (business.clientId && clients.length > 0) {
         const existingClient = clients.find((c) => c.id === business.clientId);
@@ -157,6 +158,7 @@ const BusinessFormModal: React.FC<BusinessFormModalProps> = ({
     if (!name.trim()) next.name = 'El nombre es obligatorio';
     if (!clientId) next.clientId = 'Seleccione un cliente';
     if (!businessTypeId) next.businessTypeId = 'Seleccione tipo de negocio';
+    if (!lat || !lng) next.position = 'La ubicación es obligatoria';
     if (nit.trim() && !/^\d{9,15}$/.test(nit.trim())) {
       next.nit = 'NIT inválido (entre 9 y 15 dígitos)';
     }
@@ -199,7 +201,7 @@ const BusinessFormModal: React.FC<BusinessFormModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-lead-900/60 backdrop-blur-sm overflow-y-auto">
-      <div className="mx-4 my-10 w-full max-w-lg overflow-hidden rounded-xl bg-lead-50 shadow-2xl ring-1 ring-black/5">
+      <div className="mx-4 my-10 w-full max-w-4xl overflow-hidden rounded-xl bg-lead-50 shadow-2xl ring-1 ring-black/5">
         <div className="flex items-center justify-between bg-brand-600 px-6 py-4 text-white">
           <h2 className="text-lg font-semibold tracking-wide">{title}</h2>
           <button
@@ -213,214 +215,192 @@ const BusinessFormModal: React.FC<BusinessFormModalProps> = ({
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-5 px-6 py-6">
-          <div className="grid gap-4 md:grid-cols-2">
 
-            {/* Nombre */}
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-lead-700">Nombre *</label>
-              <input
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder='Ferretería San José'
-                className={`mt-1 block w-full rounded-lg border px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500 ${
-                  errors.name ? 'border-red-500' : 'border-lead-300 bg-white'
-                }`}
-                disabled={saving}
-              />
-              {errors.name && <p className="mt-1 text-xs text-red-600">{errors.name}</p>}
-            </div>
+          <div className="flex flex-col gap-4">
 
-            {/* NIT */}
-            <div>
-              <label className="block text-sm font-medium text-lead-700">NIT</label>
-              <input
-                value={nit}
-                onChange={(e) => {
-                  const val = e.target.value.replace(/\D/g, '').slice(0, 12);
-                  setNit(val);
-                  if (errors.nit) setErrors((prev) => ({ ...prev, nit: '' }));
-                }}
-                placeholder="Ej: 1234567891"
-                className={`mt-1 block w-full rounded-lg border px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500 ${
-                  errors.nit ? 'border-red-500' : 'border-lead-300 bg-white'
-                }`}
-                disabled={saving}
-              />
-              {errors.nit && <p className="mt-1 text-xs text-red-600">{errors.nit}</p>}
-            </div>
-
-            {/* Cliente (dueño) - Buscador dinámico */}
-            <div ref={clientSearchRef} className="relative">
-              <label className="block text-sm font-medium text-lead-700">Dueño (Cliente) *</label>
-              <div className="relative mt-1">
+            {/* Fila 1: Nombre (70%) + NIT (30%) */}
+            <div className="flex gap-4">
+              <div style={{ flex: '0 0 66%' }}>
+                <label className="block text-sm font-medium text-lead-700">Nombre *</label>
                 <input
-                  type="text"
-                  value={clientSearch}
-                  onChange={(e) => handleClientSearchChange(e.target.value)}
-                  onFocus={() => clientSearch && setShowClientDropdown(true)}
-                  placeholder="Buscar cliente por apellidos y nombres..."
-                  className={`block w-full rounded-lg border px-3 py-2 text-sm pr-10 shadow-sm focus:border-brand-500 focus:ring-brand-500 ${
-                    errors.clientId ? 'border-red-500' : 'border-lead-300 bg-white'
-                  }`}
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder='Ferretería San José'
+                  className={`mt-1 block w-full rounded-lg border px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500 ${errors.name ? 'border-red-500' : 'border-lead-300 bg-white'
+                    }`}
                   disabled={saving}
                 />
-                {clientSearching && (
-                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                    <svg className="animate-spin h-4 w-4 text-brand-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
+                {errors.name && <p className="mt-1 text-xs text-red-600">{errors.name}</p>}
+              </div>
+
+              <div style={{ flex: '0 0 calc(30% - 1rem)' }}>
+                <label className="block text-sm font-medium text-lead-700">NIT</label>
+                <input
+                  value={nit}
+                  onChange={(e) => {
+                    const val = e.target.value.replace(/\D/g, '').slice(0, 12);
+                    setNit(val);
+                    if (errors.nit) setErrors((prev) => ({ ...prev, nit: '' }));
+                  }}
+                  placeholder="Ej: 1234567891"
+                  className={`mt-1 block w-full rounded-lg border px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500 ${errors.nit ? 'border-red-500' : 'border-lead-300 bg-white'
+                    }`}
+                  disabled={saving}
+                />
+                {errors.nit && <p className="mt-1 text-xs text-red-600">{errors.nit}</p>}
+              </div>
+            </div>
+
+            {/* Fila 2: Dueño + Tipo de negocio + Tipo de precio */}
+            <div className="grid grid-cols-3 gap-4">
+              <div ref={clientSearchRef} className="relative">
+                <label className="block text-sm font-medium text-lead-700">Dueño (Cliente) *</label>
+                <div className="relative mt-1">
+                  <input
+                    type="text"
+                    value={clientSearch}
+                    onChange={(e) => handleClientSearchChange(e.target.value)}
+                    onFocus={() => clientSearch && setShowClientDropdown(true)}
+                    placeholder="Buscar cliente..."
+                    className={`block w-full rounded-lg border px-3 py-2 text-sm pr-10 shadow-sm focus:border-brand-500 focus:ring-brand-500 ${errors.clientId ? 'border-red-500' : 'border-lead-300 bg-white'
+                      }`}
+                    disabled={saving}
+                  />
+                  {clientSearching && (
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                      <svg className="animate-spin h-4 w-4 text-brand-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                    </div>
+                  )}
+                  {selectedClient && !clientSearching && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedClient(null);
+                        setClientId('');
+                        setClientSearch('');
+                        setClientResults([]);
+                      }}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-lead-400 hover:text-lead-600"
+                    >
+                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  )}
+                </div>
+                {showClientDropdown && clientResults.length > 0 && (
+                  <div className="absolute z-50 mt-1 w-full bg-white border border-lead-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                    {clientResults.map((client) => (
+                      <button
+                        key={client.id}
+                        type="button"
+                        onClick={() => handleSelectClient(client)}
+                        className="w-full px-4 py-2 text-left text-sm hover:bg-brand-50 focus:bg-brand-50 focus:outline-none border-b border-lead-100 last:border-b-0"
+                      >
+                        <span className="font-medium text-lead-900">{getClientFullName(client)}</span>
+                        {client.ci && <span className="text-lead-500 ml-2">• CI: {client.ci}</span>}
+                        {client.phone && <span className="text-lead-500 ml-2">• Tel: {client.phone}</span>}
+                      </button>
+                    ))}
                   </div>
                 )}
-                {selectedClient && !clientSearching && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSelectedClient(null);
-                      setClientId('');
-                      setClientSearch('');
-                      setClientResults([]);
-                    }}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-lead-400 hover:text-lead-600"
-                  >
-                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
+                {showClientDropdown && clientSearch.trim() && !clientSearching && clientResults.length === 0 && (
+                  <div className="absolute z-50 mt-1 w-full bg-white border border-lead-200 rounded-lg shadow-lg p-4 text-sm text-lead-500 text-center">
+                    No se encontraron clientes con "{clientSearch}"
+                  </div>
                 )}
+                {errors.clientId && <p className="mt-1 text-xs text-red-600">{errors.clientId}</p>}
               </div>
-              
-              {/* Dropdown de resultados */}
-              {showClientDropdown && clientResults.length > 0 && (
-                <div className="absolute z-50 mt-1 w-full bg-white border border-lead-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                  {clientResults.map((client) => (
-                    <button
-                      key={client.id}
-                      type="button"
-                      onClick={() => handleSelectClient(client)}
-                      className="w-full px-4 py-2 text-left text-sm hover:bg-brand-50 focus:bg-brand-50 focus:outline-none border-b border-lead-100 last:border-b-0"
-                    >
-                      <span className="font-medium text-lead-900">{getClientFullName(client)}</span>
-                      {client.ci && <span className="text-lead-500 ml-2">• CI: {client.ci}</span>}
-                      {client.phone && <span className="text-lead-500 ml-2">• Tel: {client.phone}</span>}
-                    </button>
+
+              <div>
+                <label className="block text-sm font-medium text-lead-700">Tipo de negocio *</label>
+                <select
+                  value={businessTypeId}
+                  onChange={(e) => {
+                    setBusinessTypeId(e.target.value ? Number(e.target.value) : '');
+                    if (errors.businessTypeId) setErrors((prev) => ({ ...prev, businessTypeId: '' }));
+                  }}
+                  className={`mt-1 block w-full rounded-lg border px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500 ${errors.businessTypeId ? 'border-red-500' : 'border-lead-300 bg-white'
+                    }`}
+                  disabled={saving}
+                >
+                  <option value="">Seleccione...</option>
+                  {businessTypes.map((bt) => (
+                    <option key={bt.id} value={bt.id}>{bt.name}</option>
                   ))}
-                </div>
-              )}
-              
-              {/* Mensaje cuando no hay resultados */}
-              {showClientDropdown && clientSearch.trim() && !clientSearching && clientResults.length === 0 && (
-                <div className="absolute z-50 mt-1 w-full bg-white border border-lead-200 rounded-lg shadow-lg p-4 text-sm text-lead-500 text-center">
-                  No se encontraron clientes con "{clientSearch}"
-                </div>
-              )}
-              
-              {errors.clientId && <p className="mt-1 text-xs text-red-600">{errors.clientId}</p>}
+                </select>
+                {errors.businessTypeId && <p className="mt-1 text-xs text-red-600">{errors.businessTypeId}</p>}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-lead-700">Tipo de precio</label>
+                <select
+                  value={priceTypeId}
+                  onChange={(e) => setPriceTypeId(e.target.value ? Number(e.target.value) : '')}
+                  className="mt-1 block w-full rounded-lg border border-lead-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500"
+                  disabled={saving}
+                >
+                  <option value="">Sin asignar</option>
+                  {priceTypes.map((pt) => (
+                    <option key={pt.id} value={pt.id}>{pt.name}</option>
+                  ))}
+                </select>
+              </div>
             </div>
 
-            {/* Tipo de negocio */}
-            <div>
-              <label className="block text-sm font-medium text-lead-700">Tipo de negocio *</label>
-              <select
-                value={businessTypeId}
-                onChange={(e) => {
-                  setBusinessTypeId(e.target.value ? Number(e.target.value) : '');
-                  if (errors.businessTypeId) setErrors((prev) => ({ ...prev, businessTypeId: '' }));
-                }}
-                className={`mt-1 block w-full rounded-lg border px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500 ${
-                  errors.businessTypeId ? 'border-red-500' : 'border-lead-300 bg-white'
-                }`}
-                disabled={saving}
-              >
-                <option value="">Seleccione...</option>
-                {businessTypes.map((bt) => (
-                  <option key={bt.id} value={bt.id}>
-                    {bt.name}
-                  </option>
-                ))}
-              </select>
-              {errors.businessTypeId && <p className="mt-1 text-xs text-red-600">{errors.businessTypeId}</p>}
+            {/* Fila 3: Área + Dirección */}
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-lead-700">Área</label>
+                <select
+                  value={areaId}
+                  onChange={(e) => setAreaId(e.target.value ? Number(e.target.value) : '')}
+                  className="mt-1 block w-full rounded-lg border border-lead-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500"
+                  disabled={saving}
+                >
+                  <option value="">Sin asignar</option>
+                  {areas.map((area) => (
+                    <option key={area.id} value={area.id}>{area.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="col-span-2">
+                <label className="block text-sm font-medium text-lead-700">Dirección</label>
+                <textarea
+                  value={address}
+                  onChange={(e) => setAddress(e.target.value)}
+                  onInput={(e) => {
+                    const el = e.currentTarget;
+                    el.style.height = 'auto';
+                    el.style.height = `${el.scrollHeight}px`;
+                  }}
+                  placeholder='Ej. Avenida América entre Jaime Mendoza y Daniel Albornos'
+                  rows={1}
+                  className="mt-1 block w-full rounded-lg border border-lead-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500 resize-none overflow-hidden"
+                  disabled={saving}
+                />
+              </div>
             </div>
 
-            {/* Tipo de precio */}
-            <div>
-              <label className="block text-sm font-medium text-lead-700">Tipo de precio</label>
-              <select
-                value={priceTypeId}
-                onChange={(e) => setPriceTypeId(e.target.value ? Number(e.target.value) : '')}
-                className="mt-1 block w-full rounded-lg border border-lead-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500"
-                disabled={saving}
-              >
-                <option value="">Sin asignar</option>
-                {priceTypes.map((pt) => (
-                  <option key={pt.id} value={pt.id}>
-                    {pt.name}
-                  </option>
-                ))}
-              </select>
-            </div>
+            {/* Mapa + Estado activo + Imagen (igual que antes) */}
+            <BusinessMapLocationPicker
+              lat={lat}
+              lng={lng}
+              onChange={(newLat, newLng) => {
+                setLat(newLat);
+                setLng(newLng);
+                if (errors.position) setErrors((prev) => ({ ...prev, position: '' }));
+              }}
+              disabled={saving}
+              error={errors.position}
+            />
 
-            {/* Área (opcional) */}
-            <div>
-              <label className="block text-sm font-medium text-lead-700">Área</label>
-              <select
-                value={areaId}
-                onChange={(e) => setAreaId(e.target.value ? Number(e.target.value) : '')}
-                className="mt-1 block w-full rounded-lg border border-lead-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500"
-                disabled={saving}
-              >
-                <option value="">Sin asignar</option>
-                {areas.map((area) => (
-                  <option key={area.id} value={area.id}>
-                    {area.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Dirección */}
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-lead-700">Dirección</label>
-              <textarea
-                value={address}
-                onChange={(e) => setAddress(e.target.value)}
-                placeholder='Ej. Avenida América entre Jaime Mendoza y Daniel Albornos'
-                rows={2}
-                className="mt-1 block w-full rounded-lg border border-lead-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500"
-                disabled={saving}
-              />
-            </div>
-
-            {/* Coordenadas */}
-            <div>
-              <label className="block text-sm font-medium text-lead-700">Latitud</label>
-              <input
-                type="number"
-                step="any"
-                value={lat}
-                onChange={(e) => setLat(e.target.value)}
-                placeholder="-17.393"
-                className="mt-1 block w-full rounded-lg border border-lead-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500"
-                disabled={saving}
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-lead-700">Longitud</label>
-              <input
-                type="number"
-                step="any"
-                value={lng}
-                onChange={(e) => setLng(e.target.value)}
-                placeholder="-66.157"
-                className="mt-1 block w-full rounded-lg border border-lead-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500"
-                disabled={saving}
-              />
-            </div>
-
-            {/* Estado activo (solo en edición) */}
             {isEdit && (
-              <div className="md:col-span-2">
+              <div>
                 <label className="flex items-center gap-2 text-sm font-medium text-lead-700">
                   <input
                     type="checkbox"
@@ -434,25 +414,25 @@ const BusinessFormModal: React.FC<BusinessFormModalProps> = ({
               </div>
             )}
 
-            {/* Imagen */}
-            <div className="md:col-span-2">
+            <div>
               <label className="block text-sm font-medium text-lead-700">Imagen</label>
               <input
                 type="file"
                 accept="image/*"
                 onChange={handleFileChange}
                 className="mt-1 block w-full text-sm text-lead-500
-                  file:mr-4 file:py-2 file:px-4
-                  file:rounded-lg file:border-0
-                  file:text-sm file:font-semibold
-                  file:bg-brand-50 file:text-brand-700
-                  hover:file:bg-brand-100"
+        file:mr-4 file:py-2 file:px-4
+        file:rounded-lg file:border-0
+        file:text-sm file:font-semibold
+        file:bg-brand-50 file:text-brand-700
+        hover:file:bg-brand-100"
                 disabled={saving}
               />
               {business?.pathImage && !imageFile && (
                 <p className="mt-1 text-xs text-lead-500">Imagen actual guardada. Suba una nueva para reemplazarla.</p>
               )}
             </div>
+
           </div>
 
           <div className="flex justify-end gap-3 pt-4 border-t border-lead-100">
