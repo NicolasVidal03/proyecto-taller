@@ -97,15 +97,19 @@ const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({ product, pres
                 <div className="grid grid-cols-3 gap-2 text-center">
                   <div className="rounded-lg bg-white p-2 shadow-sm">
                     <p className="text-xs text-gray-500">Mayorista</p>
-                    <p className="font-bold text-brand-600">{product.prices?.find(p => p.priceTypeId === 3)?.price ? Number(product.prices.find(p => p.priceTypeId === 3)?.price).toFixed(2) : '—'}</p>
+                    <p className="font-bold text-brand-600">{product.prices?.find(p => p.priceTypeId === 3)?.price ? 'Bs. ' + Number(product.prices.find(p => p.priceTypeId === 3)?.price).toFixed(2) : '—'}</p>
                   </div>
                   <div className="rounded-lg bg-white p-2 shadow-sm">
                     <p className="text-xs text-gray-500">Minorista</p>
-                    <p className="font-bold text-brand-600">{product.prices?.find(p => p.priceTypeId === 2)?.price ? Number(product.prices.find(p => p.priceTypeId === 2)?.price).toFixed(2) : '—'}</p>
+                    <p className="font-bold text-brand-600">{product.prices?.find(p => p.priceTypeId === 2)?.price ? 'Bs. ' + Number(product.prices.find(p => p.priceTypeId === 2)?.price).toFixed(2) : '—'}</p>
                   </div>
                   <div className="rounded-lg bg-white p-2 shadow-sm">
                     <p className="text-xs text-gray-500">Regular</p>
-                    <p className="font-bold text-brand-600">{product.prices?.find(p => p.priceTypeId === 1)?.price ? Number(product.prices.find(p => p.priceTypeId === 1)?.price).toFixed(2) : '—'}</p>
+                    <p className="font-bold text-brand-600">{product.prices?.find(p => p.priceTypeId === 1)?.price ? 'Bs. ' + Number(product.prices.find(p => p.priceTypeId === 1)?.price).toFixed(2) : '—'}</p>
+                  </div>
+                  <div className="rounded-lg bg-white p-2 shadow-sm">
+                    <p className="text-xs text-gray-500">Institucional</p>
+                    <p className="font-bold text-brand-600">{product.prices?.find(p => p.priceTypeId === 4)?.price ? 'Bs. ' + Number(product.prices.find(p => p.priceTypeId === 4)?.price).toFixed(2) : '—'}</p>
                   </div>
                 </div>
                 <div className="pt-2">

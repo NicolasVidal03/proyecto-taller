@@ -50,7 +50,7 @@ const PresalesTable: React.FC<PresalesTableProps> = ({
                             <th className="px-4 py-4 text-left font-semibold">Transportista</th>
                             <th className="px-4 py-4 text-left font-semibold">Estado</th>
                             <th className="px-4 py-4 text-left font-semibold">Fecha de Entrega</th>
-                            <th className="px-4 py-4 text-left font-semibold">Total Bs.</th>
+                            <th className="px-4 py-4 text-left font-semibold">Total</th>
                             <th className="w-40 px-4 py-4 text-center align-middle font-semibold">Acciones</th>
                         </tr>
                     </thead>
@@ -100,7 +100,7 @@ const PresalesTable: React.FC<PresalesTableProps> = ({
                                     })()}
                                 </td>
                                 <td className="px-4 py-3 text-lead-600 text-xs">{p.deliveryDate || '—'}</td>
-                                <td className="px-4 py-3 text-lead-600 text-xs">{p.total || '—'}</td>
+                                <td className="px-4 py-3 text-lead-600 text-xs">{'Bs. ' + p.total || '—'}</td>
                                 <td className="px-4 py-3 text-center align-middle">
                                     <div className="flex items-center justify-center gap-2">
                                         {p.status === 'pendiente' ? (

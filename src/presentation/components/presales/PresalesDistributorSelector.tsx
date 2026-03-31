@@ -72,11 +72,11 @@ const PresalesDistributorSelector: React.FC<DistributorSelectorProps> = ({
                 onFocus={handleFocus}
                 placeholder="Asignar transportista..."
                 className={`input-plain w-full transition-opacity 
-                    ${status === 'pendiente' || status === 'asignado'
+                    ${status === 'pendiente'
                         ? 'opacity-100'
                         : 'opacity-60 cursor-not-allowed bg-lead-100'
                     }`}
-                disabled={status === 'pendiente' || status === 'asignado' ? false : true}
+                disabled={status === 'pendiente' ? false : true}
             />
 
             {/* Portal — se renderiza directo en el body */}
