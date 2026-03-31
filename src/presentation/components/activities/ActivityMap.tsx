@@ -16,30 +16,24 @@ const createCustomIcon = (color: string, borderColor: string) => {
   return L.divIcon({
     className: 'custom-marker',
     html: `
-      <div style="
-        width: 28px;
-        height: 28px;
-        background: ${color};
-        border: 3px solid ${borderColor};
-        border-radius: 50%;
-        box-shadow: 0 3px 8px rgba(0,0,0,0.3);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-      "></div>
+      <svg xmlns="http://www.w3.org/2000/svg" width="32" height="40" viewBox="-2 -2 32 40">
+        <path d="M14 0C6.268 0 0 6.268 0 14c0 9.333 14 22 14 22S28 23.333 28 14C28 6.268 21.732 0 14 0z"
+          fill="${color}" stroke="${borderColor}" stroke-width="2"/>
+        <circle cx="14" cy="14" r="5" fill="white"/>
+      </svg>
     `,
-    iconSize: [28, 28],
-    iconAnchor: [14, 14],
-    popupAnchor: [0, -14],
+    iconSize: [32, 36],
+    iconAnchor: [16, 36],
+    popupAnchor: [0, -36],
   });
 };
 
 const ICONS = {
   visited: createCustomIcon('#22c55e', '#166534'),   // Verde - visitado
-  sold: createCustomIcon('#3b82f6', '#1d4ed8'),      // Azul - vendido
+  sold: createCustomIcon('#2e7d32', '#215724'),      // Azul - vendido
   rejected: createCustomIcon('#ef4444', '#b91c1c'),  // Rojo - rechazado
-  presale: createCustomIcon('#962bd4', '#741ba8'),
-  pending: createCustomIcon('#94a3b8', '#64748b'),  // Gris - sin actividad
+  presale: createCustomIcon('#E65100', '#a04310'),
+  pending: createCustomIcon('#f50000', '#b40e0e'),  // Gris - sin actividad
 };
 
 const getActivityStatus = (activityDetail: ActivityDetails | null): keyof typeof ICONS => {
@@ -79,10 +73,12 @@ interface ActivityMapProps {
   center?: [number, number];
   zoom?: number;
   onMarkerClick?: (activity: ActivityBusinesses) => void;
+  userRole?: string;
 }
 
 const ActivityMap: React.FC<ActivityMapProps> = ({
   activities,
+  userRole,
   height = '500px',
   center = [-17.3935, -66.1570],
   zoom = 13,
@@ -223,18 +219,22 @@ const ActivityMap: React.FC<ActivityMapProps> = ({
             <span className="w-3 h-3 rounded-full bg-green-500 border-2 border-green-700"></span>
             <span className="text-xs text-gray-600">Visitado ({stats.visited})</span>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="w-3 h-3 rounded-full bg-blue-500 border-2 border-blue-700"></span>
-            <span className="text-xs text-gray-600">Venta ({stats.sold})</span>
-          </div>
+          {userRole === 'transportista' && (
+            <div className="flex items-center gap-2">
+              <span className="w-3 h-3 rounded-full bg-blue-500 border-2 border-blue-700"></span>
+              <span className="text-xs text-gray-600">Venta ({stats.sold})</span>
+            </div>
+          )}
           <div className="flex items-center gap-2">
             <span className="w-3 h-3 rounded-full bg-purple-500 border-2 border-purple-700"></span>
             <span className="text-xs text-gray-600">Preventa ({stats.presale})</span>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="w-3 h-3 rounded-full bg-red-500 border-2 border-red-700"></span>
-            <span className="text-xs text-gray-600">Rechazado ({stats.rejected})</span>
-          </div>
+          {userRole === 'transportista' && (
+            <div className="flex items-center gap-2">
+              <span className="w-3 h-3 rounded-full bg-red-500 border-2 border-red-700"></span>
+              <span className="text-xs text-gray-600">Rechazado ({stats.rejected})</span>
+            </div>
+          )}
           <div className="flex items-center gap-2">
             <span className="w-3 h-3 rounded-full bg-gray-400 border-2 border-gray-600"></span>
             <span className="text-xs text-gray-600">Sin visitar ({stats.pending})</span>
