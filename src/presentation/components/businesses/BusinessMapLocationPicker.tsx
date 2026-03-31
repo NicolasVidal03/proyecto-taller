@@ -1,6 +1,7 @@
-import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
+import { useEffect } from 'react';
 
 type Props = {
   lat: string;
@@ -22,6 +23,16 @@ function ClickHandler({ onMapClick }: { onMapClick: (lat: number, lng: number) =
 export const BusinessMapLocationPicker: React.FC<Props> = ({ lat, lng, onChange, disabled, error }) => {
   const position = lat && lng ? [Number(lat), Number(lng)] as [number, number] : null;
 
+  function MapCenterUpdater({ position }: { position: [number, number] | null }) {
+    const map = useMap();
+    useEffect(() => {
+      if (position) {
+        map.setView(position, map.getZoom());
+      }
+    }, [position]);
+    return null;
+  }
+
   return (
     <div>
       <label className="block text-sm font-medium text-lead-700 mb-2">Ubicación</label>
@@ -35,6 +46,7 @@ export const BusinessMapLocationPicker: React.FC<Props> = ({ lat, lng, onChange,
               style={{ height: '100%', width: '100%' }}
             >
               <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+              <MapCenterUpdater position={position} />
               <ClickHandler onMapClick={(lat, lng) => {
                 if (!disabled) onChange(lat.toFixed(6), lng.toFixed(6));
               }} />
@@ -53,7 +65,7 @@ export const BusinessMapLocationPicker: React.FC<Props> = ({ lat, lng, onChange,
               onChange={(e) => onChange(e.target.value, lng)}
               placeholder="-17.393"
               className={`mt-1 block w-full rounded-lg border border-lead-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500 ${error ? 'border-red-500' : 'border-lead-300 bg-white'
-                      }`}
+                }`}
               disabled={disabled}
             />
           </div>
@@ -66,7 +78,7 @@ export const BusinessMapLocationPicker: React.FC<Props> = ({ lat, lng, onChange,
               onChange={(e) => onChange(lat, e.target.value)}
               placeholder="-66.157"
               className={`mt-1 block w-full rounded-lg border border-lead-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500 ${error ? 'border-red-500' : 'border-lead-300 bg-white'
-                      }`}
+                }`}
               disabled={disabled}
             />
           </div>
