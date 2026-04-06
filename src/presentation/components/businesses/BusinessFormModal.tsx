@@ -51,7 +51,7 @@ const BusinessFormModal: React.FC<BusinessFormModalProps> = ({
   const [showClientDropdown, setShowClientDropdown] = useState(false);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const clientSearchRef = useRef<HTMLDivElement>(null);
-  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Search clients dynamically
   const searchClients = useCallback(async (term: string) => {
@@ -251,7 +251,6 @@ const BusinessFormModal: React.FC<BusinessFormModalProps> = ({
               </div>
             </div>
 
-            {/* Fila 2: Dueño + Tipo de negocio + Tipo de precio */}
             <div className="grid grid-cols-3 gap-4">
               <div ref={clientSearchRef} className="relative">
                 <label className="block text-sm font-medium text-lead-700">Dueño (Cliente) *</label>

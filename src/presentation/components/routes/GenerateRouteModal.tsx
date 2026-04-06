@@ -88,6 +88,9 @@ const GenerateRouteModal: React.FC<GenerateRouteModalProps> = ({
 
   if (!open) return null;
 
+  const today = new Date();
+  const minDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+
   return (
     <div className="fixed inset-0 flex items-center justify-center p-4" style={{ zIndex: 99999 }}>
       <div
@@ -199,7 +202,7 @@ const GenerateRouteModal: React.FC<GenerateRouteModalProps> = ({
                     setAssignedDate(e.target.value);
                     if (errors.date) setErrors(prev => ({ ...prev, date: undefined }));
                   }}
-                  min={new Date().toISOString().split('T')[0]}
+                  min={minDate}
                   className={`w-full px-4 py-3 rounded-xl border-2 ${
                     errors.date
                       ? 'border-red-400 focus:ring-red-500 focus:border-red-500 bg-red-50'

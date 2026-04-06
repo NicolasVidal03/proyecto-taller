@@ -150,7 +150,7 @@ export const RoutesPage: React.FC = () => {
             <div>
               <h3 className="text-lg font-bold text-emerald-800">Última Ruta Generada</h3>
               <p className="text-emerald-700 mt-1">
-                Has asignado al prevendedor <strong>{lastRouteInfo.userStr}</strong> el área <strong>{lastRouteInfo.areaStr}</strong> para el día <strong>{new Date(lastRouteInfo.date).toLocaleDateString()}</strong>.
+                Has asignado al prevendedor <strong>{lastRouteInfo.userStr}</strong> el área <strong>{lastRouteInfo.areaStr}</strong> para el día <strong>{lastRouteInfo.date.split('-').reverse().join('/')}</strong>.
               </p>
             </div>
           </div>

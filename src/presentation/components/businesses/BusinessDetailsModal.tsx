@@ -5,7 +5,6 @@ import { BusinessType } from '../../../domain/entities/BusinessType';
 import { Area } from '../../../domain/entities/Area';
 import { AreaMap, getAreaName } from '../../utils/areaHelpers';
 import { env } from '../../../infrastructure/config/env';
-import { url } from 'inspector';
 
 interface BusinessDetailsModalProps {
   business: Business | null;
