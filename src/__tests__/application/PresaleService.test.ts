@@ -9,11 +9,11 @@ const makePaginatedPresales = (): PaginatedPresales => ({
 });
 
 const makePresaleRepo = (): jest.Mocked<IPresaleRepository> => ({
-    getAll: jest.fn(), 
-    getById: jest.fn(), 
+    getAll: jest.fn(),
+    getById: jest.fn(),
     assign: jest.fn(),
-    create: jest.fn(), 
-    update: jest.fn(), 
+    create: jest.fn(),
+    update: jest.fn(),
     cancelPresale: jest.fn(),
 });
 
