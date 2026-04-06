@@ -1,4 +1,3 @@
-import { error } from 'console';
 import { User } from '../domain/entities/User';
 
 export interface LoginResult {
@@ -47,7 +46,7 @@ export class AuthService {
 
   async updateUser(user: string): Promise<void> {
     try {
-      return this.authRepo.updateUser(user)
+      return await this.authRepo.updateUser(user)
     } catch {
       
     }
