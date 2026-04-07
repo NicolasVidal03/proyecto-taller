@@ -13,6 +13,7 @@ import { useAuth } from '@presentation/providers';
 import ConfirmDialog from '@presentation/components/shared/ConfirmDialog';
 import Loader from '@presentation/components/shared/Loader';
 import Pagination from '@presentation/components/shared/Pagination';
+import { triggerDownload } from '@presentation/utils/downloadFile';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -170,6 +171,16 @@ export const PresalesPage: React.FC = () => {
         }, presale.id);
     };
 
+    const downloadVoucher = async (presaleId: number) => {
+        try {
+            const blob = await container.presales.downloadVoucher(presaleId);
+            triggerDownload(blob, `comprobante-${presaleId}preventa-${Date.now()}.pdf`)
+        } catch(err) {
+            const message = err instanceof Error ? err.message : 'No se pudo descargar el comprobante'
+            toast.error(message)
+        } 
+    }
+
     return (
         <>
             <div className="relative overflow-hidden">
@@ -306,7 +317,7 @@ export const PresalesPage: React.FC = () => {
 
                                 {/* Action buttons */}
                                 <div className="flex items-center gap-3">
-                                    
+
                                     <PresaleReport users={users} />
 
                                     <button
@@ -328,6 +339,7 @@ export const PresalesPage: React.FC = () => {
                                         assignDistributor={assignDistributor}
                                         onEdit={modal.openEdit}
                                         onCancel={confirm.openConfirm}
+                                        downloadVoucher={downloadVoucher}
                                     />
                                     {totalPages > 0 && (
                                         <div className="mt-6">

@@ -28,6 +28,10 @@ export class PresaleService {
         return this.repo.cancelPresale(id, reason)
     }
 
+    async downloadVoucher(id: number): Promise<Blob> {
+        return this.repo.downloadVoucher(id);
+    }
+
     async getReport(
         filters?: PresaleReportFilters, page?: number, limit?: number,): Promise<PaginatedPresaleReport> {
         return this.repo.getReport(filters, page, limit);

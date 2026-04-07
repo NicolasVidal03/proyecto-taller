@@ -59,6 +59,12 @@ export class HttpPresaleRepository implements IPresaleRepository {
         return params;
     }
 
+    async downloadVoucher(id: number): Promise<Blob> {
+        const url = `/presales/${id}/pdf`;
+        const res = await http.get(url, { responseType: 'blob' })
+        return res.data;
+    }
+
     async getReport(filters?: PresaleReportFilters, page?: number, limit?: number,): Promise<PaginatedPresaleReport> {
         const params = this.buildReportParams(filters);
         if (page) params.append('page', String(page));

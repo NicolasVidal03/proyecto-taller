@@ -132,6 +132,7 @@ export interface IPresaleRepository {
   create(data: CreatePresaleDTO): Promise<Presale>;
   update(id: number, data: UpdatePresaleDTO): Promise<Presale>;
   cancelPresale(id: number, reason?: string): Promise<Presale>;
+  downloadVoucher(id: number): Promise<Blob>;
   getReport(filters?: PresaleReportFilters, page?: number, limit?: number): Promise<PaginatedPresaleReport>;
   downloadReportPdf(filters?: PresaleReportFilters): Promise<Blob>;
   downloadReportExcel(filters?: PresaleReportFilters): Promise<Blob>;

@@ -4,17 +4,7 @@ import { PaginatedPresaleReport, PresaleReportFilters, PresaleReportItem } from 
 import { User } from '@domain/entities';
 import Pagination from '@presentation/components/shared/Pagination';
 import Loader from '@presentation/components/shared/Loader';
-
-function triggerDownload(blob: Blob, filename: string) {
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-}
+import { triggerDownload } from '@presentation/utils/downloadFile';
 
 function formatDate(dateStr: string) {
     if (!dateStr) return '—';
