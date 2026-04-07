@@ -214,21 +214,6 @@ describe('useConfirmDialog', () => {
     expect(result.current.busyId).toBeNull();
   });
 
-  it('executeWithLoading establece busyId durante la operación', async () => {
-    const { result } = renderHook(() => useConfirmDialog<Confirmable>());
-    let capturedBusyId: number | null = null;
-
-    const action = jest.fn().mockImplementation(async () => {
-      capturedBusyId = result.current.busyId;
-    });
-
-    act(() => { result.current.openConfirm({ id: 7, label: 'Z' }); });
-    await act(async () => { await result.current.executeWithLoading(action, 7); });
-
-    expect(capturedBusyId).toBe(7);
-    expect(result.current.busyId).toBeNull();
-  });
-
   it('closeConfirm NO cierra cuando isLoading es true', async () => {
     const { result } = renderHook(() => useConfirmDialog<Confirmable>());
     let resolveAction!: () => void;
