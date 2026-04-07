@@ -7,6 +7,7 @@ import { usePresales } from '@presentation/hooks/usePresales';
 import { useUsers } from '@presentation/hooks/useUsers';
 import PresalesTable from '@presentation/components/presales/PresalesTable';
 import PresaleFormModal, { PresaleFormValues } from '@presentation/components/presales/PresaleFromModal';
+import PresaleReport from '@presentation/components/presales/PresaleReport';
 import { Presale } from '@domain/entities';
 import { useAuth } from '@presentation/providers';
 import ConfirmDialog from '@presentation/components/shared/ConfirmDialog';
@@ -302,13 +303,20 @@ export const PresalesPage: React.FC = () => {
                                         {total.toLocaleString()} preventa(s) total
                                     </p>
                                 </div>
-                                <button
-                                    type="button"
-                                    className="btn-primary bg-accent-500 hover:bg-accent-600 border-transparent text-white shadow-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                                    onClick={modal.openCreate}
-                                >
-                                    Crear preventa
-                                </button>
+
+                                {/* Action buttons */}
+                                <div className="flex items-center gap-3">
+                                    
+                                    <PresaleReport users={users} />
+
+                                    <button
+                                        type="button"
+                                        className="btn-primary bg-accent-500 hover:bg-accent-600 border-transparent text-white shadow-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                                        onClick={modal.openCreate}
+                                    >
+                                        Crear preventa
+                                    </button>
+                                </div>
                             </div>
 
                             {isLoading && <Loader />}
