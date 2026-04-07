@@ -8,11 +8,11 @@ const config: Config = {
   moduleNameMapper: {
 
     '^@/(.*)$': '<rootDir>/src/$1',
-    '^@domain/(.*)$': '<rootDir>/src/domain/',
-    '^@application/(.*)$': '<rootDir>/src/application/',
-    '^@infrastructure/(.*)$': '<rootDir>/src/infrastructure/',
-    '^@/infrastructure/config/env$': '<rootDir>/src/__tests__/setup/envMock.ts',
-    '^@presentation/(.*)$': '<rootDir>/src/presentation/',
+    '^@domain/(.*)$': '<rootDir>/src/domain/$1',
+    '^@application/(.*)$': '<rootDir>/src/application/$1',
+    '^@infrastructure/(.*)$': '<rootDir>/src/infrastructure/$1',
+    '^@presentation/(.*)$': '<rootDir>/src/presentation/$1',
+    '^@infrastructure/config/env$': '<rootDir>/src/__tests__/setup/envMock.ts',
 
     '\\.(css|scss|svg|png|jpg|gif|webp)$': '<rootDir>/src/__tests__/setup/fileMock.ts',
   },
