@@ -318,7 +318,7 @@ export const PresalesPage: React.FC = () => {
                                 {/* Action buttons */}
                                 <div className="flex items-center gap-3">
 
-                                    <PresaleReport users={users} />
+                                    {/* <PresaleReport users={users} /> */}
 
                                     <button
                                         type="button"
