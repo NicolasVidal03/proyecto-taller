@@ -10,7 +10,7 @@ import Loader from '../components/shared/Loader';
 import Pagination from '../components/shared/Pagination';
 import { ToastContainer, useToast } from '../components/shared/Toast';
 
-export const InventoryPage: React.FC = () => {
+export const StockPage: React.FC = () => {
   const { inventory, pagination, isLoading, error, goToPage, applyFilters, setStock, clearError } = useInventory();
   const { branches, fetchBranches, isLoading: branchesLoading } = useBranches();
   const { categories, fetchCategories } = useCategories();
@@ -137,7 +137,7 @@ export const InventoryPage: React.FC = () => {
               <div className="space-y-6">
                 <p className="text-xs uppercase tracking-[0.45em] text-white/70">Control de Stock</p>
                 <h2 className="text-3xl font-semibold leading-tight md:text-4xl">
-                  Inventario por Sucursal
+                  Stock por Sucursal
                 </h2>
                 <div className="space-y-3 rounded-2xl bg-white/10 p-4 backdrop-blur border border-white/10">
                   <div className="flex flex-col gap-3 md:flex-row">
@@ -208,7 +208,7 @@ export const InventoryPage: React.FC = () => {
                             : 'bg-white/10 text-white/70 hover:bg-white/20'
                         }`}
                       >
-                        {filter === 'available' ? 'En Inventario' : 'Catálogo Completo'}
+                        {filter === 'available' ? 'En Stock' : 'Catálogo Completo'}
                       </button>
                     ))}
                   </div>
@@ -264,7 +264,7 @@ export const InventoryPage: React.FC = () => {
                             <td className="px-4 py-6 text-center text-sm text-lead-600" colSpan={8}>
                               {debouncedSearch || categoryFilter !== 'all' || brandFilter !== 'all'
                                 ? 'No se encontraron productos con los filtros seleccionados.'
-                                : 'No hay productos en el inventario de esta sucursal.'}
+                                : 'No hay productos en el stock de esta sucursal.'}
                             </td>
                           </tr>
                         ) : ([...inventory].sort((a,b) => (a.name || '').localeCompare(b.name || '')).map(item => (

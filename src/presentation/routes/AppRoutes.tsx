@@ -6,7 +6,7 @@ import {
   LoginPage,
   ProductsPage,
   SuppliersPage,
-  InventoryPage,
+  StockPage,
   UsersPage,
   ProfilePage,
   ActivitiesPage,
@@ -32,7 +32,7 @@ export const AppRoutes: React.FC = () => {
           <Route path="/" element={<Navigate to="/users" replace />} />
           <Route path="/products" element={<ProductsPage />} />
           <Route path="/suppliers" element={<SuppliersPage />} />
-          <Route path="/inventory" element={<InventoryPage />} />
+          <Route path="/inventory" element={<StockPage />} />
           <Route path="/users" element={<UsersPage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/clients" element={<ClientsBusinessesPage />} />

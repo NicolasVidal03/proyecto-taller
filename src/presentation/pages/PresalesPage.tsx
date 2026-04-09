@@ -7,11 +7,13 @@ import { usePresales } from '@presentation/hooks/usePresales';
 import { useUsers } from '@presentation/hooks/useUsers';
 import PresalesTable from '@presentation/components/presales/PresalesTable';
 import PresaleFormModal, { PresaleFormValues } from '@presentation/components/presales/PresaleFromModal';
+import PresaleReport from '@presentation/components/presales/PresaleReport';
 import { Presale } from '@domain/entities';
 import { useAuth } from '@presentation/providers';
 import ConfirmDialog from '@presentation/components/shared/ConfirmDialog';
 import Loader from '@presentation/components/shared/Loader';
 import Pagination from '@presentation/components/shared/Pagination';
+import { triggerDownload } from '@presentation/utils/downloadFile';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -169,6 +171,16 @@ export const PresalesPage: React.FC = () => {
         }, presale.id);
     };
 
+    const downloadVoucher = async (presaleId: number) => {
+        try {
+            const blob = await container.presales.downloadVoucher(presaleId);
+            triggerDownload(blob, `comprobante-${presaleId}preventa-${Date.now()}.pdf`)
+        } catch(err) {
+            const message = err instanceof Error ? err.message : 'No se pudo descargar el comprobante'
+            toast.error(message)
+        } 
+    }
+
     return (
         <>
             <div className="relative overflow-hidden">
@@ -302,13 +314,20 @@ export const PresalesPage: React.FC = () => {
                                         {total.toLocaleString()} preventa(s) total
                                     </p>
                                 </div>
-                                <button
-                                    type="button"
-                                    className="btn-primary bg-accent-500 hover:bg-accent-600 border-transparent text-white shadow-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                                    onClick={modal.openCreate}
-                                >
-                                    Crear preventa
-                                </button>
+
+                                {/* Action buttons */}
+                                <div className="flex items-center gap-3">
+
+                                    {/* <PresaleReport users={users} /> */}
+
+                                    <button
+                                        type="button"
+                                        className="btn-primary bg-accent-500 hover:bg-accent-600 border-transparent text-white shadow-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                                        onClick={modal.openCreate}
+                                    >
+                                        Crear preventa
+                                    </button>
+                                </div>
                             </div>
 
                             {isLoading && <Loader />}
@@ -320,6 +339,7 @@ export const PresalesPage: React.FC = () => {
                                         assignDistributor={assignDistributor}
                                         onEdit={modal.openEdit}
                                         onCancel={confirm.openConfirm}
+                                        downloadVoucher={downloadVoucher}
                                     />
                                     {totalPages > 0 && (
                                         <div className="mt-6">

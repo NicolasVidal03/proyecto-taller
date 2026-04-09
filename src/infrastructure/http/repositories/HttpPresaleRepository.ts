@@ -1,6 +1,6 @@
 import { Presale } from '@domain/entities';
 import { http } from '../httpClient';
-import { CreatePresaleDTO, IPresaleRepository, PaginatedPresales, PresaleFilters, UpdatePresaleDTO } from "@domain/ports/IPresaleRepository";
+import { CreatePresaleDTO, IPresaleRepository, PaginatedPresaleReport, PaginatedPresales, PresaleFilters, PresaleReportFilters, UpdatePresaleDTO } from "@domain/ports/IPresaleRepository";
 
 export class HttpPresaleRepository implements IPresaleRepository {
     async getAll(filters?: PresaleFilters): Promise<PaginatedPresales> {
@@ -51,4 +51,44 @@ export class HttpPresaleRepository implements IPresaleRepository {
         const res = await http.patch(`/presales/${id}/cancel`, { reason: reason ?? null });
         return res.data;
     }
-} 
+    private buildReportParams(filters?: PresaleReportFilters): URLSearchParams {
+        const params = new URLSearchParams();
+        if (filters?.userId) params.append('userId', String(filters.userId));
+        if (filters?.dateFrom) params.append('dateFrom', filters.dateFrom);
+        if (filters?.dateTo) params.append('dateTo', filters.dateTo);
+        return params;
+    }
+
+    async downloadVoucher(id: number): Promise<Blob> {
+        const url = `/presales/${id}/pdf`;
+        const res = await http.get(url, { responseType: 'blob' })
+        return res.data;
+    }
+
+    async getReport(filters?: PresaleReportFilters, page?: number, limit?: number,): Promise<PaginatedPresaleReport> {
+        const params = this.buildReportParams(filters);
+        if (page) params.append('page', String(page));
+        if (limit) params.append('limit', String(limit));
+
+        const qs = params.toString();
+        const url = qs ? `/presales/report?${qs}` : '/presales/report';
+        const res = await http.get(url);
+        return res.data;
+    }
+
+    async downloadReportPdf(filters?: PresaleReportFilters): Promise<Blob> {
+        const params = this.buildReportParams(filters);
+        const qs = params.toString();
+        const url = qs ? `/presales/report/pdf?${qs}` : '/presales/report/pdf';
+        const res = await http.get(url, { responseType: 'blob' });
+        return res.data;
+    }
+
+    async downloadReportExcel(filters?: PresaleReportFilters): Promise<Blob> {
+        const params = this.buildReportParams(filters);
+        const qs = params.toString();
+        const url = qs ? `/presales/report/excel?${qs}` : '/presales/report/excel';
+        const res = await http.get(url, { responseType: 'blob' });
+        return res.data;
+    }
+}

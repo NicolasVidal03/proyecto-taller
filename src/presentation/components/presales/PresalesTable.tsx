@@ -9,6 +9,7 @@ type PresalesTableProps = {
     onEdit: (presale: Presale) => void;
     busyId?: number | null;
     onCancel: (presale: Presale) => void;
+    downloadVoucher: (presaleId: number) => void;
     assignDistributor: (presaleId: number, distributorId: number) => Promise<Presale | null>;
 };
 
@@ -17,6 +18,7 @@ const PresalesTable: React.FC<PresalesTableProps> = ({
     assignDistributor,
     onEdit,
     onCancel,
+    downloadVoucher,
     busyId,
 }) => {
     const isBusy = (id: number) => busyId != null && busyId === id;
@@ -122,9 +124,25 @@ const PresalesTable: React.FC<PresalesTableProps> = ({
                                                     Cancelar
                                                 </button>
                                             </>
-                                        ) : (
+                                        ) 
+                                            :
+                                        p.status === 'entregado' || p.status === 'parcial' ? (
+                                            <>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => downloadVoucher(p.id)}
+                                                    className="rounded bg-brand-100 px-3 py-1.5 font-medium text-brand-700 transition hover:bg-brand-200 disabled:opacity-50"
+                                                    disabled={isBusy(p.id)}
+                                                >
+                                                    Comprobante
+                                                </button>
+                                            </>
+                                        )
+                                            :
+                                        (
                                             <span className="text-xs text-lead-400 italic">Sin acciones disponibles</span>
                                         )}
+                                        
                                     </div>
                                 </td>
                             </tr>
