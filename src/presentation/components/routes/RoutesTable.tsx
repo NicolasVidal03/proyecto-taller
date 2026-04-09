@@ -59,7 +59,7 @@ const RoutesTable: React.FC<RoutesTableProps> = ({
                             <th className="px-4 py-4 text-left font-semibold">Prevendedor</th>
                             <th className="px-4 py-4 text-left font-semibold">Area</th>
                             <th className="px-4 py-4 text-left font-semibold">Fecha</th>
-                            <th className="w-40 px-4 py-4 text-center align-middle font-semibold">Acciones</th>
+                            <th className="w-40 px-4 py-4 text-center align-middle font-semibold"></th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-lead-200">

@@ -15,14 +15,15 @@ export const RoutesPage: React.FC = () => {
   const { routes, isLoading: routesLoading, error: routesError, fetchRoutes, createRoute, clearError } = useRoutes();
   const { users, isLoading: usersLoading, fetchUsers } = useUsers();
   const { areas, isLoading: areasLoading, fetchAreas } = useAreasSimple();
-  
+
   const toast = useToast();
   const confirm = useConfirmDialog<Route>();
 
-  
+
   const [modalOpen, setModalOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [lastRouteInfo, setLastRouteInfo] = useState<{userStr: string, areaStr: string, date: string} | null>(null);
+  const [lastRouteInfo, setLastRouteInfo] = useState<{ userStr: string, areaStr: string, date: string } | null>(null);
+  const [infoOpen, setInfoOpen] = useState(false);
 
   const loadData = useCallback(async () => {
     await Promise.all([fetchUsers(), fetchAreas(), fetchRoutes()]);
@@ -31,7 +32,7 @@ export const RoutesPage: React.FC = () => {
   useEffect(() => {
     loadData();
   }, [loadData]);
-  
+
   useEffect(() => {
     if (routesError) {
       toast.error(routesError.message);
@@ -39,7 +40,7 @@ export const RoutesPage: React.FC = () => {
     }
   }, [routesError, toast, clearError]);
 
- 
+
   const handleGenerateRoute = async (data: { assignedIdUser: number; assignedIdArea: number; assignedDate: string }) => {
     setSubmitting(true);
     try {
@@ -48,7 +49,7 @@ export const RoutesPage: React.FC = () => {
         assignedIdArea: data.assignedIdArea,
         assignedDate: data.assignedDate,
       });
-      
+
       if (result) {
         toast.success('¡Ruta generada exitosamente!');
         const user = users.find(u => u.id === data.assignedIdUser);
@@ -65,7 +66,7 @@ export const RoutesPage: React.FC = () => {
             ? data.assignedDate
             : data.assignedDate,
         });
-        
+
         setModalOpen(false);
       }
     } catch (err) {
@@ -127,7 +128,21 @@ export const RoutesPage: React.FC = () => {
                   </div>
                 </div>
               </div>
-              <div>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setInfoOpen(prev => !prev)}
+                  className="flex items-center gap-2 px-4 py-3 bg-white/20 text-white border border-white/30 rounded-xl hover:bg-white/30 transition-colors font-medium"
+                  aria-expanded={infoOpen}
+                >
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                      d={infoOpen
+                        ? "M6 18L18 6M6 6l12 12"
+                        : "M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"}
+                    />
+                  </svg>
+                  {infoOpen ? 'Cerrar info' : '¿Cómo funciona?'}
+                </button>
                 <button
                   onClick={() => setModalOpen(true)}
                   className="flex items-center gap-2 px-6 py-3 bg-white text-brand-700 rounded-xl hover:bg-brand-50 transition-colors shadow-lg font-bold transform hover:scale-105 duration-200"
@@ -138,6 +153,47 @@ export const RoutesPage: React.FC = () => {
                 </button>
               </div>
             </div>
+            {infoOpen && (
+              <section className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
+                <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                  <h3 className="text-lg font-bold text-gray-800 mb-2">¿Cómo funciona?</h3>
+                  <p className="text-gray-600 text-sm leading-relaxed">
+                    El sistema permite asignar vendedores ("prevendedores") a áreas geográficas específicas para fechas determinadas.
+                    Esto ayuda a organizar el trabajo de campo y asegurar que todas las zonas sean cubiertas eficientemente.
+                  </p>
+                  <ul className="mt-4 space-y-2 text-sm text-gray-600">
+                    <li className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-brand-500"></span>
+                      Selecciona un prevendedor de la lista.
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-brand-500"></span>
+                      Elige el área geográfica correspondiente.
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-brand-500"></span>
+                      Establece la fecha de visita.
+                    </li>
+                  </ul>
+                </div>
+
+                <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                  <h3 className="text-lg font-bold text-gray-800 mb-2">Gestión de Áreas</h3>
+                  <p className="text-gray-600 text-sm leading-relaxed">
+                    Recuerda que para asignar rutas, primero debes tener áreas definidas en el sistema. Puedes gestionar las áreas desde
+                    la sección de "Áreas".
+                  </p>
+                  <div className="mt-6">
+                    <a href="/areas" className="text-brand-600 font-medium text-sm hover:underline flex items-center gap-1">
+                      Ir a gestión de Áreas
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                      </svg>
+                    </a>
+                  </div>
+                </div>
+              </section>
+            )}
           </div>
         </section>
         {lastRouteInfo && (
@@ -153,47 +209,10 @@ export const RoutesPage: React.FC = () => {
                 Has asignado al prevendedor <strong>{lastRouteInfo.userStr}</strong> el área <strong>{lastRouteInfo.areaStr}</strong> para el día <strong>{lastRouteInfo.date.split('-').reverse().join('/')}</strong>.
               </p>
             </div>
+
           </div>
         )}
-        <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-            <h3 className="text-lg font-bold text-gray-800 mb-2">¿Cómo funciona?</h3>
-            <p className="text-gray-600 text-sm leading-relaxed">
-              El sistema permite asignar vendedores ("prevendedores") a áreas geográficas específicas para fechas determinadas.
-              Esto ayuda a organizar el trabajo de campo y asegurar que todas las zonas sean cubiertas eficientemente.
-            </p>
-            <ul className="mt-4 space-y-2 text-sm text-gray-600">
-              <li className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-brand-500"></span>
-                Selecciona un prevendedor de la lista.
-              </li>
-              <li className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-brand-500"></span>
-                Elige el área geográfica correspondiente.
-              </li>
-              <li className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-brand-500"></span>
-                Establece la fecha de visita.
-              </li>
-            </ul>
-          </div>
-          
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-            <h3 className="text-lg font-bold text-gray-800 mb-2">Gestión de Áreas</h3>
-            <p className="text-gray-600 text-sm leading-relaxed">
-              Recuerda que para asignar rutas, primero debes tener áreas definidas en el sistema. Puedes gestionar las áreas desde
-              la sección de "Áreas".
-            </p>
-            <div className="mt-6">
-              <a href="/areas" className="text-brand-600 font-medium text-sm hover:underline flex items-center gap-1">
-                Ir a gestión de Áreas
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                </svg>
-              </a>
-            </div>
-          </div>
-        </section>
+
 
 
         <RoutesTable
