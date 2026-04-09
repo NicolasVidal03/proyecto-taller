@@ -71,7 +71,7 @@ const PresalesTable: React.FC<PresalesTableProps> = ({
                                     </p>
                                 </td>
                                 <td className="px-4 py-3 text-lead-600">{p.branchName || '—'}</td>
-                                <td className="px-4 py-3 text-lead-600">{p.presellerName || '—'}</td>
+                                <td className="px-4 py-3 text-lead-600">{p.presellerName || 'VENTA DIRECTA'}</td>
                                 <td className="px-4 py-3 text-lead-600 text-xs">
                                     {!usersLoading ? (
                                         <PresalesDistributorSelector

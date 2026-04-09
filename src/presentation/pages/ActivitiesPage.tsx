@@ -344,6 +344,7 @@ export const ActivitiesPage: React.FC = () => {
                   activities={activities}
                   height="600px"
                   onMarkerClick={handleMarkerClick}
+                  userRole={selectedUser?.role}
                 />
               ) : (
                 <div className="h-[400px] flex flex-col items-center justify-center text-lead-500">
@@ -396,22 +397,32 @@ export const ActivitiesPage: React.FC = () => {
                       {selectedActivity.activityDetail?.action ? (
                         <>
                           <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium ${selectedActivity.activityDetail.action.toLowerCase() === 'venta'
-                              ? 'bg-blue-100 text-blue-700'
-                              : selectedActivity.activityDetail.rejectionId
-                                ? 'bg-red-100 text-red-700'
+                            ? 'bg-green-100 text-green-700'
+                            : selectedActivity.activityDetail.rejectionId && selectedUser?.role === 'transportista'
+                              ? 'bg-red-100 text-red-700'
+                              : selectedActivity.activityDetail.action.toLowerCase() === 'visitado'
+                                ? 'bg-blue-100 text-blue-700'
                                 : selectedActivity.activityDetail.action.toLowerCase() === 'preventa'
-                                  ? 'bg-purple-100 text-purple-700'
-                                  : 'bg-green-100 text-green-700'
+                                  ? 'bg-orange-100 text-orange-700'
+                                  : 'bg-gray-100 text-gray-700'
                             }`}>
                             <span className={`w-2 h-2 rounded-full ${selectedActivity.activityDetail.action.toLowerCase() === 'venta'
-                                ? 'bg-blue-500'
-                                : selectedActivity.activityDetail.rejectionId
-                                  ? 'bg-red-500'
+                              ? 'bg-green-500'
+                              : selectedActivity.activityDetail.rejectionId && selectedUser?.role === 'transportista'
+                                ? 'bg-red-500'
+                                : selectedActivity.activityDetail.action.toLowerCase() === 'visitado'
+                                  ? 'bg-blue-500'
                                   : selectedActivity.activityDetail.action.toLowerCase() === 'preventa'
-                                    ? 'bg-purple-500'
-                                    : 'bg-green-500'
+                                    ? 'bg-orange-500'
+                                    : 'bg-gray-500'
                               }`}></span>
-                            {!selectedActivity.activityDetail.rejectionId ? selectedActivity.activityDetail.action : "Cancelado"}
+                            {
+                              !selectedActivity.activityDetail.rejectionId
+                                ? selectedActivity.activityDetail.action
+                                : selectedUser?.role === 'transportista'
+                                  ? "No entregado"
+                                  : "Visitado"
+                            }
                           </div>
                           {selectedActivity.activityDetail.createdAt && (
                             <p className="text-sm text-lead-500">

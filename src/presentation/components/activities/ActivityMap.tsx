@@ -29,16 +29,17 @@ const createCustomIcon = (color: string, borderColor: string) => {
 };
 
 const ICONS = {
-  visited: createCustomIcon('#22c55e', '#166534'),   // Verde - visitado
-  sold: createCustomIcon('#2e7d32', '#215724'),      // Azul - vendido
-  rejected: createCustomIcon('#ef4444', '#b91c1c'),  // Rojo - rechazado
-  presale: createCustomIcon('#E65100', '#a04310'),
-  pending: createCustomIcon('#f50000', '#b40e0e'),  // Gris - sin actividad
+  visited: createCustomIcon('rgb(21, 101, 192)', '#184880'),
+  sold: createCustomIcon('#2e7d32', '#205823'),
+  partial: createCustomIcon('#1565c0', '#134885'),
+  rejected: createCustomIcon('#df2020', '#9c1b1b'),
+  presale: createCustomIcon('#E65100', 'rgb(156, 68, 21)'),
+  pending: createCustomIcon('#868483', '#5c5c5c'),
 };
 
-const getActivityStatus = (activityDetail: ActivityDetails | null): keyof typeof ICONS => {
+const getActivityStatus = (activityDetail: ActivityDetails | null, role: string | undefined): keyof typeof ICONS => {
   if (!activityDetail) return 'pending';
-  if (activityDetail.rejectionId) return 'rejected';
+  if (activityDetail.rejectionId && role === 'transportista') return 'rejected';
   const action = activityDetail.action.toLowerCase();
   if (action === 'venta') return 'sold';
   if (action === 'preventa') return 'presale';
@@ -52,20 +53,21 @@ const getStatusLabel = (status: keyof typeof ICONS): string => {
     case 'presale': return 'Preventa';
     case 'visited': return 'Visitado';
     case 'pending': return 'Sin visitar';
-    case 'rejected': return 'Cancelado';
+    case 'rejected': return 'No entregado';
     default: return 'Desconocido';
   }
 };
 
-// const getStatusColor = (status: keyof typeof ICONS): string => {
-//   switch (status) {
-//     case 'sold': return 'text-blue-600';
-//     case 'presale': return 'text-red-600';
-//     case 'visited': return 'text-green-600';
-//     case 'pending': return 'text-gray-500';
-//     default: return 'text-gray-500';
-//   }
-// };
+const getStatusColor = (status: keyof typeof ICONS): string => {
+  switch (status) {
+    case 'sold': return '#2e7d32';
+    case 'presale': return '#E65100';
+    case 'visited': return 'rgb(21, 101, 192)';
+    case 'pending': return '#868483';
+    case 'rejected': return '#df2020';
+    default: return 'text-gray-500';
+  }
+};
 
 interface ActivityMapProps {
   activities: Activity;
@@ -130,7 +132,7 @@ const ActivityMap: React.FC<ActivityMapProps> = ({
 
       if (!business.position || !business.position.lat || !business.position.lng) return;
 
-      const status = getActivityStatus(activityDetail);
+      const status = getActivityStatus(activityDetail, userRole);
       const icon = ICONS[status];
 
       const marker = L.marker([business.position.lat, business.position.lng], { icon });
@@ -151,9 +153,9 @@ const ActivityMap: React.FC<ActivityMapProps> = ({
               width: 10px; 
               height: 10px; 
               border-radius: 50%; 
-              background: ${status === 'sold' ? '#3b82f6' : status === 'presale' ? '#962bd4' : status === 'visited' ? '#22c55e' : status === 'rejected' ? '#ef4444' : '#94a3b8'};
+              background: ${getStatusColor(status)};
             "></span>
-            <span style="font-size: 12px; font-weight: 600; color: ${status === 'sold' ? '#1d4ed8' : status === 'presale' ? '#741ba8' : status === 'visited' ? '#166534' : status === 'rejected' ? '#b91c1c' : '#64748b'};">
+            <span style="font-size: 12px; font-weight: 600; color: ${getStatusColor(status)};">
               ${getStatusLabel(status)}
             </span>
           </div>
@@ -194,11 +196,11 @@ const ActivityMap: React.FC<ActivityMapProps> = ({
   // Calcular estadísticas
   const stats = useMemo(() => {
     const total = activities.businesses?.length;
-    const visited = activities.businesses?.filter(a => getActivityStatus(a.activityDetail) === 'visited').length;
-    const sold = activities.businesses?.filter(a => getActivityStatus(a.activityDetail) === 'sold').length;
-    const presale = activities.businesses?.filter(a => getActivityStatus(a.activityDetail) === 'presale').length;
-    const rejected = activities.businesses?.filter(a => getActivityStatus(a.activityDetail) === 'presale').length;
-    const pending = activities.businesses?.filter(a => getActivityStatus(a.activityDetail) === 'pending').length;
+    const visited = activities.businesses?.filter(a => getActivityStatus(a.activityDetail, userRole) === 'visited').length;
+    const sold = activities.businesses?.filter(a => getActivityStatus(a.activityDetail, userRole) === 'sold').length;
+    const presale = activities.businesses?.filter(a => getActivityStatus(a.activityDetail, userRole) === 'presale').length;
+    const rejected = activities.businesses?.filter(a => getActivityStatus(a.activityDetail, userRole) === 'rejected').length;
+    const pending = activities.businesses?.filter(a => getActivityStatus(a.activityDetail, userRole) === 'pending').length;
 
     return { total, visited, sold, rejected, pending, presale };
   }, [activities]);
@@ -215,25 +217,31 @@ const ActivityMap: React.FC<ActivityMapProps> = ({
       <div className="absolute bottom-4 left-4 z-[1000] bg-white/95 backdrop-blur rounded-xl shadow-lg border border-gray-200 p-3">
         <p className="text-xs font-semibold text-gray-700 mb-2">Leyenda</p>
         <div className="flex flex-col gap-1.5">
-          <div className="flex items-center gap-2">
-            <span className="w-3 h-3 rounded-full bg-green-500 border-2 border-green-700"></span>
-            <span className="text-xs text-gray-600">Visitado ({stats.visited})</span>
-          </div>
+
           {userRole === 'transportista' && (
-            <div className="flex items-center gap-2">
-              <span className="w-3 h-3 rounded-full bg-blue-500 border-2 border-blue-700"></span>
-              <span className="text-xs text-gray-600">Venta ({stats.sold})</span>
-            </div>
+            <>
+              <div className="flex items-center gap-2">
+                <span className="w-3 h-3 rounded-full bg-green-500 border-2 border-green-700"></span>
+                <span className="text-xs text-gray-600">Venta ({stats.sold})</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="w-3 h-3 rounded-full bg-red-500 border-2 border-red-700"></span>
+                <span className="text-xs text-gray-600">No entregado ({stats.rejected})</span>
+              </div>
+            </>
           )}
-          <div className="flex items-center gap-2">
-            <span className="w-3 h-3 rounded-full bg-purple-500 border-2 border-purple-700"></span>
-            <span className="text-xs text-gray-600">Preventa ({stats.presale})</span>
-          </div>
-          {userRole === 'transportista' && (
-            <div className="flex items-center gap-2">
-              <span className="w-3 h-3 rounded-full bg-red-500 border-2 border-red-700"></span>
-              <span className="text-xs text-gray-600">Rechazado ({stats.rejected})</span>
-            </div>
+
+          {userRole === 'prevendedor' && (
+            <>
+              <div className="flex items-center gap-2">
+                <span className="w-3 h-3 rounded-full bg-blue-500 border-2 border-blue-700"></span>
+                <span className="text-xs text-gray-600">Visitado ({stats.visited})</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="w-3 h-3 rounded-full bg-orange-500 border-2 border-orange-700"></span>
+                <span className="text-xs text-gray-600">Preventa ({stats.presale})</span>
+              </div>
+            </>
           )}
           <div className="flex items-center gap-2">
             <span className="w-3 h-3 rounded-full bg-gray-400 border-2 border-gray-600"></span>
