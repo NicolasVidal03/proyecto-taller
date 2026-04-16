@@ -1,7 +1,9 @@
 node_modules
-.dist
-.vite
-.idea
-.DS_Store
-.env
+dist
+.git
+.gitignore
+*.md
+.env.local
+.env.development
+.env*.local
 coverage
