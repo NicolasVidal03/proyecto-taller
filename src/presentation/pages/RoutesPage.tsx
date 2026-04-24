@@ -12,16 +12,16 @@ import { useConfirmDialog } from '@presentation/hooks';
 import { Route } from '@domain/entities';
 
 export const RoutesPage: React.FC = () => {
-  const { routes, isLoading: routesLoading, error: routesError, fetchRoutes, createRoute, clearError } = useRoutes();
+  const { routes, isLoading: routesLoading, error: routesError, fetchRoutes, createRoute, updateRoute, clearError } = useRoutes();
   const { users, isLoading: usersLoading, fetchUsers } = useUsers();
   const { areas, isLoading: areasLoading, fetchAreas } = useAreasSimple();
 
   const toast = useToast();
   const confirm = useConfirmDialog<Route>();
 
-
   const [modalOpen, setModalOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [routeToEdit, setRouteToEdit] = useState<Route | null>(null);
   const [lastRouteInfo, setLastRouteInfo] = useState<{ userStr: string, areaStr: string, date: string } | null>(null);
   const [infoOpen, setInfoOpen] = useState(false);
 
@@ -40,6 +40,15 @@ export const RoutesPage: React.FC = () => {
     }
   }, [routesError, toast, clearError]);
 
+  const handleCloseModal = () => {
+    setModalOpen(false);
+    setRouteToEdit(null);
+  };
+
+  const handleEditRoute = (route: Route) => {
+    setRouteToEdit(route);
+    setModalOpen(true);
+  };
 
   const handleGenerateRoute = async (data: { assignedIdUser: number; assignedIdArea: number; assignedDate: string }) => {
     setSubmitting(true);
@@ -62,15 +71,36 @@ export const RoutesPage: React.FC = () => {
         setLastRouteInfo({
           userStr,
           areaStr: area ? area.name : `Área #${data.assignedIdArea}`,
-          date: data.assignedIdArea
-            ? data.assignedDate
-            : data.assignedDate,
+          date: data.assignedDate,
         });
 
-        setModalOpen(false);
+        handleCloseModal();
       }
     } catch (err) {
       toast.error('Error al generar la ruta');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleUpdateRoute = async (data: { assignedIdUser: number; assignedIdArea: number; assignedDate: string }) => {
+    if (!routeToEdit) return;
+    setSubmitting(true);
+    try {
+      const result = await updateRoute(routeToEdit.id, {
+        assignedIdUser: data.assignedIdUser,
+        assignedIdArea: data.assignedIdArea,
+        assignedDate: data.assignedDate,
+      });
+
+      if (result) {
+        toast.success('¡Ruta actualizada exitosamente!');
+        handleCloseModal();
+      } else {
+        toast.error('No se pudo actualizar la ruta');
+      }
+    } catch (err) {
+      toast.error('Error al actualizar la ruta');
     } finally {
       setSubmitting(false);
     }
@@ -196,6 +226,7 @@ export const RoutesPage: React.FC = () => {
             )}
           </div>
         </section>
+
         {lastRouteInfo && (
           <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-6 flex items-start gap-4 shadow-sm animate-fade-in">
             <div className="bg-emerald-100 p-3 rounded-full">
@@ -209,29 +240,26 @@ export const RoutesPage: React.FC = () => {
                 Has asignado al prevendedor <strong>{lastRouteInfo.userStr}</strong> el área <strong>{lastRouteInfo.areaStr}</strong> para el día <strong>{lastRouteInfo.date.split('-').reverse().join('/')}</strong>.
               </p>
             </div>
-
           </div>
         )}
-
-
 
         <RoutesTable
           routes={routes}
           users={users}
           areas={areas}
           busyId={confirm.busyId}
+          onEdit={handleEditRoute}
         />
-
       </div>
 
-      {/* Modal */}
       <GenerateRouteModal
         open={modalOpen}
-        onClose={() => setModalOpen(false)}
-        onSubmit={handleGenerateRoute}
+        onClose={handleCloseModal}
+        onSubmit={routeToEdit ? handleUpdateRoute : handleGenerateRoute}
         users={sortedUsers}
         areas={sortedAreas}
         isSubmitting={submitting}
+        routeToEdit={routeToEdit}
       />
 
       <ToastContainer toasts={toast.toasts} onDismiss={toast.dismissToast} />

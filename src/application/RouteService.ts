@@ -1,5 +1,5 @@
 import { Route } from '../domain/entities/Route';
-import { CreateRouteDTO, IRouteRepository } from '../domain/ports/IRouteRepository';
+import { CreateRouteDTO, UpdateRouteDTO, IRouteRepository } from '../domain/ports/IRouteRepository';
 
 export class RouteService {
   constructor(private readonly repository: IRouteRepository) {}
@@ -10,5 +10,9 @@ export class RouteService {
 
   async getRoutes(): Promise<Route[]> {
     return this.repository.getRoutes();
+  }
+
+  async update(id: number, data: UpdateRouteDTO): Promise<Route> {
+    return this.repository.update(id, data);
   }
 }

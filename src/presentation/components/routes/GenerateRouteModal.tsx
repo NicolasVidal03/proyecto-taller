@@ -1,9 +1,10 @@
 /**
- * GenerateRouteModal - Modal para generar rutas de prevendedores
+ * GenerateRouteModal - Modal para crear o editar rutas de prevendedores
  */
 import React, { useState, useEffect, useMemo } from 'react';
 import { User } from '../../../domain/entities/User';
 import { Area } from '../../../domain/entities/Area';
+import { Route } from '../../../domain/entities/Route';
 import SingleAreaMap from './SingleAreaMap';
 
 interface GenerateRouteModalProps {
@@ -13,6 +14,8 @@ interface GenerateRouteModalProps {
   users: User[];
   areas: Area[];
   isSubmitting?: boolean;
+  /** Si se provee, el modal opera en modo edición con los datos de esta ruta precargados */
+  routeToEdit?: Route | null;
 }
 
 const GenerateRouteModal: React.FC<GenerateRouteModalProps> = ({
@@ -22,13 +25,15 @@ const GenerateRouteModal: React.FC<GenerateRouteModalProps> = ({
   users,
   areas,
   isSubmitting = false,
+  routeToEdit = null,
 }) => {
+  const isEditMode = routeToEdit != null;
+
   const [selectedUserId, setSelectedUserId] = useState<number | ''>('');
   const [selectedAreaId, setSelectedAreaId] = useState<number | ''>('');
   const [assignedDate, setAssignedDate] = useState('');
   const [errors, setErrors] = useState<{ user?: string; area?: string; date?: string }>({});
 
- 
   const prevendedores = useMemo(() => {
     return users.filter(u => u.role === 'prevendedor');
   }, [users]);
@@ -38,14 +43,22 @@ const GenerateRouteModal: React.FC<GenerateRouteModalProps> = ({
     return areas.find(a => a.id === selectedAreaId) || null;
   }, [areas, selectedAreaId]);
 
+  // Al abrir el modal, precargar datos de la ruta si estamos en modo edición
   useEffect(() => {
     if (open) {
-      setSelectedUserId('');
-      setSelectedAreaId('');
-      setAssignedDate('');
       setErrors({});
+      if (routeToEdit) {
+        setSelectedUserId(routeToEdit.assignedIdUser);
+        setSelectedAreaId(routeToEdit.assignedIdArea);
+        // Normalizar la fecha a YYYY-MM-DD para el input type="date"
+        setAssignedDate(String(routeToEdit.assignedDate).slice(0, 10));
+      } else {
+        setSelectedUserId('');
+        setSelectedAreaId('');
+        setAssignedDate('');
+      }
     }
-  }, [open]);
+  }, [open, routeToEdit]);
 
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
@@ -74,7 +87,6 @@ const GenerateRouteModal: React.FC<GenerateRouteModalProps> = ({
     return Object.keys(newErrors).length === 0;
   };
 
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
@@ -82,7 +94,7 @@ const GenerateRouteModal: React.FC<GenerateRouteModalProps> = ({
     await onSubmit({
       assignedIdUser: selectedUserId as number,
       assignedIdArea: selectedAreaId as number,
-      assignedDate:assignedDate
+      assignedDate: assignedDate,
     });
   };
 
@@ -106,18 +118,30 @@ const GenerateRouteModal: React.FC<GenerateRouteModalProps> = ({
           <div className="flex items-center gap-4">
             <div className="p-3 bg-brand-100 rounded-xl">
               <svg className="w-6 h-6 text-brand-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                {isEditMode ? (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                ) : (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                )}
               </svg>
             </div>
             <div>
-              <h2 className="text-xl font-bold text-gray-900">Generar Ruta para Prevendedor</h2>
-              <p className="text-sm text-gray-500 mt-0.5">Asigna un área y fecha a un prevendedor</p>
+              <h2 className="text-xl font-bold text-gray-900">
+                {isEditMode ? `Editar Ruta #${routeToEdit!.id}` : 'Generar Ruta para Prevendedor'}
+              </h2>
+              <p className="text-sm text-gray-500 mt-0.5">
+                {isEditMode
+                  ? 'Modifica los datos de la ruta asignada'
+                  : 'Asigna un área y fecha a un prevendedor'}
+              </p>
             </div>
           </div>
         </div>
+
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto">
           <div className="p-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="space-y-5">
+              {/* Prevendedor */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                   👤 Vendedor/Distribuidor <span className="text-red-500">*</span>
@@ -128,11 +152,10 @@ const GenerateRouteModal: React.FC<GenerateRouteModalProps> = ({
                     setSelectedUserId(e.target.value ? Number(e.target.value) : '');
                     if (errors.user) setErrors(prev => ({ ...prev, user: undefined }));
                   }}
-                  className={`w-full px-4 py-3 rounded-xl border-2 ${
-                    errors.user
+                  className={`w-full px-4 py-3 rounded-xl border-2 ${errors.user
                       ? 'border-red-400 focus:ring-red-500 focus:border-red-500 bg-red-50'
                       : 'border-gray-200 focus:ring-brand-500 focus:border-brand-500'
-                  } focus:outline-none focus:ring-2 transition-all`}
+                    } focus:outline-none focus:ring-2 transition-all`}
                   disabled={isSubmitting}
                 >
                   <option value="">Seleccionar prevendedor...</option>
@@ -157,6 +180,7 @@ const GenerateRouteModal: React.FC<GenerateRouteModalProps> = ({
                 )}
               </div>
 
+              {/* Área */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                   🗺️ Área a Designar <span className="text-red-500">*</span>
@@ -167,11 +191,10 @@ const GenerateRouteModal: React.FC<GenerateRouteModalProps> = ({
                     setSelectedAreaId(e.target.value ? Number(e.target.value) : '');
                     if (errors.area) setErrors(prev => ({ ...prev, area: undefined }));
                   }}
-                  className={`w-full px-4 py-3 rounded-xl border-2 ${
-                    errors.area
+                  className={`w-full px-4 py-3 rounded-xl border-2 ${errors.area
                       ? 'border-red-400 focus:ring-red-500 focus:border-red-500 bg-red-50'
                       : 'border-gray-200 focus:ring-brand-500 focus:border-brand-500'
-                  } focus:outline-none focus:ring-2 transition-all`}
+                    } focus:outline-none focus:ring-2 transition-all`}
                   disabled={isSubmitting}
                 >
                   <option value="">Seleccionar área...</option>
@@ -191,6 +214,7 @@ const GenerateRouteModal: React.FC<GenerateRouteModalProps> = ({
                 )}
               </div>
 
+              {/* Fecha */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                   📅 Fecha Designada <span className="text-red-500">*</span>
@@ -203,11 +227,10 @@ const GenerateRouteModal: React.FC<GenerateRouteModalProps> = ({
                     if (errors.date) setErrors(prev => ({ ...prev, date: undefined }));
                   }}
                   min={minDate}
-                  className={`w-full px-4 py-3 rounded-xl border-2 ${
-                    errors.date
+                  className={`w-full px-4 py-3 rounded-xl border-2 ${errors.date
                       ? 'border-red-400 focus:ring-red-500 focus:border-red-500 bg-red-50'
                       : 'border-gray-200 focus:ring-brand-500 focus:border-brand-500'
-                  } focus:outline-none focus:ring-2 transition-all`}
+                    } focus:outline-none focus:ring-2 transition-all`}
                   disabled={isSubmitting}
                 />
                 {errors.date && (
@@ -220,6 +243,7 @@ const GenerateRouteModal: React.FC<GenerateRouteModalProps> = ({
                 )}
               </div>
 
+              {/* Resumen */}
               {(selectedUserId || selectedAreaId || assignedDate) && (
                 <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
                   <h4 className="text-sm font-semibold text-gray-700 mb-3">📋 Resumen</h4>
@@ -258,6 +282,7 @@ const GenerateRouteModal: React.FC<GenerateRouteModalProps> = ({
               )}
             </div>
 
+            {/* Mapa */}
             <div className="space-y-3">
               <label className="block text-sm font-semibold text-gray-700">
                 🗺️ Vista Previa del Área
@@ -286,6 +311,7 @@ const GenerateRouteModal: React.FC<GenerateRouteModalProps> = ({
             </div>
           </div>
 
+          {/* Footer */}
           <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 flex items-center justify-end gap-3">
             <button
               type="button"
@@ -298,11 +324,10 @@ const GenerateRouteModal: React.FC<GenerateRouteModalProps> = ({
             <button
               type="submit"
               disabled={isSubmitting}
-              className={`px-6 py-2.5 rounded-xl font-medium transition-all flex items-center gap-2 ${
-                isSubmitting
+              className={`px-6 py-2.5 rounded-xl font-medium transition-all flex items-center gap-2 ${isSubmitting
                   ? 'bg-gray-400 text-white cursor-not-allowed'
                   : 'bg-brand-600 text-white hover:bg-brand-700 shadow-lg shadow-brand-500/30 hover:shadow-brand-500/40'
-              }`}
+                }`}
             >
               {isSubmitting ? (
                 <>
@@ -310,14 +335,18 @@ const GenerateRouteModal: React.FC<GenerateRouteModalProps> = ({
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                   </svg>
-                  Generando...
+                  {isEditMode ? 'Guardando...' : 'Generando...'}
                 </>
               ) : (
                 <>
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    {isEditMode ? (
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    ) : (
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    )}
                   </svg>
-                  Generar Ruta
+                  {isEditMode ? 'Guardar Cambios' : 'Generar Ruta'}
                 </>
               )}
             </button>

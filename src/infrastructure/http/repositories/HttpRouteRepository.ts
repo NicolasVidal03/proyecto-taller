@@ -2,7 +2,7 @@
  * HTTP Route Repository - Infrastructure Layer (Frontend)
  */
 import { Route } from '../../../domain/entities/Route';
-import { IRouteRepository, CreateRouteDTO } from '../../../domain/ports/IRouteRepository';
+import { IRouteRepository, CreateRouteDTO, UpdateRouteDTO } from '../../../domain/ports/IRouteRepository';
 import { http } from '../httpClient';
 
 export class HttpRouteRepository implements IRouteRepository {
@@ -16,5 +16,10 @@ export class HttpRouteRepository implements IRouteRepository {
   async getRoutes(): Promise<Route[]> {
     const resp = await http.get(this.basePath);
     return resp.data;
+  }
+
+  async update(id: number, data: UpdateRouteDTO): Promise<Route> {
+    const resp = await http.put<{ updated: Route }>(`${this.basePath}/${id}`, data);
+    return resp.data.updated;
   }
 }
