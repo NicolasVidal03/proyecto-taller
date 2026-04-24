@@ -81,7 +81,7 @@ const BusinessDetailsModal: React.FC<BusinessDetailsModalProps> = ({ business, c
             </div>
 
             <div className="space-y-4 rounded-2xl bg-gray-50 p-5">
-              <h3 className="text-sm font-semibold uppercase tracking-wider text-gray-500">Propietario</h3>
+              <h3 className="text-sm font-semibold uppercase tracking-wider text-gray-500">Gerente</h3>
               <div className="space-y-3">
                 <p className="text-sm"><span className="font-medium">Cliente:</span> {client ? `${client.lastName || ''} ${client.secondLastName || ''} ${client.name}`.trim() : `Cliente ${business.clientId}`}</p>
                 <p className="text-sm"><span className="font-medium">Teléfono:</span> {client && client.phone ? (<a className="text-brand-600 font-medium" href={`tel:${client.phone}`}>{client.phone}</a>) : '-'}</p>

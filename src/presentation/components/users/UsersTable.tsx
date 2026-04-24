@@ -5,8 +5,8 @@ import { formatRole } from '../../utils/format';
 
 
 function canManageUser(actorRole: string, targetRole: string): boolean {
-  if (actorRole === 'propietario') {
-    return targetRole !== 'propietario'; 
+  if (actorRole === 'gerente') {
+    return targetRole !== 'gerente'; 
   }
   if (actorRole === 'administrador') {
     return targetRole === 'prevendedor' || targetRole === 'transportista';
@@ -71,7 +71,7 @@ const UsersTable: React.FC<UsersTableProps> = ({
                 </td>
                 <td className="px-4 py-3 capitalize text-lead-600">
                   <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                    user.role === 'propietario' 
+                    user.role === 'gerente' 
                       ? 'bg-purple-100 text-purple-800' 
                       : user.role === 'administrador'
                         ? 'bg-blue-100 text-blue-800'

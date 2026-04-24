@@ -14,7 +14,7 @@ describe('formatRole', () => {
     });
 
     it.each([
-        ['propietario', 'Propietario'],
+        ['gerente', 'Gerente'],
         ['administrador', 'Administrador'],
         ['prevendedor', 'Prevendedor'],
         ['transportista', 'Transportista'],
