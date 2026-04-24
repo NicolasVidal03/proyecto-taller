@@ -156,7 +156,7 @@ const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           <div>
             <p className="text-[0.65rem] uppercase tracking-[0.3em] text-brand-600 font-bold mb-0.5">Panel General</p>
             <h1 className="text-xl font-bold text-lead-900">
-              {user?.role === 'propietario' ? 'Propietario' : 'Administración'}
+              {user?.role === 'gerente' ? 'Gerente' : 'Administración'}
             </h1>
           </div>
           <div className="flex items-center gap-4">

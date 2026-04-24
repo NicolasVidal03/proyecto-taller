@@ -2,7 +2,7 @@ export function formatRole(role?: string | null) {
   if (!role) return 'Sin rol';
   // Custom mappings for Spanish-friendly labels
   const map: Record<string, string> = {
-    propietario: 'Propietario',
+    gerente: 'Gerente',
     administrador: 'Administrador',
     prevendedor: 'Prevendedor',
     transportista: 'Transportista',

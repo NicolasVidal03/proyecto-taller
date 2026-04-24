@@ -5,11 +5,11 @@ import { UsersSection, BranchesSection } from '../components/users/sections';
 import { ToastContainer, useToast } from '../components/shared/Toast';
 
 type ActiveSection = 'users' | 'branches';
-type RoleFilter = 'all' | 'propietario' | 'administrador' | 'prevendedor' | 'transportista';
+type RoleFilter = 'all' | 'gerente' | 'administrador' | 'prevendedor' | 'transportista';
 
 const ROLE_FILTERS: Array<{ value: RoleFilter; label: string }> = [
   { value: 'all', label: 'Todos' },
-  { value: 'propietario', label: 'Propietarios' },
+  { value: 'gerente', label: 'Gerentes' },
   { value: 'administrador', label: 'Administradores' },
   { value: 'prevendedor', label: 'Prevendedores' },
   { value: 'transportista', label: 'Transportistas' },

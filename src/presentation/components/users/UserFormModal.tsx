@@ -14,9 +14,9 @@ export type UserFormValues = {
   email: string;
 };
 
-type AssignableRole = 'propietario' | 'administrador' | 'prevendedor' | 'transportista';
+type AssignableRole = 'gerente' | 'administrador' | 'prevendedor' | 'transportista';
 
-const ROLE_OPTIONS_PROPIETARIO: Array<{ value: AssignableRole; label: string }> = [
+const ROLE_OPTIONS_GERENTE: Array<{ value: AssignableRole; label: string }> = [
   { value: 'administrador', label: 'Administrador' },
   { value: 'prevendedor', label: 'Prevendedor' },
   { value: 'transportista', label: 'Transportista' },
@@ -75,7 +75,7 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
   const [form, setForm] = useState<FormState>(emptyForm);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const auth = useAuth();
-  const isPropietario = auth.user?.role === 'propietario';
+  const isGerente = auth.user?.role === 'gerente';
   const isAdmin = auth.user?.role === 'administrador';
 
   useEffect(() => {
@@ -90,7 +90,7 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
         lastName: initialUser.lastName,
         secondLastName: initialUser.secondLastName ?? '',
         branchId: initialUser.branchId != null ? String(initialUser.branchId) : '',
-        role: (initialUser.role === 'propietario') ? defaultRole : (initialUser.role as AssignableRole),
+        role: (initialUser.role === 'gerente') ? defaultRole : (initialUser.role as AssignableRole),
         email: initialUser.email ?? '',
       });
     } else {
@@ -103,10 +103,10 @@ const UserFormModal: React.FC<UserFormModalProps> = ({
   const submitLabel = mode === 'create' ? 'Crear' : 'Guardar cambios';
 
   const filteredRoles = useMemo(() => {
-    if (isPropietario) return ROLE_OPTIONS_PROPIETARIO;
+    if (isGerente) return ROLE_OPTIONS_GERENTE;
     if (isAdmin) return ROLE_OPTIONS_ADMIN;
-    return [] as typeof ROLE_OPTIONS_PROPIETARIO;
-  }, [isPropietario, isAdmin]);
+    return [] as typeof ROLE_OPTIONS_GERENTE;
+  }, [isGerente, isAdmin]);
 
   const displayedRoles = filteredRoles.length ? filteredRoles : ROLE_OPTIONS_ADMIN;
 
