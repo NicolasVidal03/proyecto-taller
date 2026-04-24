@@ -228,6 +228,7 @@ const BusinessFormModal: React.FC<BusinessFormModalProps> = ({
                   placeholder='Ferretería San José'
                   className={`mt-1 block w-full rounded-lg border px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500 ${errors.name ? 'border-red-500' : 'border-lead-300 bg-white'
                     }`}
+                    maxLength={45}
                   disabled={saving}
                 />
                 {errors.name && <p className="mt-1 text-xs text-red-600">{errors.name}</p>}
@@ -377,6 +378,7 @@ const BusinessFormModal: React.FC<BusinessFormModalProps> = ({
                     el.style.height = 'auto';
                     el.style.height = `${el.scrollHeight}px`;
                   }}
+                  maxLength={150}
                   placeholder='Ej. Avenida América entre Jaime Mendoza y Daniel Albornos'
                   rows={1}
                   className="mt-1 block w-full rounded-lg border border-lead-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500 resize-none overflow-hidden"

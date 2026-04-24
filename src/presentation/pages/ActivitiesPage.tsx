@@ -12,12 +12,6 @@ const formatDateForInput = (date: Date): string => {
   return date.toISOString().split('T')[0];
 };
 
-// Obtener fecha de ayer
-const getYesterday = (): Date => {
-  const date = new Date();
-  date.setDate(date.getDate() - 1);
-  return date;
-};
 
 // Obtener fecha de hoy
 const getToday = (): Date => {
@@ -45,7 +39,7 @@ export const ActivitiesPage: React.FC = () => {
   } = useUsers();
 
   // Estado del filtro
-  const [selectedDate, setSelectedDate] = useState<string>(formatDateForInput(getYesterday()));
+  const [selectedDate, setSelectedDate] = useState<string>(formatDateForInput(getToday()));
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [showUserDropdown, setShowUserDropdown] = useState(false);
@@ -128,7 +122,7 @@ export const ActivitiesPage: React.FC = () => {
   const handleClear = useCallback(() => {
     setSelectedUser(null);
     setSearchTerm('');
-    setSelectedDate(formatDateForInput(getYesterday()));
+    setSelectedDate(formatDateForInput(getToday()));
     clearActivities();
     setSelectedActivity(null);
   }, [clearActivities]);

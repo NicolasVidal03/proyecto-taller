@@ -126,6 +126,7 @@ const ClientForm: React.FC<ClientFormProps> = ({
             name="name"
             value={formData.name}
             placeholder='JUAN CARLOS'
+            maxLength={30}
             onChange={handleChange}
             className={`mt-1 block w-full rounded-lg border px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500 ${
               errors.name ? 'border-red-500' : 'border-lead-300 bg-white'
@@ -145,6 +146,7 @@ const ClientForm: React.FC<ClientFormProps> = ({
             id="lastName"
             name="lastName"
             value={formData.lastName}
+            maxLength={20}
             placeholder='PEREZ'
             onChange={handleChange}
             className={`mt-1 block w-full rounded-lg border px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500 ${
@@ -165,6 +167,7 @@ const ClientForm: React.FC<ClientFormProps> = ({
             id="secondLastName"
             name="secondLastName"
             value={formData.secondLastName}
+            maxLength={20}
             placeholder='FERNANDEZ'
             onChange={handleChange}
             className={`mt-1 block w-full rounded-lg border px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500 ${
@@ -187,6 +190,7 @@ const ClientForm: React.FC<ClientFormProps> = ({
             value={formData.phone}
             placeholder='67482012'
             onChange={handleChange}
+            maxLength={9}
             className={`mt-1 block w-full rounded-lg border px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500 ${
               errors.phone ? 'border-red-500' : 'border-lead-300 bg-white'
             }`}

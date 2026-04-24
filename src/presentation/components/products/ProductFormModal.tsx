@@ -256,6 +256,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
               type="text"
               id="name"
               value={name}
+              maxLength={40}
               onChange={(e) => setName(e.target.value)}
               className={`mt-1 block w-full rounded-lg border px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500 ${
                 errors.name ? 'border-red-500' : 'border-lead-300 bg-white'
@@ -321,6 +322,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
                 id="barcode"
                 value={barcode}
                 onChange={(e) => setBarcode(e.target.value)}
+                maxLength={15}
                 className="mt-1 block w-full rounded-lg border border-lead-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500"
                 placeholder="123456789012"
                 disabled={submitting}
@@ -334,6 +336,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
                 type="text"
                 id="internalCode"
                 value={internalCode}
+                maxLength={25}
                 onChange={(e) => setInternalCode(e.target.value)}
                 className="mt-1 block w-full rounded-lg border border-lead-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500"
                 placeholder="CAB-HDMI-2M"

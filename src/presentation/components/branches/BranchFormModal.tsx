@@ -75,6 +75,7 @@ const   BranchFormModal: React.FC<BranchFormModalProps> = ({
               type="text"
               id="name"
               value={name}
+              maxLength={35}
               onChange={(e) => {
                 setName(e.target.value);
                 if (error) setError('');

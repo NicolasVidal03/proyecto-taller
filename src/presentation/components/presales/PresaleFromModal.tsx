@@ -486,6 +486,7 @@ const PresaleFormModal: React.FC<PresaleFormModalProps> = ({
                                 id="internalCode"
                                 value={note}
                                 onChange={(e) => setNote(e.target.value)}
+                                maxLength={50}
                                 className="mt-1 block w-full rounded-lg border border-lead-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500"
                                 placeholder="CAB-HDMI-2M"
                                 disabled={submitting}

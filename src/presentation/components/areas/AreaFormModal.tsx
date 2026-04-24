@@ -159,6 +159,7 @@ const AreaFormModal: React.FC<AreaFormModalProps> = ({
                     setErrors(prev => ({ ...prev, name: undefined }));
                   }
                 }}
+                maxLength={35}
                 placeholder="Ej: Zona Centro, Área Industrial Norte, Barrio Sur..."
                 className={`w-full px-4 py-3 rounded-xl border-2 ${
                   errors.name 
