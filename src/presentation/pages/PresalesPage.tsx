@@ -1,384 +1,465 @@
-import React, { useState, useMemo, useCallback, useEffect } from 'react';
-import { ToastContainer, useToast } from '../components/shared/Toast';
-import { useBranches, useConfirmDialog, useDebounce, useEntityModal } from '@presentation/hooks';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { container } from '@infrastructure/config';
-import { PresaleFilters, PresaleStatus } from '@domain/ports';
-import { usePresales } from '@presentation/hooks/usePresales';
-import { useUsers } from '@presentation/hooks/useUsers';
-import PresalesTable from '@presentation/components/presales/PresalesTable';
-import PresaleFormModal, { PresaleFormValues } from '@presentation/components/presales/PresaleFromModal';
-import PresaleReport from '@presentation/components/presales/PresaleReport';
-import { Presale } from '@domain/entities';
-import { useAuth } from '@presentation/providers';
-import ConfirmDialog from '@presentation/components/shared/ConfirmDialog';
-import Loader from '@presentation/components/shared/Loader';
+import { PaginatedPresaleReport, PresaleReportFilters, PresaleReportItem } from '@domain/ports/IPresaleRepository';
+import { User } from '@domain/entities';
 import Pagination from '@presentation/components/shared/Pagination';
+import Loader from '@presentation/components/shared/Loader';
 import { triggerDownload } from '@presentation/utils/downloadFile';
 
-const ITEMS_PER_PAGE = 10;
+function formatDate(dateStr: string) {
+    if (!dateStr) return '—';
+    return new Date(dateStr).toLocaleDateString('es-BO', {
+        day: '2-digit', month: '2-digit', year: 'numeric',
+    });
+}
 
-const STATUS_OPTIONS: { label: string; value: PresaleStatus | 'all' }[] = [
-    { label: 'Todos los estados', value: 'all' },
-    { label: 'Pendiente', value: 'pendiente' },
-    { label: 'Asignado', value: 'asignado' },
-    { label: 'Entregado', value: 'entregado' },
-    { label: 'Parcial', value: 'parcial' },
-    { label: 'Cancelado', value: 'cancelado' },
-    { label: 'No entregado', value: 'no entregado' },
-];
+function formatCurrency(amount: number) {
+    return `Bs ${amount.toLocaleString('es-BO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
 
-export const PresalesPage: React.FC = () => {
-    const {
-        presales,
-        isLoading,
-        error,
-        page,
-        total,
-        totalPages,
-        goToPage,
-        applyFilters,
-        clearError,
-        assignDistributor,
-        createPresale,
-        updatePresale,
-        cancelPresale,
-    } = usePresales();
+const STATUS_BADGE: Record<string, string> = {
+    pendiente:      'bg-yellow-100 text-yellow-800 border-yellow-200',
+    asignado:       'bg-blue-100 text-blue-800 border-blue-200',
+    entregado:      'bg-green-100 text-green-800 border-green-200',
+    parcial:        'bg-orange-100 text-orange-800 border-orange-200',
+    cancelado:      'bg-red-100 text-red-800 border-red-200',
+    'no entregado': 'bg-gray-100 text-gray-700 border-gray-200',
+};
 
-    const { branches, fetchBranches } = useBranches();
-    const { users, fetchUsers } = useUsers();
-    const auth = useAuth();
+const REPORT_LIMIT = 15;
 
-    const toast = useToast();
-    const modal = useEntityModal<Presale>();
-    const confirm = useConfirmDialog<Presale>();
+interface FilterDropdownProps {
+    users: User[];
+    onApply: (filters: PresaleReportFilters) => void;
+}
 
-    const [search, setSearch] = useState<string>('');
-    const [branchFilter, setBranchFilter] = useState<number | 'all'>(auth.user?.branchId ?? 'all');
-    const [statusFilter, setStatusFilter] = useState<PresaleStatus | 'all'>('all');
-    const [presellerFilter, setPresellerFilter] = useState<number | 'all'>('all');
-    const [distributorFilter, setDistributorFilter] = useState<number | 'all'>('all');
-    const [deliveryDateFrom, setDeliveryDateFrom] = useState<string>('');
-    const [deliveryDateTo, setDeliveryDateTo] = useState<string>('');
-
-    const debouncedSearch = useDebounce(search, 500);
+const FilterDropdown: React.FC<FilterDropdownProps> = ({ users, onApply }) => {
+    const [open, setOpen]         = useState(false);
+    const [userId, setUserId]     = useState<number | ''>('');
+    const [dateFrom, setDateFrom] = useState('');
+    const [dateTo, setDateTo]     = useState('');
+    const ref = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
-        Promise.all([fetchBranches(), fetchUsers()]);
-    }, [fetchBranches, fetchUsers]);
+        const handler = (e: MouseEvent) => {
+            if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+        };
+        document.addEventListener('mousedown', handler);
+        return () => document.removeEventListener('mousedown', handler);
+    }, []);
 
-    useEffect(() => {
-        const filters: PresaleFilters = {};
-        if (debouncedSearch.trim()) filters.search = debouncedSearch.trim();
-        if (branchFilter !== 'all') filters.branchId = branchFilter;
-        if (statusFilter !== 'all') filters.status = statusFilter;
-        if (presellerFilter !== 'all') filters.presellerId = presellerFilter;
-        if (distributorFilter !== 'all') filters.distributorId = distributorFilter;
-        if (deliveryDateFrom) filters.deliveryDateFrom = deliveryDateFrom;
-        if (deliveryDateTo) filters.deliveryDateTo = deliveryDateTo;
-        applyFilters(filters);
-    }, [debouncedSearch, branchFilter, statusFilter, presellerFilter, distributorFilter, deliveryDateFrom, deliveryDateTo, applyFilters]);
+    const handleApply = () => {
+        const filters: PresaleReportFilters = {};
+        if (userId !== '') filters.userId   = Number(userId);
+        if (dateFrom)      filters.dateFrom = dateFrom;
+        if (dateTo)        filters.dateTo   = dateTo;
+        onApply(filters);
+        setOpen(false);
+    };
 
-    useEffect(() => {
-        if (error) {
-            toast.error(error);
-            clearError();
-        }
-    }, [error, toast, clearError]);
+    const handleClear = () => { setUserId(''); setDateFrom(''); setDateTo(''); };
 
-    const handleClearFilters = useCallback(() => {
-        setSearch('');
-        setBranchFilter(auth.user?.branchId ?? 'all');
-        setStatusFilter('all');
-        setPresellerFilter('all');
-        setDistributorFilter('all');
-        setDeliveryDateFrom('');
-        setDeliveryDateTo('');
-    }, [auth.user?.branchId]);
+    const presellers = users.filter(u =>
+        u.role?.toLowerCase() === 'prevendedor' || u.role?.toLowerCase() === 'transportista'
+    );
 
-    const presellers = useMemo(() => users.filter(u => u.role?.toLowerCase() === 'prevendedor'), [users]);
-    const distributors = useMemo(() => users.filter(u => u.role?.toLowerCase() === 'transportista'), [users]);
+    const triggerButton = (
+        <button
+            type="button"
+            onClick={() => setOpen(v => !v)}
+            className="btn-primary flex items-center gap-2 bg-white border text-brand-700 shadow-sm"
+        >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                    d="M9 17v-6m4 6v-4m4 4V9M5 20h14a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v14a1 1 0 001 1z" />
+            </svg>
+            Generar reporte
+            <svg
+                className={`w-3.5 h-3.5 transition-transform ${open ? 'rotate-180' : ''}`}
+                fill="none" stroke="currentColor" viewBox="0 0 24 24"
+            >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+        </button>
+    );
 
-    const hasActiveFilters = !!(search || branchFilter !== (auth.user?.branchId ?? 'all') || statusFilter !== 'all' ||
-        presellerFilter !== 'all' || distributorFilter !== 'all' || deliveryDateFrom || deliveryDateTo);
+    const filterContent = (
+        <div className="p-5 space-y-4">
+            <p className="text-sm font-semibold text-brand-900 border-b border-lead-100 pb-3">
+                Filtros del reporte
+            </p>
+            <div className="space-y-1">
+                <label className="text-xs font-medium text-lead-600 uppercase tracking-wide">
+                    Prevendedor / Transportista
+                </label>
+                <select
+                    className="w-full rounded-xl border border-lead-200 px-3 py-2 text-sm text-lead-900 focus:outline-none focus:ring-2 focus:ring-brand-300"
+                    value={userId}
+                    onChange={e => setUserId(e.target.value === '' ? '' : Number(e.target.value))}
+                >
+                    <option value="">Todos</option>
+                    {presellers.map(u => (
+                        <option key={u.id} value={u.id}>
+                            {u.names} {u.lastName} ({u.role})
+                        </option>
+                    ))}
+                </select>
+            </div>
+            <div className="space-y-1">
+                <label className="text-xs font-medium text-lead-600 uppercase tracking-wide">Desde</label>
+                <input
+                    type="date"
+                    className="w-full rounded-xl border border-lead-200 px-3 py-2 text-sm text-lead-900 focus:outline-none focus:ring-2 focus:ring-brand-300"
+                    value={dateFrom}
+                    onChange={e => setDateFrom(e.target.value)}
+                />
+            </div>
+            <div className="space-y-1">
+                <label className="text-xs font-medium text-lead-600 uppercase tracking-wide">Hasta</label>
+                <input
+                    type="date"
+                    className="w-full rounded-xl border border-lead-200 px-3 py-2 text-sm text-lead-900 focus:outline-none focus:ring-2 focus:ring-brand-300"
+                    value={dateTo}
+                    onChange={e => setDateTo(e.target.value)}
+                />
+            </div>
+            <div className="flex gap-2 pt-1">
+                <button
+                    type="button"
+                    onClick={handleClear}
+                    className="flex-1 rounded-xl border border-lead-200 py-2 text-sm text-lead-600 hover:bg-lead-50 transition-colors"
+                >
+                    Limpiar
+                </button>
+                <button
+                    type="button"
+                    onClick={handleApply}
+                    className="flex-1 rounded-xl bg-brand-600 py-2 text-sm font-semibold text-white hover:bg-brand-700 transition-colors"
+                >
+                    Aceptar
+                </button>
+            </div>
+        </div>
+    );
 
-    const handleSubmit = async (values: PresaleFormValues) => {
-        if (!auth.user) return;
-        modal.setSubmitting(true);
+    return (
+        <div className="relative" ref={ref}>
+            {triggerButton}
+
+            {open && (
+                <>
+                    <div className="fixed inset-0 z-40 sm:hidden bg-black/40 backdrop-blur-sm" onClick={() => setOpen(false)} />
+                    <div className="fixed inset-x-4 top-1/2 -translate-y-1/2 z-50 sm:hidden rounded-2xl border border-lead-100 bg-white shadow-2xl">
+                        {filterContent}
+                    </div>
+                    <div className="hidden sm:block absolute right-0 mt-2 w-80 rounded-2xl border border-lead-100 bg-white shadow-2xl z-50">
+                        {filterContent}
+                    </div>
+                </>
+            )}
+        </div>
+    );
+};
+
+interface ReportModalProps {
+    open: boolean;
+    filters: PresaleReportFilters;
+    onClose: () => void;
+}
+
+const ReportModal: React.FC<ReportModalProps> = ({ open, filters, onClose }) => {
+    const [report, setReport]               = useState<PaginatedPresaleReport | null>(null);
+    const [loading, setLoading]             = useState(false);
+    const [page, setPage]                   = useState(1);
+    const [downloadingPdf, setDownloadingPdf]     = useState(false);
+    const [downloadingExcel, setDownloadingExcel] = useState(false);
+    const [expandedId, setExpandedId]       = useState<number | null>(null);
+
+    const fetchReport = useCallback(async (p: number) => {
+        setLoading(true);
         try {
-            if (modal.modalState.mode === 'create') {
-                const result = await createPresale(values);
-                if (result) {
-                    toast.success('Preventa creada correctamente');
-                    modal.setSubmitting(false);
-                    modal.close();
-                }
-            } else if (modal.modalState.entity) {
-                const original = await container.presales.getById(modal.modalState.entity.id, true);
-                const originalDetails = original.details ?? [];
-                const newProductIds = new Set(values.details.map(d => d.productId));
-
-                const remove = originalDetails
-                    .filter(d => !newProductIds.has(d.productId))
-                    .map(d => d.id);
-
-                const update = values.details
-                    .filter(d => originalDetails.some(od => od.productId === d.productId))
-                    .map(d => {
-                        const orig = originalDetails.find(od => od.productId === d.productId)!;
-                        return { detailId: orig.id, quantityRequested: d.quantityRequested, unitPrice: d.unitPrice };
-                    });
-
-                const add = values.details
-                    .filter(d => !originalDetails.some(od => od.productId === d.productId))
-                    .map(d => ({
-                        productId: d.productId,
-                        quantityRequested: d.quantityRequested,
-                        priceTypeId: d.priceTypeId,
-                        unitPrice: d.unitPrice,
-                    }));
-
-                const result = await updatePresale(modal.modalState.entity.id, {
-                    clientId: values.clientId,
-                    businessId: values.businessId,
-                    branchId: values.branchId,
-                    deliveryDate: values.deliveryDate,
-                    notes: values.notes,
-                    details: { update, add, remove },
-                });
-
-                if (result) {
-                    toast.success('Preventa actualizada correctamente');
-                    modal.setSubmitting(false);
-                    modal.close();
-                }
-            }
-        } catch (err: unknown) {
-            const message = err instanceof Error ? err.message : 'No se pudo guardar la preventa';
-            toast.error(message);
+            const data = await container.presales.getReport(filters, p, REPORT_LIMIT);
+            setReport(data);
         } finally {
-            modal.setSubmitting(false);
+            setLoading(false);
+        }
+    }, [filters]);
+
+    useEffect(() => {
+        if (open) { setPage(1); setExpandedId(null); fetchReport(1); }
+    }, [open, fetchReport]);
+
+    const handlePageChange = (p: number) => { setPage(p); fetchReport(p); };
+
+    const handleDownloadPdf = async () => {
+        setDownloadingPdf(true);
+        try {
+            const blob = await container.presales.downloadReportPdf(filters);
+            triggerDownload(blob, `reporte-preventas-${Date.now()}.pdf`);
+        } finally {
+            setDownloadingPdf(false);
         }
     };
 
-    const handleCancelPresale = async () => {
-        if (!confirm.dialogState.entity || !auth.user) return;
-        const presale = confirm.dialogState.entity;
-        await confirm.executeWithLoading(async () => {
-            const success = await cancelPresale(presale.id);
-            if (success) {
-                toast.success(`Preventa "${presale.businessName ?? presale.clientName}" cancelada correctamente`);
-            }
-        }, presale.id);
+    const handleDownloadExcel = async () => {
+        setDownloadingExcel(true);
+        try {
+            const blob = await container.presales.downloadReportExcel(filters);
+            triggerDownload(blob, `reporte-preventas-${Date.now()}.xlsx`);
+        } finally {
+            setDownloadingExcel(false);
+        }
     };
 
-    const downloadVoucher = async (presaleId: number) => {
-        try {
-            const blob = await container.presales.downloadVoucher(presaleId);
-            triggerDownload(blob, `comprobante-${presaleId}preventa-${Date.now()}.pdf`)
-        } catch(err) {
-            const message = err instanceof Error ? err.message : 'No se pudo descargar el comprobante'
-            toast.error(message)
-        } 
-    }
+    if (!open) return null;
+
+    const SpinIcon = () => (
+        <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+        </svg>
+    );
+
+    const DownloadIcon = () => (
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+        </svg>
+    );
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
+
+            <div className="relative w-full sm:max-w-6xl max-h-[95vh] sm:max-h-[90vh] bg-white sm:rounded-3xl rounded-t-3xl shadow-2xl flex flex-col overflow-hidden">
+
+                <div className="flex flex-col gap-3 px-4 py-4 sm:px-8 sm:py-5 border-b border-lead-100 bg-gradient-to-r from-brand-900 to-brand-600">
+                    <div className="flex items-start justify-between gap-3">
+                        <div>
+                            <h2 className="text-base sm:text-xl font-bold text-white">Reporte de Preventas</h2>
+                            <p className="text-xs text-white/70 mt-0.5">
+                                {report ? `${report.total.toLocaleString()} registro(s) encontrado(s)` : 'Cargando…'}
+                            </p>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            className="shrink-0 rounded-xl bg-white/20 hover:bg-white/30 p-2 text-white transition-colors"
+                        >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+
+                    <div className="flex gap-2">
+                        <button
+                            type="button"
+                            onClick={handleDownloadExcel}
+                            disabled={downloadingExcel}
+                            className="flex-1 sm:flex-none flex items-center justify-center gap-2 rounded-xl bg-green-600 hover:bg-green-700 disabled:opacity-60 px-3 py-2 sm:px-4 sm:py-2.5 text-xs sm:text-sm font-semibold text-white transition-colors shadow-md"
+                        >
+                            {downloadingExcel ? <SpinIcon /> : <DownloadIcon />}
+                            <span className="hidden xs:inline">Descargar </span>Excel
+                        </button>
+                        <button
+                            type="button"
+                            onClick={handleDownloadPdf}
+                            disabled={downloadingPdf}
+                            className="flex-1 sm:flex-none flex items-center justify-center gap-2 rounded-xl bg-red-600 hover:bg-red-700 disabled:opacity-60 px-3 py-2 sm:px-4 sm:py-2.5 text-xs sm:text-sm font-semibold text-white transition-colors shadow-md"
+                        >
+                            {downloadingPdf ? <SpinIcon /> : <DownloadIcon />}
+                            <span className="hidden xs:inline">Descargar </span>PDF
+                        </button>
+                    </div>
+                </div>
+
+                {(filters.userId || filters.dateFrom || filters.dateTo) && (
+                    <div className="flex flex-wrap gap-2 px-4 sm:px-8 py-3 bg-brand-50 border-b border-brand-100">
+                        <span className="text-xs font-medium text-brand-700 uppercase tracking-wide self-center">Filtros:</span>
+                        {filters.userId && (
+                            <span className="rounded-full bg-brand-100 text-brand-800 text-xs px-3 py-1 border border-brand-200">
+                                Usuario ID: {filters.userId}
+                            </span>
+                        )}
+                        {filters.dateFrom && (
+                            <span className="rounded-full bg-brand-100 text-brand-800 text-xs px-3 py-1 border border-brand-200">
+                                Desde: {formatDate(filters.dateFrom)}
+                            </span>
+                        )}
+                        {filters.dateTo && (
+                            <span className="rounded-full bg-brand-100 text-brand-800 text-xs px-3 py-1 border border-brand-200">
+                                Hasta: {formatDate(filters.dateTo)}
+                            </span>
+                        )}
+                    </div>
+                )}
+
+                <div className="flex-1 overflow-y-auto px-3 py-4 sm:px-8 sm:py-6">
+                    {loading ? (
+                        <div className="flex items-center justify-center py-16">
+                            <Loader />
+                        </div>
+                    ) : !report || report.data.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center py-20 text-lead-400">
+                            <svg className="w-16 h-16 mb-4 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+                                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414A1 1 0 0119 9.414V19a2 2 0 01-2 2z" />
+                            </svg>
+                            <p className="text-sm font-medium">No se encontraron preventas</p>
+                            <p className="text-xs mt-1">Intenta ajustar los filtros del reporte</p>
+                        </div>
+                    ) : (
+                        <div className="space-y-3">
+                            {report.data.map((item: PresaleReportItem) => (
+                                <div
+                                    key={item.id}
+                                    className="rounded-2xl border border-lead-100 overflow-hidden shadow-sm hover:shadow-md transition-shadow"
+                                >
+                                    <button
+                                        type="button"
+                                        onClick={() => setExpandedId(expandedId === item.id ? null : item.id)}
+                                        className="w-full px-4 py-3 sm:px-5 sm:py-4 bg-white hover:bg-lead-50 transition-colors text-left"
+                                    >
+                                        <div className="flex items-start justify-between gap-2">
+                                            <div className="flex items-center gap-2 min-w-0">
+                                                <span className="text-xs font-bold text-brand-400 shrink-0">#{item.id}</span>
+                                                <div className="min-w-0">
+                                                    <p className="text-sm font-semibold text-lead-900 truncate">
+                                                        {item.clientName} {item.clientLastName}
+                                                    </p>
+                                                    {item.businessName && (
+                                                        <p className="text-xs text-lead-500 truncate">{item.businessName}</p>
+                                                    )}
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center gap-2 shrink-0">
+                                                <span className={`rounded-full border px-2.5 py-0.5 text-xs font-semibold capitalize ${STATUS_BADGE[item.status] ?? 'bg-gray-100 text-gray-700'}`}>
+                                                    {item.status}
+                                                </span>
+                                                <svg
+                                                    className={`w-4 h-4 text-lead-400 transition-transform shrink-0 ${expandedId === item.id ? 'rotate-180' : ''}`}
+                                                    fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                                                >
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                                </svg>
+                                            </div>
+                                        </div>
+
+                                        <div className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 sm:flex sm:flex-wrap sm:gap-x-6 text-xs text-lead-600">
+                                            <div>
+                                                <span className="text-lead-400">Prevendedor: </span>
+                                                <span className="font-medium text-lead-800">{item.presellerName}</span>
+                                            </div>
+                                            <div>
+                                                <span className="text-lead-400">Transportista: </span>
+                                                <span className="font-medium text-lead-800">{item.distributorName}</span>
+                                            </div>
+                                            <div>
+                                                <span className="text-lead-400">Entrega: </span>
+                                                <span className="font-medium text-lead-800">{formatDate(item.deliveryDate)}</span>
+                                            </div>
+                                            <div>
+                                                <span className="text-lead-400">Total: </span>
+                                                <span className="font-bold text-brand-700">{formatCurrency(item.total)}</span>
+                                            </div>
+                                        </div>
+                                    </button>
+
+                                    {expandedId === item.id && (
+                                        <div className="border-t border-lead-100 bg-lead-50 px-4 py-4 sm:px-5">
+                                            <p className="text-xs font-semibold text-lead-500 uppercase tracking-wide mb-3">
+                                                Detalle de productos
+                                            </p>
+                                            <div className="overflow-x-auto">
+                                                <table className="w-full text-sm">
+                                                    <thead>
+                                                        <tr className="text-xs text-lead-500 uppercase">
+                                                            <th className="text-left pb-2 pr-4 whitespace-nowrap">Producto</th>
+                                                            <th className="text-left pb-2 pr-4 whitespace-nowrap">Cód. barras</th>
+                                                            <th className="text-right pb-2 pr-4 whitespace-nowrap">Precio unit.</th>
+                                                            <th className="text-right pb-2 pr-4 whitespace-nowrap">Cant. pedida</th>
+                                                            <th className="text-right pb-2 pr-4 whitespace-nowrap">Cant. entregada</th>
+                                                            <th className="text-right pb-2 pr-4 whitespace-nowrap">Subtotal pedido</th>
+                                                            <th className="text-right pb-2 whitespace-nowrap">Subtotal entregado</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody className="divide-y divide-lead-100">
+                                                        {item.details.map(d => (
+                                                            <tr key={d.id} className="text-lead-800">
+                                                                <td className="py-2 pr-4 font-medium whitespace-nowrap">{d.productName}</td>
+                                                                <td className="py-2 pr-4 text-lead-500 whitespace-nowrap">{d.productBarcode ?? '—'}</td>
+                                                                <td className="py-2 pr-4 text-right whitespace-nowrap">{formatCurrency(d.unitPrice)}</td>
+                                                                <td className="py-2 pr-4 text-right">{d.quantityRequested}</td>
+                                                                <td className="py-2 pr-4 text-right">{d.quantityDelivered ?? '—'}</td>
+                                                                <td className="py-2 pr-4 text-right whitespace-nowrap">{formatCurrency(d.subtotalRequested)}</td>
+                                                                <td className="py-2 text-right whitespace-nowrap">
+                                                                    {d.subtotalDelivered != null ? formatCurrency(d.subtotalDelivered) : '—'}
+                                                                </td>
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+
+                                            {(item.notes || item.deliveryNotes) && (
+                                                <div className="mt-3 flex flex-wrap gap-4 text-xs text-lead-500">
+                                                    {item.notes && (
+                                                        <p><span className="font-medium">Notas:</span> {item.notes}</p>
+                                                    )}
+                                                    {item.deliveryNotes && (
+                                                        <p><span className="font-medium">Notas de entrega:</span> {item.deliveryNotes}</p>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+
+                {report && report.totalPages > 1 && (
+                    <div className="border-t border-lead-100 px-4 py-4 sm:px-8">
+                        <Pagination
+                            currentPage={page}
+                            totalPages={report.totalPages}
+                            totalItems={report.total}
+                            itemsPerPage={REPORT_LIMIT}
+                            onPageChange={handlePageChange}
+                            isLoading={loading}
+                        />
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+};
+
+interface PresaleReportProps {
+    users: User[];
+}
+
+export const PresaleReport: React.FC<PresaleReportProps> = ({ users }) => {
+    const [reportFilters, setReportFilters] = useState<PresaleReportFilters>({});
+    const [reportOpen, setReportOpen]       = useState(false);
+
+    const handleApplyFilters = (filters: PresaleReportFilters) => {
+        setReportFilters(filters);
+        setReportOpen(true);
+    };
 
     return (
         <>
-            <div className="relative overflow-hidden">
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(17,93,216,0.12),transparent_60%),radial-gradient(circle_at_80%_0%,rgba(255,100,27,0.08),transparent_55%)]" />
-                <div className="relative space-y-10 px-6 py-8 lg:px-10 lg:py-12">
-
-                    {/* Header */}
-                    <section className="relative overflow-hidden rounded-[2.5rem] bg-gradient-to-r from-brand-900 via-brand-700 to-brand-500 text-white shadow-2xl">
-                        <div
-                            className="absolute inset-0 opacity-30"
-                            style={{ backgroundImage: 'linear-gradient(135deg, rgba(255,255,255,0.25) 0%, rgba(255,255,255,0) 45%)' }}
-                        />
-                        <div className="grid gap-10 px-8 py-10 md:px-12 lg:grid-cols-[2fr,1.2fr]">
-                            <div className="space-y-5">
-                                <p className="text-xs uppercase tracking-[0.45em] text-white/70">Panel de Preventas</p>
-                                <h2 className="text-3xl font-semibold leading-tight md:text-4xl">
-                                    Preventas por Sucursal
-                                </h2>
-
-                                {/* Filtros */}
-                                <div className="space-y-3 rounded-2xl bg-white/10 p-4 backdrop-blur border border-white/10">
-                                    <input
-                                        className="input-plain w-full"
-                                        placeholder="Buscar por cliente, negocio o producto…"
-                                        value={search}
-                                        onChange={e => setSearch(e.target.value)}
-                                    />
-
-                                    <div className="flex flex-wrap gap-3">
-                                        <select
-                                            className="rounded-full px-4 py-2 text-sm font-semibold bg-white/10 text-white/90 border border-white/20 focus:outline-none"
-                                            value={branchFilter}
-                                            onChange={e => setBranchFilter(e.target.value === 'all' ? 'all' : Number(e.target.value))}
-                                        >
-                                            <option value="all" className="text-lead-900">Todas las sucursales</option>
-                                            {branches.filter(b => b.state).map(b => (
-                                                <option key={b.id} value={b.id} className="text-lead-900">{b.name}</option>
-                                            ))}
-                                        </select>
-
-                                        <select
-                                            className="rounded-full px-4 py-2 text-sm font-semibold bg-white/10 text-white/90 border border-white/20 focus:outline-none"
-                                            value={statusFilter}
-                                            onChange={e => setStatusFilter(e.target.value as PresaleStatus | 'all')}
-                                        >
-                                            {STATUS_OPTIONS.map(o => (
-                                                <option key={o.value} value={o.value} className="text-lead-900">{o.label}</option>
-                                            ))}
-                                        </select>
-                                        <select
-                                            className="rounded-full px-4 py-2 text-sm font-semibold bg-white/10 text-white/90 border border-white/20 focus:outline-none"
-                                            value={presellerFilter}
-                                            onChange={e => setPresellerFilter(e.target.value === 'all' ? 'all' : Number(e.target.value))}
-                                        >
-                                            <option value="all" className="text-lead-900">Todos los prevendedores</option>
-                                            {presellers.map(u => (
-                                                <option key={u.id} value={u.id} className="text-lead-900">
-                                                    {u.names} {u.lastName}
-                                                </option>
-                                            ))}
-                                        </select>
-
-                                        <select
-                                            className="rounded-full px-4 py-2 text-sm font-semibold bg-white/10 text-white/90 border border-white/20 focus:outline-none"
-                                            value={distributorFilter}
-                                            onChange={e => setDistributorFilter(e.target.value === 'all' ? 'all' : Number(e.target.value))}
-                                        >
-                                            <option value="all" className="text-lead-900">Todos los transportistas</option>
-                                            {distributors.map(u => (
-                                                <option key={u.id} value={u.id} className="text-lead-900">
-                                                    {u.names} {u.lastName}
-                                                </option>
-                                            ))}
-                                        </select>
-                                    </div>
-
-                                    <div className="flex flex-wrap items-center gap-3">
-                                        <span className="text-xs text-white/70 font-medium uppercase tracking-wide whitespace-nowrap">Entrega:</span>
-                                        <div className="flex items-center gap-2">
-                                            <input
-                                                type="date"
-                                                className="rounded-full px-4 py-2 text-sm font-semibold bg-white/10 text-white/90 border border-white/20 focus:outline-none"
-                                                value={deliveryDateFrom}
-                                                onChange={e => setDeliveryDateFrom(e.target.value)}
-                                            />
-                                            <span className="text-white/60 text-sm">→</span>
-                                            <input
-                                                type="date"
-                                                className="rounded-full px-4 py-2 text-sm font-semibold bg-white/10 text-white/90 border border-white/20 focus:outline-none"
-                                                value={deliveryDateTo}
-                                                onChange={e => setDeliveryDateTo(e.target.value)}
-                                            />
-                                        </div>
-                                        {hasActiveFilters && (
-                                            <button
-                                                type="button"
-                                                onClick={handleClearFilters}
-                                                className="ml-auto rounded-full px-4 py-2 text-xs font-semibold bg-white/20 text-white hover:bg-white/30 border border-white/20 transition-colors"
-                                            >
-                                                Limpiar filtros
-                                            </button>
-                                        )}
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Estadísticas */}
-                            <div className="relative">
-                                <div className="absolute inset-0 rounded-[2rem] bg-white/10 blur-xl" />
-                                <div className="relative space-y-5 rounded-[2rem] border border-white/20 bg-white/10 px-7 py-8 backdrop-blur">
-                                    <p className="text-xs uppercase tracking-[0.35em] text-white/60">Resumen</p>
-                                    <div className="grid grid-cols-1 gap-4">
-                                        <div className="rounded-2xl bg-gradient-to-br from-brand-900 to-brand-600 px-4 py-5 shadow-lg">
-                                            <p className="text-xs uppercase tracking-wide text-white/80">Total preventas</p>
-                                            <p className="mt-2 text-4xl font-semibold text-white">{total.toLocaleString()}</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </section>
-
-                    {/* Tabla */}
-                    <section className="grid gap-8 xl:grid-cols-[1fr]">
-                        <div className="card shadow-xl ring-1 ring-black/5">
-                            <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between border-b border-lead-100 pb-4">
-                                <div>
-                                    <h3 className="text-xl font-bold text-brand-900">Listado de preventas</h3>
-                                    <p className="text-sm text-lead-500">
-                                        {totalPages > 0 && `Página ${page} de ${totalPages} • `}
-                                        {total.toLocaleString()} preventa(s) total
-                                    </p>
-                                </div>
-
-                                {/* Action buttons */}
-                                <div className="flex items-center gap-3">
-
-                                    <PresaleReport users={users} />
-
-                                    <button
-                                        type="button"
-                                        className="btn-primary bg-accent-500 hover:bg-accent-600 border-transparent text-white shadow-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                                        onClick={modal.openCreate}
-                                    >
-                                        Crear preventa
-                                    </button>
-                                </div>
-                            </div>
-
-                            {isLoading && <Loader />}
-
-                            {!isLoading && (
-                                <>
-                                    <PresalesTable
-                                        presales={presales}
-                                        assignDistributor={assignDistributor}
-                                        onEdit={modal.openEdit}
-                                        onCancel={confirm.openConfirm}
-                                        downloadVoucher={downloadVoucher}
-                                    />
-                                    {totalPages > 0 && (
-                                        <div className="mt-6">
-                                            <Pagination
-                                                currentPage={page}
-                                                totalPages={totalPages}
-                                                totalItems={total}
-                                                itemsPerPage={ITEMS_PER_PAGE}
-                                                onPageChange={goToPage}
-                                                isLoading={isLoading}
-                                            />
-                                        </div>
-                                    )}
-                                </>
-                            )}
-                        </div>
-                    </section>
-                </div>
-
-                <PresaleFormModal
-                    open={modal.modalState.isOpen}
-                    mode={modal.modalState.mode}
-                    initialData={modal.modalState.entity}
-                    submitting={modal.modalState.isSubmitting}
-                    onClose={modal.close}
-                    onSubmit={handleSubmit}
-                />
-                <ConfirmDialog
-                    open={confirm.dialogState.isOpen}
-                    title="Cancelar preventa"
-                    message="El stock será repuesto automáticamente."
-                    confirmLabel="Confirmar"
-                    onConfirm={handleCancelPresale}
-                    onCancel={confirm.closeConfirm}
-                    disabled={confirm.dialogState.isLoading}
-                />
-
-                <ToastContainer toasts={toast.toasts} onDismiss={toast.dismissToast} />
-            </div>
+            <FilterDropdown users={users} onApply={handleApplyFilters} />
+            <ReportModal
+                open={reportOpen}
+                filters={reportFilters}
+                onClose={() => setReportOpen(false)}
+            />
         </>
     );
 };
+
+export default PresaleReport;
