@@ -61,7 +61,7 @@ const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     { label: 'Rutas', to: '/routes', icon: '🛤️' },
     { label: 'Actividades', to: '/activities', icon: '📍' },
     { label: 'Productos', to: '/products', icon: '📦' },
-    { label: 'Inventario', to: '/inventory', icon: '📊' },
+    { label: 'Stock', to: '/stock', icon: '📊' },
     { label: 'Preventas', to: '/presales', icon: '🤝🏻' },
     { label: 'Usuarios', to: '/users', icon: '👤' },
   ];

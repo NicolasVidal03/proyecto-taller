@@ -30,7 +30,7 @@ export const AppRoutes: React.FC = () => {
         <Route element={<LayoutWrapper />}>
           <Route path="/" element={<Navigate to="/users" replace />} />
           <Route path="/products" element={<ProductsPage />} />
-          <Route path="/inventory" element={<StockPage />} />
+          <Route path="/stock" element={<StockPage />} />
           <Route path="/users" element={<UsersPage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/clients" element={<ClientsBusinessesPage />} />
