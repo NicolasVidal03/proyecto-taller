@@ -7,7 +7,8 @@ import ClientDetailsModal from '../components/clients/ClientDetailsModal';
 import BusinessDetailsModal from '../components/businesses/BusinessDetailsModal';
 import BusinessFormModal from '../components/businesses/BusinessFormModal';
 import BusinessesTable from '../components/businesses/BusinessesTable';
-import ClientForm from '../components/clients/ClientForm';
+import ClientForm from '../components/clients/ClientModalForm';
+import ClientsTable from '@presentation/components/clients/ClientsTable';
 import ConfirmDialog from '../components/shared/ConfirmDialog';
 import Loader from '../components/shared/Loader';
 import Pagination from '../components/shared/Pagination';
@@ -307,59 +308,12 @@ export const ClientsBusinessesPage: React.FC = () => {
               <>
                 {/* Clients Table */}
                 {activeSection === 'clients' && (
-                  <div className="overflow-x-auto rounded-lg border border-lead-200 bg-lead-50 shadow-lg">
-                    <table className="min-w-full text-sm">
-                      <thead className="bg-brand-600 text-xs uppercase tracking-wider text-white">
-                        <tr>
-                          <th className="px-4 py-4 text-left font-semibold">Nombre completo</th>
-                          <th className="px-4 py-4 text-left font-semibold">Teléfono</th>
-                          <th className="px-4 py-4 text-left font-semibold">CI</th>
-                          <th className="w-40 px-4 py-4 text-center align-middle font-semibold">Acciones</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-lead-200">
-                        {paginatedClients.length === 0 ? (
-                          <tr>
-                            <td colSpan={4} className="px-4 py-6 text-center text-sm text-lead-600">
-                              No hay clientes registrados
-                            </td>
-                          </tr>
-                        ) : (
-                          paginatedClients.map((client) => (
-                            <tr key={client.id} className="transition-colors hover:bg-white">
-                              <td className="px-4 py-3 font-medium text-brand-900">
-                                {`${client.lastName || ''} ${client.secondLastName || ''} ${client.name}`.trim()}
-                              </td>
-                              <td className="px-4 py-3 text-lead-600">{client.phone}</td>
-                              <td className="px-4 py-3 text-lead-600">{client.ci || '-'}</td>
-                              <td className="px-4 py-3 text-center align-middle">
-                                <div className="flex items-center justify-center gap-2">
-                                  <button
-                                    onClick={() => setSelectedClient(client)}
-                                    className="rounded bg-blue-100 px-3 py-1.5 font-medium text-blue-700 transition hover:bg-blue-200"
-                                  >
-                                    Ver
-                                  </button>
-                                  <button
-                                    onClick={() => setEditingClient(client)}
-                                    className="rounded bg-brand-100 px-3 py-1.5 font-medium text-brand-700 transition hover:bg-brand-200"
-                                  >
-                                    Editar
-                                  </button>
-                                  <button
-                                    onClick={() => setToDeleteClient(client)}
-                                    className="rounded bg-red-100 px-3 py-1.5 font-medium text-red-700 transition hover:bg-red-200"
-                                  >
-                                    Eliminar
-                                  </button>
-                                </div>
-                              </td>
-                            </tr>
-                          ))
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
+                  <ClientsTable
+                    clients={paginatedClients}
+                    onEdit={setEditingClient}
+                    onDelete={setToDeleteClient}
+                    onView={setSelectedClient}
+                  />
                 )}
 
                 {/* Businesses Table — recibe la página actual del servidor directamente */}

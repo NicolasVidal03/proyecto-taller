@@ -35,7 +35,7 @@ export interface UseBusinessesReturn {
 
 const useBusinesses = (): UseBusinessesReturn => {
   const [crudLoading, setCrudLoading] = useState(false);
-  const [crudError, setCrudError]     = useState<string | null>(null);
+  const [crudError, setCrudError] = useState<string | null>(null);
 
   const auth = useAuth();
 
@@ -43,8 +43,8 @@ const useBusinesses = (): UseBusinessesReturn => {
     async (filters: BusinessFilters, page: number, limit: number) => {
       const result = await container.businesses.listPaginated({ ...filters, page, limit });
       return {
-        data:       result.data,
-        total:      result.total,
+        data: result.data,
+        total: result.total,
         totalPages: result.totalPages,
       };
     },
@@ -133,12 +133,12 @@ const useBusinesses = (): UseBusinessesReturn => {
   }, [clearPaginationError]);
 
   const isLoading = paginationLoading || crudLoading;
-  const error     = paginationError   || crudError;
+  const error = paginationError || crudError;
 
   return {
     businesses,
-    page:       pagination.page,
-    total:      pagination.total,
+    page: pagination.page,
+    total: pagination.total,
     totalPages: pagination.totalPages,
     goToPage,
     applyFilters,

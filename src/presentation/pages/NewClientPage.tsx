@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useClients } from '../hooks/useClients';
-import ClientForm from '../components/clients/ClientForm';
+import ClientForm from '../components/clients/ClientModalForm';
 import { CreateClientDTO, UpdateClientDTO } from '../../domain/ports/IClientRepository';
 import { ToastContainer, useToast } from '../components/shared/Toast';
 

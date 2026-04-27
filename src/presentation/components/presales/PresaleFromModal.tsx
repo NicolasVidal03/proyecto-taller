@@ -50,7 +50,7 @@ const PresaleFormModal: React.FC<PresaleFormModalProps> = ({
     onSubmit,
 }) => {
     const auth = useAuth();
-    const { businesses, fetchBusinesses } = useBusinesses();
+    const { businesses, applyFilters: applyBusinessesFilters } = useBusinesses();
     const { inventory, applyFilters } = useInventory();
     const { presaleById } = usePresales();
 
@@ -93,8 +93,8 @@ const PresaleFormModal: React.FC<PresaleFormModalProps> = ({
 
 
     useEffect(() => {
-        Promise.all([fetchBusinesses()])
-    }, [fetchBusinesses]);
+        Promise.all([applyBusinessesFilters()])
+    }, [applyBusinessesFilters]);
 
     useEffect(() => {
         if (auth.user?.branchId) {
