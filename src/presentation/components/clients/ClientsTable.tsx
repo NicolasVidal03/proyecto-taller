@@ -1,20 +1,18 @@
 import React from 'react';
 import { Client } from '../../../domain/entities/Client';
 
-interface ClientTableProps {
+interface ClientsTableProps {
   clients: Client[];
   onEdit: (client: Client) => void;
   onDelete: (client: Client) => void;
+  onView?: (client: Client) => void;
 }
 
-/**
- * Simplified ClientTable - matches backend entity
- * Shows: name (full), phone, ci
- */
-const ClientTable: React.FC<ClientTableProps> = ({
+const ClientsTable: React.FC<ClientsTableProps> = ({
   clients,
   onEdit,
   onDelete,
+  onView,
 }) => {
   return (
     <div className="overflow-x-auto rounded-lg border border-lead-200 bg-lead-50 shadow-lg">
@@ -38,12 +36,23 @@ const ClientTable: React.FC<ClientTableProps> = ({
             clients.map((client) => (
               <tr key={client.id} className="transition-colors hover:bg-white">
                 <td className="px-4 py-3 font-medium text-brand-900">
-                  {`${client.lastName} ${client.secondLastName} ${client.name}`.trim()}
+                  {`${client.lastName || ''} ${client.secondLastName || ''} ${client.name}`.trim()}
                 </td>
                 <td className="px-4 py-3 text-lead-600">{client.phone}</td>
-                <td className="px-4 py-3 text-lead-600">{client.ci ? `${client.ci}${client.ciExt ? ' ' + client.ciExt : ''}` : '-'}</td>
+                <td className="px-4 py-3 text-lead-600">
+                  {client.ci ? `${client.ci}${client.ciExt ? ' ' + client.ciExt : ''}` : '-'}
+                </td>
                 <td className="px-4 py-3 text-center align-middle">
                   <div className="flex items-center justify-center gap-2">
+                    {onView && (
+                      <button
+                        onClick={() => onView(client)}
+                        className="rounded bg-blue-100 px-3 py-1.5 font-medium text-blue-700 transition hover:bg-blue-200"
+                        title="Ver"
+                      >
+                        Ver
+                      </button>
+                    )}
                     <button
                       onClick={() => onEdit(client)}
                       className="rounded bg-brand-100 px-3 py-1.5 font-medium text-brand-700 transition hover:bg-brand-200 disabled:opacity-50"
@@ -69,4 +78,4 @@ const ClientTable: React.FC<ClientTableProps> = ({
   );
 };
 
-export default ClientTable;
+export default ClientsTable;

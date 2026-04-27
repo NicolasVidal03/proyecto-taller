@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { useClients } from '../hooks/useClients';
-import ClientForm from '../components/clients/ClientForm';
+import ClientForm from '../components/clients/ClientModalForm';
 import { CreateClientDTO, UpdateClientDTO } from '../../domain/ports/IClientRepository';
 import { ToastContainer, useToast } from '../components/shared/Toast';
 import Loader from '../components/shared/Loader';

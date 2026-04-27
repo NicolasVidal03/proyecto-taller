@@ -1,17 +1,38 @@
 import { http } from '../httpClient';
-import { IBusinessRepository, CreateBusinessDTO, UpdateBusinessDTO } from '../../../domain/ports/IBusinessRepository';
+import {
+  IBusinessRepository,
+  CreateBusinessDTO,
+  UpdateBusinessDTO,
+  BusinessFilters,
+  PaginatedBusinessesResult,
+} from '../../../domain/ports/IBusinessRepository';
 import { Business } from '../../../domain/entities/Business';
 
 export class HttpBusinessRepository implements IBusinessRepository {
-  async getAll(): Promise<Business[]> {
-    const res = await http.get('/business');
-    const data = res.data || [];
-    return data.data.map(this.mapBusinessResponse);
+  async getAll(
+    filters: BusinessFilters & { page?: number; limit?: number } = {},
+  ): Promise<PaginatedBusinessesResult> {
+    const { search, areaId, state, page = 1, limit = 10 } = filters;
+
+    const params: Record<string, string | number | boolean> = { page, limit };
+    if (search) params.search = search;
+    if (areaId !== undefined) params.areaId = areaId;
+    if (state !== undefined) params.state = state;
+
+    const res = await http.get('/business', { params });
+    const body = res.data || {};
+
+    return {
+      data: (body.data || []).map(this.mapBusinessResponse),
+      total: body.total ?? 0,
+      totalPages: body.totalPages ?? 0,
+      page: body.page ?? page,
+    };
   }
 
   async getByClientId(clientId: number): Promise<Business[]> {
-    const all = await this.getAll();
-    return all.filter((b) => Number(b.clientId) === Number(clientId));
+    const result = await this.getAll({ limit: 1000 });
+    return result.data.filter((b) => Number(b.clientId) === Number(clientId));
   }
 
   async create(data: CreateBusinessDTO, userId?: number | null): Promise<Business> {
@@ -47,7 +68,6 @@ export class HttpBusinessRepository implements IBusinessRepository {
     return true;
   }
 
-  
   private createFormData(data: CreateBusinessDTO | UpdateBusinessDTO, userId?: number | null): FormData {
     const fd = new FormData();
 
@@ -64,15 +84,13 @@ export class HttpBusinessRepository implements IBusinessRepository {
     if (data.position !== undefined && data.position !== null) {
       fd.append('position', JSON.stringify(data.position));
     }
-
     if ((data as any).isActive !== undefined) fd.append('isActive', String((data as any).isActive));
     if (userId !== undefined && userId !== null) fd.append('userId', String(userId));
-    if (data.imageFile) fd.append('image', data.imageFile); 
+    if (data.imageFile) fd.append('image', data.imageFile);
 
     return fd;
   }
 
- 
   private createPayload(data: CreateBusinessDTO | UpdateBusinessDTO, userId?: number | null): Record<string, any> {
     const payload: Record<string, any> = {};
 
@@ -84,7 +102,7 @@ export class HttpBusinessRepository implements IBusinessRepository {
     if ((data as any).businessTypeId !== undefined) payload.businessTypeId = (data as any).businessTypeId;
     const areaVal = (data as any).areaId !== undefined ? (data as any).areaId : (data as any).area_id;
     if (areaVal !== undefined) payload.areaId = areaVal;
-    
+
     if (data.position !== undefined) payload.position = data.position;
     if ((data as any).isActive !== undefined) payload.isActive = (data as any).isActive;
     if (userId !== undefined && userId !== null) payload.userId = userId;

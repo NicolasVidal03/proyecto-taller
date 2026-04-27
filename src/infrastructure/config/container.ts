@@ -25,7 +25,6 @@ import {
   HttpUserRepository,
   HttpCategoryRepository,
   HttpProductRepository,
-  HttpSupplierRepository,
   HttpProductSupplierRepository,
   HttpBranchRepository,
   HttpCountryRepository,
@@ -45,7 +44,6 @@ const authRepository = new HttpAuthRepository();
 const userRepository = new HttpUserRepository();
 const categoryRepository = new HttpCategoryRepository();
 const productRepository = new HttpProductRepository();
-const supplierRepository = new HttpSupplierRepository();
 const productSupplierRepository = new HttpProductSupplierRepository();
 const branchRepository = new HttpBranchRepository();
 const countryRepository = new HttpCountryRepository();
@@ -64,10 +62,9 @@ const presaleRepository = new HttpPresaleRepository();
 export const container = {
   auth: new AuthService(authRepository),
   user: new UserService(userRepository),
-  users: new UserService(userRepository), // Alias para compatibilidad
+  users: new UserService(userRepository),
   categories: new CategoryService(categoryRepository),
   products: new ProductService(productRepository),
-  suppliers: new SupplierService(supplierRepository),
   productSuppliers: new ProductSupplierService(productSupplierRepository),
   branches: new BranchService(branchRepository),
   countries: new CountryService(countryRepository),

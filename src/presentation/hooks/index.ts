@@ -22,10 +22,6 @@ export type { UseCategoriesReturn } from './useCategories';
 export { useProducts } from './useProducts';
 export type { UseProductsReturn } from './useProducts';
 
-// Suppliers
-export { useSuppliers } from './useSuppliers';
-export type { UseSuppliersReturn, SupplierFilters } from './useSuppliers';
-
 // Product Suppliers
 export { useProductSuppliers } from './useProductSuppliers';
 export type { UseProductSuppliersReturn } from './useProductSuppliers';
