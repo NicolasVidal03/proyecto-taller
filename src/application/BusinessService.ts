@@ -1,11 +1,18 @@
-import { IBusinessRepository, CreateBusinessDTO } from '../domain/ports/IBusinessRepository';
+import {
+  IBusinessRepository,
+  CreateBusinessDTO,
+  BusinessFilters,
+  PaginatedBusinessesResult,
+} from '../domain/ports/IBusinessRepository';
 import { Business } from '../domain/entities/Business';
 
 export class BusinessService {
   constructor(private repository: IBusinessRepository) {}
 
-  async listAll(): Promise<Business[]> {
-    return this.repository.getAll();
+  async listPaginated(
+    filters: BusinessFilters & { page?: number; limit?: number },
+  ): Promise<PaginatedBusinessesResult> {
+    return this.repository.getAll(filters);
   }
 
   async getByClient(clientId: number): Promise<Business[]> {

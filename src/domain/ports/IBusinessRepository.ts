@@ -27,8 +27,21 @@ export interface UpdateBusinessDTO {
   imageFile?: File;
 }
 
+export interface BusinessFilters {
+  search?: string;
+  areaId?: number;
+  state?: boolean;
+}
+
+export interface PaginatedBusinessesResult {
+  data: Business[];
+  total: number;
+  totalPages: number;
+  page: number;
+}
+
 export interface IBusinessRepository {
-  getAll(): Promise<Business[]>;
+  getAll(filters: BusinessFilters & { page?: number; limit?: number }): Promise<PaginatedBusinessesResult>;
   getByClientId(clientId: number): Promise<Business[]>;
   create(data: CreateBusinessDTO, userId?: number | null): Promise<Business>;
   update(id: number, data: UpdateBusinessDTO, userId?: number | null): Promise<Business | null>;
