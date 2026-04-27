@@ -253,7 +253,7 @@ const BusinessFormModal: React.FC<BusinessFormModalProps> = ({
             </div>
 
             <div className="grid grid-cols-3 gap-4">
-              <div ref={clientSearchRef} className="relative">
+              <div ref={clientSearchRef} className="relative z-[60]">
                 <label className="block text-sm font-medium text-lead-700">Dueño (Cliente) *</label>
                 <div className="relative mt-1">
                   <input
@@ -292,7 +292,7 @@ const BusinessFormModal: React.FC<BusinessFormModalProps> = ({
                   )}
                 </div>
                 {showClientDropdown && clientResults.length > 0 && (
-                  <div className="absolute z-50 mt-1 w-full bg-white border border-lead-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                  <div className="absolute z-[1000] mt-1 w-full bg-white border border-lead-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
                     {clientResults.map((client) => (
                       <button
                         key={client.id}

@@ -39,7 +39,7 @@ export const BusinessMapLocationPicker: React.FC<Props> = ({ lat, lng, onChange,
 
       <div className="flex gap-4">
         <div style={{ width: '60%' }}>
-          <div className={`rounded-lg overflow-hidden border border-lead-300 ${error ? 'border-red-500' : 'border-lead-300 bg-white'}`} style={{ height: 240 }}>
+          <div className={`rounded-lg overflow-hidden border border-lead-300 ${error ? 'border-red-500' : 'border-lead-300 bg-white'}`} style={{ height: 240,position: 'relative', zIndex: 1 }}>
             <MapContainer
               center={position ?? COCHABAMBA}
               zoom={14}
