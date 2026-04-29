@@ -48,12 +48,10 @@ export const BrandsSection: React.FC<BrandsSectionProps> = ({ searchTerm, onToas
     pagination.resetToFirstPage();
   }, [searchTerm]);
 
-  // Cargar datos
   useEffect(() => {
     fetchBrands();
   }, [fetchBrands]);
 
-  // Mostrar errores
   useEffect(() => {
     if (error) {
       onToast('error', `Error cargando marcas: ${error}`);
@@ -69,12 +67,14 @@ export const BrandsSection: React.FC<BrandsSectionProps> = ({ searchTerm, onToas
         const result = await createBrand({ name: values.name, userId: auth.user.id });
         if (result) {
           onToast('success', 'Marca creada correctamente');
+          modal.setSubmitting(false);
           modal.close();
         }
       } else if (modal.modalState.entity) {
         const result = await updateBrand(modal.modalState.entity.id, { name: values.name });
         if (result) {
           onToast('success', 'Marca actualizada correctamente');
+          modal.setSubmitting(false);
           modal.close();
         }
       }

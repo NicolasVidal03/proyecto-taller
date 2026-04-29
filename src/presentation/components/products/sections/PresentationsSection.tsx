@@ -30,7 +30,6 @@ export const PresentationsSection: React.FC<PresentationsSectionProps> = ({ sear
   const modal = useEntityModal<Presentation>();
   const confirm = useConfirmDialog<Presentation>();
 
-  // Filtrar y ordenar presentaciones
   const filteredPresentations = useMemo(() => {
     const term = searchTerm.trim().toLowerCase();
     let list = [...presentations];
@@ -40,20 +39,16 @@ export const PresentationsSection: React.FC<PresentationsSectionProps> = ({ sear
     return list.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
   }, [presentations, searchTerm]);
 
-  // Paginación
   const pagination = useListPagination(filteredPresentations, { pageSize: 10 });
 
-  // Reset página cuando cambia búsqueda
   useEffect(() => {
     pagination.resetToFirstPage();
   }, [searchTerm]);
 
-  // Cargar datos
   useEffect(() => {
     fetchPresentations();
   }, [fetchPresentations]);
 
-  // Mostrar errores
   useEffect(() => {
     if (error) {
       onToast('error', `Error cargando presentaciones: ${error}`);
@@ -72,6 +67,7 @@ export const PresentationsSection: React.FC<PresentationsSectionProps> = ({ sear
         });
         if (result) {
           onToast('success', 'Presentación creada correctamente');
+          modal.setSubmitting(false);
           modal.close();
         }
       } else if (modal.modalState.entity) {
@@ -81,6 +77,7 @@ export const PresentationsSection: React.FC<PresentationsSectionProps> = ({ sear
         });
         if (result) {
           onToast('success', 'Presentación actualizada correctamente');
+          modal.setSubmitting(false);
           modal.close();
         }
       }

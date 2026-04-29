@@ -30,7 +30,6 @@ export const ColorsSection: React.FC<ColorsSectionProps> = ({ searchTerm, onToas
   const modal = useEntityModal<Color>();
   const confirm = useConfirmDialog<Color>();
 
-  // Filtrar y ordenar colores
   const filteredColors = useMemo(() => {
     const term = searchTerm.trim().toLowerCase();
     let list = [...colors];
@@ -40,20 +39,16 @@ export const ColorsSection: React.FC<ColorsSectionProps> = ({ searchTerm, onToas
     return list.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
   }, [colors, searchTerm]);
 
-  // Paginación
   const pagination = useListPagination(filteredColors, { pageSize: 10 });
 
-  // Reset página cuando cambia búsqueda
   useEffect(() => {
     pagination.resetToFirstPage();
   }, [searchTerm]);
 
-  // Cargar datos
   useEffect(() => {
     fetchColors();
   }, [fetchColors]);
 
-  // Mostrar errores
   useEffect(() => {
     if (error) {
       onToast('error', `Error cargando colores: ${error}`);
@@ -72,6 +67,7 @@ export const ColorsSection: React.FC<ColorsSectionProps> = ({ searchTerm, onToas
         });
         if (result) {
           onToast('success', 'Color creado correctamente');
+          modal.setSubmitting(false);
           modal.close();
         }
       } else if (modal.modalState.entity) {
@@ -81,6 +77,7 @@ export const ColorsSection: React.FC<ColorsSectionProps> = ({ searchTerm, onToas
         });
         if (result) {
           onToast('success', 'Color actualizado correctamente');
+          modal.setSubmitting(false);
           modal.close();
         }
       }

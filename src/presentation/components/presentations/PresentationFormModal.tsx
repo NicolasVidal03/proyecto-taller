@@ -76,6 +76,7 @@ const PresentationFormModal: React.FC<PresentationFormModalProps> = ({
               type="text"
               id="name"
               value={name}
+              placeholder='Caja'
               onChange={(e) => {
                 setName(e.target.value);
                 if (error) setError('');

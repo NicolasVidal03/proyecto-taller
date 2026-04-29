@@ -76,6 +76,7 @@ const ColorFormModal: React.FC<ColorFormModalProps> = ({
               type="text"
               id="name"
               value={name}
+              placeholder='Azul'
               onChange={(e) => {
                 setName(e.target.value);
                 if (error) setError('');

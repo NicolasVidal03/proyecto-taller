@@ -59,12 +59,14 @@ export const BranchesSection: React.FC<BranchesSectionProps> = ({ searchTerm, on
         const result = await createBranch({ name: values.name });
         if (result) {
           onToast('success', 'Sucursal creada correctamente');
+          modal.setSubmitting(false);
           modal.close();
         }
       } else if (modal.modalState.entity) {
         const result = await updateBranch(modal.modalState.entity.id, { name: values.name });
         if (result) {
           onToast('success', 'Sucursal actualizada correctamente');
+          modal.setSubmitting(false);
           modal.close();
         }
       }

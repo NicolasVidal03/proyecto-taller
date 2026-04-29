@@ -30,7 +30,6 @@ export const CategoriesSection: React.FC<CategoriesSectionProps> = ({ searchTerm
   const modal = useEntityModal<Category>();
   const confirm = useConfirmDialog<Category>();
 
-  // Filtrar y ordenar categorías
   const filteredCategories = useMemo(() => {
     const term = searchTerm.trim().toLowerCase();
     let list = [...categories];
@@ -43,20 +42,16 @@ export const CategoriesSection: React.FC<CategoriesSectionProps> = ({ searchTerm
     return list.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
   }, [categories, searchTerm]);
 
-  // Paginación
   const pagination = useListPagination(filteredCategories, { pageSize: 10 });
 
-  // Reset página cuando cambia búsqueda
   useEffect(() => {
     pagination.resetToFirstPage();
   }, [searchTerm]);
 
-  // Cargar datos
   useEffect(() => {
     fetchCategories();
   }, [fetchCategories]);
 
-  // Mostrar errores
   useEffect(() => {
     if (error) {
       onToast('error', `Error cargando categorías: ${error}`);
@@ -76,6 +71,7 @@ export const CategoriesSection: React.FC<CategoriesSectionProps> = ({ searchTerm
         });
         if (result) {
           onToast('success', 'Categoría creada correctamente');
+          modal.setSubmitting(false);
           modal.close();
         }
       } else if (modal.modalState.entity) {
@@ -86,6 +82,7 @@ export const CategoriesSection: React.FC<CategoriesSectionProps> = ({ searchTerm
         });
         if (result) {
           onToast('success', 'Categoría actualizada correctamente');
+          modal.setSubmitting(false);
           modal.close();
         }
       }

@@ -45,10 +45,10 @@ const CategoryFormModal: React.FC<CategoryFormModalProps> = ({
     if (!name.trim()) {
       setError('El nombre es requerido');
       return;
-    }
+    } 
     onSubmit({
       name: name.trim(),
-      description: description.trim() || undefined,
+      description: description.trim() || '',
     });
   };
 
@@ -81,6 +81,7 @@ const CategoryFormModal: React.FC<CategoryFormModalProps> = ({
               type="text"
               id="name"
               value={name}
+              placeholder='Electrónicos'
               onChange={(e) => {
                 setName(e.target.value);
                 if (error) setError('');
@@ -97,7 +98,7 @@ const CategoryFormModal: React.FC<CategoryFormModalProps> = ({
 
           <div>
             <label htmlFor="description" className="block text-sm font-medium text-lead-700">
-              Descripción
+              Descripción *
             </label>
             <textarea
               id="description"
@@ -105,6 +106,7 @@ const CategoryFormModal: React.FC<CategoryFormModalProps> = ({
               onChange={(e) => setDescription(e.target.value)}
               className="mt-1 block w-full rounded-lg border border-lead-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500 resize-none"
               rows={3}
+              placeholder='Materiales electrónicos'
               disabled={submitting}
             />
           </div>
