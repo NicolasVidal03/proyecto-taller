@@ -51,7 +51,9 @@ const ChangePasswordForm: React.FC<{ userId: number; onClose: () => void }> = ({
       </div>
       <div className="flex justify-end gap-2">
         <button type="button" onClick={onClose} className="px-4 py-2 rounded border">Cancelar</button>
-        <button type="submit" disabled={loading} className="px-4 py-2 rounded bg-accent-500 text-white">{loading ? 'Guardando...' : 'Guardar'}</button>
+        <button type="submit" disabled={loading} className="px-4 py-2 rounded bg-accent-500 text-white">
+          {loading ? 'Guardando...' : 'Guardar'}
+        </button>
       </div>
     </form>
   );
@@ -64,7 +66,6 @@ const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
   const [isHovered, setIsHovered] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-
   const [showChangePassword, setShowChangePassword] = useState(false);
   const toast = useToast();
 
@@ -121,10 +122,9 @@ const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
               to={item.to}
               onClick={handleNavClick}
               className={({ isActive }) =>
-                `flex items-center gap-3 rounded-xl px-3 py-3 text-xs font-bold uppercase tracking-wider transition-all duration-200 ${
-                  isActive || location.pathname.startsWith(item.to)
-                    ? 'bg-accent-500 text-white shadow-lg shadow-accent-500/25 translate-x-1'
-                    : 'text-lead-200 hover:bg-white/10 hover:text-white hover:translate-x-1'
+                `flex items-center gap-3 rounded-xl px-3 py-3 text-xs font-bold uppercase tracking-wider transition-all duration-200 ${isActive || location.pathname.startsWith(item.to)
+                  ? 'bg-accent-500 text-white shadow-lg shadow-accent-500/25 translate-x-1'
+                  : 'text-lead-200 hover:bg-white/10 hover:text-white hover:translate-x-1'
                 } ${expanded ? 'justify-start' : 'justify-center'}`
               }
             >
@@ -143,6 +143,22 @@ const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     </>
   );
 
+  // Dropdown compartido para reutilizar en mobile y desktop
+  const UserDropdownShared = () => (
+    <React.Suspense fallback={
+      <div className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-100 text-brand-700 font-bold border border-brand-200 text-sm">
+        {user?.names ? user.names.charAt(0) : 'S'}
+      </div>
+    }>
+      <UserDropdown
+        user={user ?? null}
+        onViewProfile={() => navigate('/profile')}
+        onChangePassword={() => setShowChangePassword(true)}
+        onLogout={handleLogout}
+      />
+    </React.Suspense>
+  );
+
   return (
     <div className="flex min-h-screen bg-lead-200 text-lead-800 font-sans">
       {mobileOpen && (
@@ -151,10 +167,11 @@ const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           onClick={() => setMobileOpen(false)}
         />
       )}
+
+      {/* Sidebar mobile */}
       <div
-        className={`fixed inset-y-0 left-0 z-50 flex flex-col w-64 bg-gradient-to-b from-brand-900 via-brand-800 to-brand-900 text-white shadow-2xl transition-transform duration-300 lg:hidden ${
-          mobileOpen ? 'translate-x-0' : '-translate-x-full'
-        }`}
+        className={`fixed inset-y-0 left-0 z-50 flex flex-col w-64 bg-gradient-to-b from-brand-900 via-brand-800 to-brand-900 text-white shadow-2xl transition-transform duration-300 lg:hidden ${mobileOpen ? 'translate-x-0' : '-translate-x-full'
+          }`}
       >
         <button
           onClick={() => setMobileOpen(false)}
@@ -167,10 +184,10 @@ const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         <SidebarContent expanded={true} />
       </div>
 
+      {/* Sidebar desktop */}
       <div
-        className={`hidden lg:flex fixed inset-y-0 left-0 z-30 flex-col bg-gradient-to-b from-brand-900 via-brand-800 to-brand-900 text-white shadow-2xl transition-all duration-300 ease-in-out ${
-          isHovered ? 'w-60' : 'w-16'
-        }`}
+        className={`hidden lg:flex fixed inset-y-0 left-0 z-30 flex-col bg-gradient-to-b from-brand-900 via-brand-800 to-brand-900 text-white shadow-2xl transition-all duration-300 ease-in-out ${isHovered ? 'w-60' : 'w-16'
+          }`}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
@@ -206,31 +223,12 @@ const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                 <p className="text-[0.6rem] uppercase tracking-wider text-lead-400 font-semibold">{user.role?.replace(/_/g, ' ')}</p>
               </div>
             )}
-            <div className="hidden md:block">
-              <React.Suspense fallback={
-                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-100 text-brand-700 font-bold border border-brand-200 text-sm">
-                  {user?.names ? user.names.charAt(0) : 'S'}
-                </div>
-              }>
-                <UserDropdown
-                  user={user ?? null}
-                  onViewProfile={() => navigate('/profile')}
-                  onChangePassword={() => setShowChangePassword(true)}
-                  onLogout={handleLogout}
-                />
-              </React.Suspense>
-            </div>
-            <div className="block md:hidden">
-              <button
-                onClick={handleLogout}
-                className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-100 text-brand-700 font-bold border border-brand-200 text-sm"
-              >
-                {user?.names ? user.names.charAt(0) : 'S'}
-              </button>
-            </div>
+            {/* ✅ Fix: UserDropdown unificado para mobile y desktop */}
+            <UserDropdownShared />
           </div>
         </header>
 
+        {/* Modal cambiar contraseña */}
         {showChangePassword && user && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-lead-900/60 backdrop-blur-sm px-4">
             <div className="w-full max-w-md overflow-hidden rounded-xl bg-lead-50 shadow-2xl ring-1 ring-black/5">

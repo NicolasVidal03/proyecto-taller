@@ -19,12 +19,12 @@ const ITEMS_PER_PAGE = 10;
 
 const STATUS_OPTIONS: { label: string; value: PresaleStatus | 'all' }[] = [
     { label: 'Todos los estados', value: 'all' },
-    { label: 'Pendiente',         value: 'pendiente' },
-    { label: 'Asignado',          value: 'asignado' },
-    { label: 'Entregado',         value: 'entregado' },
-    { label: 'Parcial',           value: 'parcial' },
-    { label: 'Cancelado',         value: 'cancelado' },
-    { label: 'No entregado',      value: 'no entregado' },
+    { label: 'Pendiente', value: 'pendiente' },
+    { label: 'Asignado', value: 'asignado' },
+    { label: 'Entregado', value: 'entregado' },
+    { label: 'Parcial', value: 'parcial' },
+    { label: 'Cancelado', value: 'cancelado' },
+    { label: 'No entregado', value: 'no entregado' },
 ];
 
 const selectCls =
@@ -38,20 +38,20 @@ export const PresalesPage: React.FC = () => {
     } = usePresales();
 
     const { branches, fetchBranches } = useBranches();
-    const { users, fetchUsers }       = useUsers();
-    const auth                        = useAuth();
-    const toast                       = useToast();
-    const modal                       = useEntityModal<Presale>();
-    const confirm                     = useConfirmDialog<Presale>();
+    const { users, fetchUsers } = useUsers();
+    const auth = useAuth();
+    const toast = useToast();
+    const modal = useEntityModal<Presale>();
+    const confirm = useConfirmDialog<Presale>();
 
-    const [search,           setSearch]           = useState<string>('');
-    const [branchFilter,     setBranchFilter]     = useState<number | 'all'>(auth.user?.branchId ?? 'all');
-    const [statusFilter,     setStatusFilter]     = useState<PresaleStatus | 'all'>('all');
-    const [presellerFilter,  setPresellerFilter]  = useState<number | 'all'>('all');
-    const [distributorFilter,setDistributorFilter]= useState<number | 'all'>('all');
+    const [search, setSearch] = useState<string>('');
+    const [branchFilter, setBranchFilter] = useState<number | 'all'>(auth.user?.branchId ?? 'all');
+    const [statusFilter, setStatusFilter] = useState<PresaleStatus | 'all'>('all');
+    const [presellerFilter, setPresellerFilter] = useState<number | 'all'>('all');
+    const [distributorFilter, setDistributorFilter] = useState<number | 'all'>('all');
     const [deliveryDateFrom, setDeliveryDateFrom] = useState<string>('');
-    const [deliveryDateTo,   setDeliveryDateTo]   = useState<string>('');
-    const [statsOpen,        setStatsOpen]        = useState(false);
+    const [deliveryDateTo, setDeliveryDateTo] = useState<string>('');
+    const [statsOpen, setStatsOpen] = useState(false);
 
     const debouncedSearch = useDebounce(search, 500);
 
@@ -59,13 +59,13 @@ export const PresalesPage: React.FC = () => {
 
     useEffect(() => {
         const filters: PresaleFilters = {};
-        if (debouncedSearch.trim())        filters.search          = debouncedSearch.trim();
-        if (branchFilter      !== 'all')   filters.branchId        = branchFilter;
-        if (statusFilter      !== 'all')   filters.status          = statusFilter;
-        if (presellerFilter   !== 'all')   filters.presellerId     = presellerFilter;
-        if (distributorFilter !== 'all')   filters.distributorId   = distributorFilter;
-        if (deliveryDateFrom)              filters.deliveryDateFrom = deliveryDateFrom;
-        if (deliveryDateTo)                filters.deliveryDateTo   = deliveryDateTo;
+        if (debouncedSearch.trim()) filters.search = debouncedSearch.trim();
+        if (branchFilter !== 'all') filters.branchId = branchFilter;
+        if (statusFilter !== 'all') filters.status = statusFilter;
+        if (presellerFilter !== 'all') filters.presellerId = presellerFilter;
+        if (distributorFilter !== 'all') filters.distributorId = distributorFilter;
+        if (deliveryDateFrom) filters.deliveryDateFrom = deliveryDateFrom;
+        if (deliveryDateTo) filters.deliveryDateTo = deliveryDateTo;
         applyFilters(filters);
     }, [debouncedSearch, branchFilter, statusFilter, presellerFilter, distributorFilter, deliveryDateFrom, deliveryDateTo, applyFilters]);
 
@@ -83,16 +83,16 @@ export const PresalesPage: React.FC = () => {
         setDeliveryDateTo('');
     }, [auth.user?.branchId]);
 
-    const presellers  = useMemo(() => users.filter(u => u.role?.toLowerCase() === 'prevendedor'),  [users]);
-    const distributors= useMemo(() => users.filter(u => u.role?.toLowerCase() === 'transportista'),[users]);
+    const presellers = useMemo(() => users.filter(u => u.role?.toLowerCase() === 'prevendedor'), [users]);
+    const distributors = useMemo(() => users.filter(u => u.role?.toLowerCase() === 'transportista'), [users]);
 
     const hasActiveFilters = !!(
         search ||
-        branchFilter      !== (auth.user?.branchId ?? 'all') ||
-        statusFilter      !== 'all' ||
-        presellerFilter   !== 'all' ||
+        branchFilter !== (auth.user?.branchId ?? 'all') ||
+        statusFilter !== 'all' ||
+        presellerFilter !== 'all' ||
         distributorFilter !== 'all' ||
-        deliveryDateFrom  ||
+        deliveryDateFrom ||
         deliveryDateTo
     );
 
@@ -104,9 +104,9 @@ export const PresalesPage: React.FC = () => {
                 const result = await createPresale(values);
                 if (result) { toast.success('Preventa creada correctamente'); modal.setSubmitting(false); modal.close(); }
             } else if (modal.modalState.entity) {
-                const original        = await container.presales.getById(modal.modalState.entity.id, true);
+                const original = await container.presales.getById(modal.modalState.entity.id, true);
                 const originalDetails = original.details ?? [];
-                const newProductIds   = new Set(values.details.map(d => d.productId));
+                const newProductIds = new Set(values.details.map(d => d.productId));
 
                 const remove = originalDetails.filter(d => !newProductIds.has(d.productId)).map(d => d.id);
                 const update = values.details
@@ -158,20 +158,16 @@ export const PresalesPage: React.FC = () => {
 
                 <div className="relative space-y-6 px-3 py-5 sm:px-6 sm:py-8 lg:px-10 lg:py-12">
 
-                    {/* ── HERO ── */}
                     <section className="relative overflow-hidden rounded-2xl sm:rounded-[2.5rem] bg-gradient-to-r from-brand-900 via-brand-700 to-brand-500 text-white shadow-2xl">
                         <div
                             className="absolute inset-0 opacity-30"
                             style={{ backgroundImage: 'linear-gradient(135deg,rgba(255,255,255,.25) 0%,rgba(255,255,255,0) 45%)' }}
                         />
 
-                        {/* Grid principal: engloba título+filtros | stats desde el tope */}
                         <div className="relative grid gap-6 px-5 py-7 sm:px-8 sm:py-10 md:px-12 lg:grid-cols-[2fr,1.2fr] lg:items-start">
 
-                            {/* ── COLUMNA IZQUIERDA ── */}
                             <div className="flex flex-col gap-5">
 
-                                {/* Título + botón toggle stats (mobile) */}
                                 <div className="flex items-start justify-between gap-4">
                                     <div className="space-y-1">
                                         <p className="text-[0.6rem] uppercase tracking-[0.45em] text-white/70">Panel de Preventas</p>
@@ -195,9 +191,7 @@ export const PresalesPage: React.FC = () => {
                                     </button>
                                 </div>
 
-                                {/* Filtros */}
                                 <div className="space-y-3 rounded-2xl bg-white/10 p-3 sm:p-4 backdrop-blur border border-white/10">
-                                    {/* Buscador */}
                                     <input
                                         className="input-plain w-full text-sm"
                                         placeholder="Buscar por cliente, negocio o producto…"
@@ -279,7 +273,6 @@ export const PresalesPage: React.FC = () => {
                                     </div>
                                 </div>
 
-                                {/* Stats colapsables en mobile (debajo de filtros) */}
                                 {statsOpen && (
                                     <div className="lg:hidden">
                                         <div className="relative space-y-4 rounded-2xl border border-white/20 bg-white/10 px-5 py-6 backdrop-blur">
@@ -293,7 +286,6 @@ export const PresalesPage: React.FC = () => {
                                 )}
                             </div>
 
-                            {/* ── COLUMNA DERECHA — stats desktop ── */}
                             <div className="hidden lg:block">
                                 <div className="relative">
                                     <div className="absolute inset-0 rounded-[2rem] bg-white/10 blur-xl" />
@@ -310,10 +302,8 @@ export const PresalesPage: React.FC = () => {
                         </div>
                     </section>
 
-                    {/* ── TABLA ── */}
                     <section>
                         <div className="card shadow-xl ring-1 ring-black/5">
-                            {/* Cabecera de la tabla */}
                             <div className="mb-6 flex flex-col gap-4 border-b border-lead-100 pb-4 sm:flex-row sm:items-center sm:justify-between">
                                 <div>
                                     <h3 className="text-lg font-bold text-brand-900 sm:text-xl">Listado de preventas</h3>
@@ -323,7 +313,6 @@ export const PresalesPage: React.FC = () => {
                                     </p>
                                 </div>
 
-                                {/* Botones de acción */}
                                 <div className="flex flex-wrap items-center gap-2 sm:gap-3">
                                     <PresaleReport users={users} />
                                     <button

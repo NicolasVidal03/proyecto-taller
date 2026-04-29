@@ -4,7 +4,7 @@ import { BranchMap, getBranchName } from '../../utils/branchHelpers';
 import { formatRole } from '../../utils/format';
 
 function canManageUser(actorRole: string, targetRole: string): boolean {
-  if (actorRole === 'gerente')       return targetRole !== 'gerente';
+  if (actorRole === 'gerente') return targetRole !== 'gerente';
   if (actorRole === 'administrador') return targetRole === 'prevendedor' || targetRole === 'transportista';
   return false;
 }
@@ -21,7 +21,7 @@ type UsersTableProps = {
 };
 
 const roleBadgeCls = (role: string) => {
-  if (role === 'gerente')       return 'bg-purple-100 text-purple-800';
+  if (role === 'gerente') return 'bg-purple-100 text-purple-800';
   if (role === 'administrador') return 'bg-blue-100 text-blue-800';
   return 'bg-gray-100 text-gray-800';
 };
@@ -36,8 +36,8 @@ const UsersTable: React.FC<UsersTableProps> = ({
   showResetButton,
   busyUserId,
 }) => {
-  const isEmpty  = users.length === 0;
-  const isBusy   = (id: number) => busyUserId != null && busyUserId === id;
+  const isEmpty = users.length === 0;
+  const isBusy = (id: number) => busyUserId != null && busyUserId === id;
 
   if (isEmpty) {
     return (
@@ -52,7 +52,7 @@ const UsersTable: React.FC<UsersTableProps> = ({
       <div className="flex flex-col gap-3 md:hidden">
         {users.map(user => {
           const canManage = canManageUser(currentUserRole, user.role);
-          const busy      = isBusy(user.id);
+          const busy = isBusy(user.id);
 
           return (
             <div
@@ -62,7 +62,9 @@ const UsersTable: React.FC<UsersTableProps> = ({
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <p className="truncate font-semibold text-brand-900">
-                    {user.lastName}{user.secondLastName ? ` ${user.secondLastName}` : ''}, {user.names}
+                    {user.lastName}{user.secondLastName ? ` ${user.secondLastName}` : ''}
+                    <br></br> 
+                    {user.names}
                   </p>
                   <p className="text-xs text-lead-500">@{user.userName}</p>
                 </div>
@@ -136,7 +138,7 @@ const UsersTable: React.FC<UsersTableProps> = ({
           <tbody className="divide-y divide-lead-200">
             {users.map(user => {
               const canManage = canManageUser(currentUserRole, user.role);
-              const busy      = isBusy(user.id);
+              const busy = isBusy(user.id);
 
               return (
                 <tr key={user.id} className="transition-colors hover:bg-white">

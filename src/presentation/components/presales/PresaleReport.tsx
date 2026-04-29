@@ -19,11 +19,11 @@ function formatCurrency(amount: number) {
 }
 
 const STATUS_BADGE: Record<string, string> = {
-    pendiente:      'bg-yellow-100 text-yellow-800 border-yellow-200',
-    asignado:       'bg-blue-100 text-blue-800 border-blue-200',
-    entregado:      'bg-green-100 text-green-800 border-green-200',
-    parcial:        'bg-orange-100 text-orange-800 border-orange-200',
-    cancelado:      'bg-red-100 text-red-800 border-red-200',
+    pendiente: 'bg-yellow-100 text-yellow-800 border-yellow-200',
+    asignado: 'bg-blue-100 text-blue-800 border-blue-200',
+    entregado: 'bg-green-100 text-green-800 border-green-200',
+    parcial: 'bg-orange-100 text-orange-800 border-orange-200',
+    cancelado: 'bg-red-100 text-red-800 border-red-200',
     'no entregado': 'bg-gray-100 text-gray-700 border-gray-200',
 };
 
@@ -35,21 +35,21 @@ interface FilterDropdownProps {
 }
 
 const FilterDropdown: React.FC<FilterDropdownProps> = ({ users, onApply }) => {
-    const [open, setOpen]         = useState(false);
-    const [userId, setUserId]     = useState<number | ''>('');
+    const [open, setOpen] = useState(false);
+    const [userId, setUserId] = useState<number | ''>('');
     const [dateFrom, setDateFrom] = useState('');
-    const [dateTo, setDateTo]     = useState('');
-    const btnRef                  = useRef<HTMLButtonElement>(null);
-    const dropRef                 = useRef<HTMLDivElement>(null);
-    const mobileRef               = useRef<HTMLDivElement>(null);
-    const [dropPos, setDropPos]   = useState<{ top: number; right: number } | null>(null);
+    const [dateTo, setDateTo] = useState('');
+    const btnRef = useRef<HTMLButtonElement>(null);
+    const dropRef = useRef<HTMLDivElement>(null);
+    const mobileRef = useRef<HTMLDivElement>(null);
+    const [dropPos, setDropPos] = useState<{ top: number; right: number } | null>(null);
 
     useEffect(() => {
         const handler = (e: MouseEvent) => {
             const target = e.target as Node;
             const outsideDropdown = !dropRef.current?.contains(target);
-            const outsideMobile   = !mobileRef.current?.contains(target);
-            const outsideBtn      = !btnRef.current?.contains(target);
+            const outsideMobile = !mobileRef.current?.contains(target);
+            const outsideBtn = !btnRef.current?.contains(target);
 
             if (outsideBtn && outsideDropdown && outsideMobile) {
                 setOpen(false);
@@ -63,7 +63,7 @@ const FilterDropdown: React.FC<FilterDropdownProps> = ({ users, onApply }) => {
         if (!btnRef.current) return;
         const rect = btnRef.current.getBoundingClientRect();
         setDropPos({
-            top:   rect.bottom + 8,
+            top: rect.bottom + 8,
             right: window.innerWidth - rect.right,
         });
     }, []);
@@ -81,9 +81,9 @@ const FilterDropdown: React.FC<FilterDropdownProps> = ({ users, onApply }) => {
 
     const handleApply = () => {
         const filters: PresaleReportFilters = {};
-        if (userId !== '') filters.userId   = Number(userId);
-        if (dateFrom)      filters.dateFrom = dateFrom;
-        if (dateTo)        filters.dateTo   = dateTo;
+        if (userId !== '') filters.userId = Number(userId);
+        if (dateFrom) filters.dateFrom = dateFrom;
+        if (dateTo) filters.dateTo = dateTo;
         onApply(filters);
         setOpen(false);
     };
@@ -176,7 +176,6 @@ const FilterDropdown: React.FC<FilterDropdownProps> = ({ users, onApply }) => {
 
             {open && createPortal(
                 <>
-                    {/* Mobile */}
                     <div
                         ref={mobileRef}
                         className="fixed inset-x-4 top-1/2 -translate-y-1/2 z-[100] sm:hidden rounded-2xl border border-lead-100 bg-white shadow-2xl"
@@ -185,7 +184,6 @@ const FilterDropdown: React.FC<FilterDropdownProps> = ({ users, onApply }) => {
                         {filterContent}
                     </div>
 
-                    {/* Desktop */}
                     {dropPos && (
                         <div
                             ref={dropRef}
@@ -210,12 +208,12 @@ interface ReportModalProps {
 }
 
 const ReportModal: React.FC<ReportModalProps> = ({ open, filters, onClose }) => {
-    const [report, setReport]                     = useState<PaginatedPresaleReport | null>(null);
-    const [loading, setLoading]                   = useState(false);
-    const [page, setPage]                         = useState(1);
-    const [downloadingPdf, setDownloadingPdf]     = useState(false);
+    const [report, setReport] = useState<PaginatedPresaleReport | null>(null);
+    const [loading, setLoading] = useState(false);
+    const [page, setPage] = useState(1);
+    const [downloadingPdf, setDownloadingPdf] = useState(false);
     const [downloadingExcel, setDownloadingExcel] = useState(false);
-    const [expandedId, setExpandedId]             = useState<number | null>(null);
+    const [expandedId, setExpandedId] = useState<number | null>(null);
 
     const fetchReport = useCallback(async (p: number) => {
         setLoading(true);
@@ -485,7 +483,7 @@ interface PresaleReportProps {
 
 export const PresaleReport: React.FC<PresaleReportProps> = ({ users }) => {
     const [reportFilters, setReportFilters] = useState<PresaleReportFilters>({});
-    const [reportOpen, setReportOpen]       = useState(false);
+    const [reportOpen, setReportOpen] = useState(false);
 
     const handleApplyFilters = (filters: PresaleReportFilters) => {
         setReportFilters(filters);

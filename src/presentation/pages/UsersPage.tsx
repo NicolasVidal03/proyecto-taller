@@ -23,7 +23,6 @@ export const UsersPage: React.FC = () => {
   const [activeSection, setActiveSection] = useState<ActiveSection>('users');
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState<RoleFilter>('all');
-  // Colapsar stats en mobile para ganar espacio vertical
   const [statsOpen, setStatsOpen] = useState(false);
 
   useEffect(() => {
@@ -39,58 +38,53 @@ export const UsersPage: React.FC = () => {
 
   const searchPlaceholder = useMemo(() => {
     switch (activeSection) {
-      case 'users':    return 'Buscar por nombre, apellido o usuario…';
+      case 'users': return 'Buscar por nombre, apellido o usuario…';
       case 'branches': return 'Buscar sucursales por nombre…';
-      default:         return 'Buscar…';
+      default: return 'Buscar…';
     }
   }, [activeSection]);
 
   const stats = useMemo(() => {
     const safeUsers = Array.isArray(users) ? users.filter(Boolean) : [];
-    const total   = safeUsers.length;
-    const admins  = safeUsers.filter(u => u.role === 'administrador').length;
+    const total = safeUsers.length;
+    const admins = safeUsers.filter(u => u.role === 'administrador').length;
     const sellers = safeUsers.filter(u => u.role === 'prevendedor').length;
     const drivers = safeUsers.filter(u => u.role === 'transportista').length;
     return {
       cards: [
-        { label: 'Total usuarios', value: total,  accent: 'from-brand-900 to-brand-600' },
-        { label: 'Admins',         value: admins,  accent: 'from-brand-500 to-brand-300' },
+        { label: 'Total usuarios', value: total, accent: 'from-brand-900 to-brand-600' },
+        { label: 'Admins', value: admins, accent: 'from-brand-500 to-brand-300' },
       ],
       breakdown: [
-        { label: 'Prevendedores',  value: sellers },
+        { label: 'Prevendedores', value: sellers },
         { label: 'Transportistas', value: drivers },
-        { label: 'Sucursales',     value: branches.length },
+        { label: 'Sucursales', value: branches.length },
       ],
     };
   }, [users, branches.length]);
 
   const sectionButtons: { key: ActiveSection; label: string }[] = [
-    { key: 'users',    label: 'Usuarios'   },
+    { key: 'users', label: 'Usuarios' },
     { key: 'branches', label: 'Sucursales' },
   ];
 
   return (
     <>
       <div className="relative overflow-hidden">
-        {/* Fondo decorativo */}
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(17,93,216,0.12),transparent_60%),radial-gradient(circle_at_80%_0%,rgba(255,100,27,0.08),transparent_55%)]" />
 
         <div className="relative space-y-6 px-3 py-5 sm:px-6 sm:py-8 lg:px-10 lg:py-12">
 
-          {/* ── HERO ── */}
           <section className="relative overflow-hidden rounded-2xl sm:rounded-[2.5rem] bg-gradient-to-r from-brand-900 via-brand-700 to-brand-500 text-white shadow-2xl">
             <div
               className="absolute inset-0 opacity-30"
               style={{ backgroundImage: 'linear-gradient(135deg,rgba(255,255,255,.25) 0%,rgba(255,255,255,0) 45%)' }}
             />
 
-            {/* Grid principal: columna izquierda (título + buscador) | columna derecha (stats) */}
             <div className="relative grid gap-6 px-5 py-7 sm:px-8 sm:py-10 md:px-12 lg:grid-cols-[2fr,1.2fr] lg:items-start">
 
-              {/* ── COLUMNA IZQUIERDA ── */}
               <div className="flex flex-col gap-6">
 
-                {/* Encabezado + toggle stats (mobile) */}
                 <div className="flex items-start justify-between gap-4">
                   <div className="space-y-1">
                     <p className="text-[0.6rem] uppercase tracking-[0.45em] text-white/70">
@@ -101,7 +95,6 @@ export const UsersPage: React.FC = () => {
                     </h2>
                   </div>
 
-                  {/* Botón colapsar stats — solo visible en pantallas < lg */}
                   <button
                     type="button"
                     onClick={() => setStatsOpen(o => !o)}
@@ -117,7 +110,6 @@ export const UsersPage: React.FC = () => {
                   </button>
                 </div>
 
-                {/* Buscador + filtros */}
                 <div className="rounded-2xl bg-white/10 backdrop-blur border border-white/10 p-3 sm:p-4">
                   <input
                     className="input-plain w-full text-sm"
@@ -135,19 +127,16 @@ export const UsersPage: React.FC = () => {
                         type="button"
                         onClick={() => setRoleFilter(option.value)}
                         disabled={activeSection !== 'users'}
-                        className={`w-full rounded-full px-3 py-2 text-xs font-semibold transition sm:w-auto sm:px-4 sm:py-2 sm:text-sm ${
-                          roleFilter === option.value
+                        className={`w-full rounded-full px-3 py-2 text-xs font-semibold transition sm:w-auto sm:px-4 sm:py-2 sm:text-sm ${roleFilter === option.value
                             ? 'bg-lead-50 text-brand-700 shadow-lg'
                             : 'bg-white/10 text-white/70 hover:bg-white/20'
-                        }`}
+                          }`}
                       >
                         {option.label}
                       </button>
                     ))}
                   </div>
                 </div>
-
-                {/* Stats colapsables en mobile (debajo del buscador) */}
                 {statsOpen && (
                   <div className="lg:hidden">
                     <div className="relative space-y-4 rounded-2xl border border-white/20 bg-white/10 px-5 py-6 backdrop-blur">
@@ -173,7 +162,6 @@ export const UsersPage: React.FC = () => {
                 )}
               </div>
 
-              {/* ── COLUMNA DERECHA — stats desktop (siempre visible en lg+) ── */}
               <div className="hidden lg:block">
                 <div className="relative">
                   <div className="absolute inset-0 rounded-[2rem] bg-white/10 blur-xl" />
@@ -202,17 +190,15 @@ export const UsersPage: React.FC = () => {
             </div>
           </section>
 
-          {/* ── TABS ── */}
           <div className="flex gap-2 sm:gap-3">
             {sectionButtons.map(({ key, label }) => (
               <button
                 key={key}
                 type="button"
-                className={`rounded-full px-4 py-2 text-sm font-semibold transition shadow ${
-                  activeSection === key
+                className={`rounded-full px-4 py-2 text-sm font-semibold transition shadow ${activeSection === key
                     ? 'bg-white text-brand-700 ring-2 ring-brand-200'
                     : 'bg-white/70 text-lead-600 hover:bg-white'
-                }`}
+                  }`}
                 onClick={() => setActiveSection(key)}
               >
                 {label}
@@ -220,7 +206,6 @@ export const UsersPage: React.FC = () => {
             ))}
           </div>
 
-          {/* ── CONTENIDO ── */}
           <section className="grid gap-8 xl:grid-cols-[1fr]">
             {activeSection === 'users' && (
               <UsersSection
