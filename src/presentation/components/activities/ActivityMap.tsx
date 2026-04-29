@@ -90,7 +90,7 @@ const ActivityMap: React.FC<ActivityMapProps> = ({
   const mapRef = useRef<L.Map | null>(null);
   const markersLayerRef = useRef<L.FeatureGroup | null>(null);
 
-  // Inicializar mapa
+
   useEffect(() => {
     if (!mapContainerRef.current || mapRef.current) return;
 
@@ -113,9 +113,7 @@ const ActivityMap: React.FC<ActivityMapProps> = ({
     };
   }, []);
 
-  console.log(activities)
 
-  // Actualizar marcadores cuando cambien las actividades
   useEffect(() => {
     const map = mapRef.current;
     const markersLayer = markersLayerRef.current;
@@ -137,7 +135,6 @@ const ActivityMap: React.FC<ActivityMapProps> = ({
 
       const marker = L.marker([business.position.lat, business.position.lng], { icon });
 
-      // Crear contenido del popup
       const popupContent = `
         <div style="min-width: 200px; font-family: 'Inter', system-ui, sans-serif;">
           <h3 style="margin: 0 0 8px 0; font-size: 14px; font-weight: 700; color: #1e293b;">
@@ -187,13 +184,11 @@ const ActivityMap: React.FC<ActivityMapProps> = ({
       bounds.extend([business.position.lat, business.position.lng]);
     });
 
-    // Ajustar vista para mostrar todos los marcadores
     if (bounds.isValid()) {
       map.fitBounds(bounds, { padding: [50, 50], maxZoom: 15 });
     }
   }, [activities, onMarkerClick]);
 
-  // Calcular estadísticas
   const stats = useMemo(() => {
     const total = activities.businesses?.length;
     const visited = activities.businesses?.filter(a => getActivityStatus(a.activityDetail, userRole) === 'visited').length;
@@ -213,7 +208,6 @@ const ActivityMap: React.FC<ActivityMapProps> = ({
         className="rounded-xl overflow-hidden border border-gray-200 shadow-sm"
       />
 
-      {/* Leyenda */}
       <div className="absolute bottom-4 left-4 z-[1000] bg-white/95 backdrop-blur rounded-xl shadow-lg border border-gray-200 p-3">
         <p className="text-xs font-semibold text-gray-700 mb-2">Leyenda</p>
         <div className="flex flex-col gap-1.5">
@@ -250,7 +244,6 @@ const ActivityMap: React.FC<ActivityMapProps> = ({
         </div>
       </div>
 
-      {/* Estadísticas */}
       <div className="absolute top-4 right-4 z-[1000] bg-white/95 backdrop-blur rounded-xl shadow-lg border border-gray-200 p-3">
         <p className="text-xs font-semibold text-gray-700 mb-1">Total de negocios</p>
         <p className="text-2xl font-bold text-brand-700">{stats.total}</p>

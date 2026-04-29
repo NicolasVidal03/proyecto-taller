@@ -10,7 +10,6 @@ export interface UseActivitiesReturn {
   isLoading: boolean;
   error: ActivityError | null;
   
-  // fetchActivities: (userId: number, date: string) => Promise<void>;
   getActivityByUserAndDate: (userId: number, date: string, role: string) => Promise<void>;
   clearActivities: () => void;
   clearError: () => void;
@@ -24,25 +23,11 @@ export const useActivities = (): UseActivitiesReturn => {
   const clearError = useCallback(() => setError(null), []);
   const clearActivities = useCallback(() => setActivities(undefined), []);
 
-  // const fetchActivities = useCallback(async (userId: number, date: string) => {
-  //   setIsLoading(true);
-  //   setError(null);
-  //   try {
-  //     const data = await container.activities.getActivityByUserAndDate(userId, date);
-  //     setActivity(data);
-  //   } catch (err) {
-  //     setError({ message: extractErrorMessage(err), code: 'FETCH_ERROR' });
-  //     setActivity(undefined);
-  //   } finally {
-  //     setIsLoading(false);
-  //   }
-  // }, []);
 
   const getActivityByUserAndDate = useCallback(async (userId: number, date: string, role: string): Promise<void> => {
     setIsLoading(true);
     setError(null);
     try {
-      console.log(role)
       const data = await container.activities.getActivityByUserAndDate(userId, date, role);
       setActivities(data);
     } catch (e) {
@@ -56,7 +41,6 @@ export const useActivities = (): UseActivitiesReturn => {
     activities,
     isLoading,
     error,
-    // fetchActivities,
     getActivityByUserAndDate,
     clearActivities,
     clearError,
