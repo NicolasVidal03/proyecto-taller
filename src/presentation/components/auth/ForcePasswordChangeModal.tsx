@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import ReactDOM from 'react-dom';
+import PasswordInput from '../shared/PasswordInput';
 
 type ForcePasswordChangeModalProps = {
   open: boolean;
@@ -20,7 +21,7 @@ const ForcePasswordChangeModal: React.FC<ForcePasswordChangeModalProps> = ({
     confirmPassword: '',
   });
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
-  const passwordRegex = /^(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>_\-\\[\]\\\/+=;']).{8,}$/;
+  const passwordRegex = /^(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>_\-\\\[\]\\/+=;']).{8,}$/;
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -69,6 +70,9 @@ const ForcePasswordChangeModal: React.FC<ForcePasswordChangeModalProps> = ({
   };
 
   if (!open) return null;
+
+  const inputBase =
+    'mt-1 block w-full rounded-lg border px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500';
 
   return ReactDOM.createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-lead-900/80 backdrop-blur-sm">
@@ -119,15 +123,12 @@ const ForcePasswordChangeModal: React.FC<ForcePasswordChangeModalProps> = ({
             <label htmlFor="currentPassword" className="block text-sm font-medium text-lead-700">
               Contraseña temporal *
             </label>
-            <input
+            <PasswordInput
               id="currentPassword"
               name="currentPassword"
-              type="password"
               value={form.currentPassword}
               onChange={handleChange}
-              className={`mt-1 block w-full rounded-lg border px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500 ${
-                validationErrors.currentPassword ? 'border-red-500' : 'border-lead-300'
-              }`}
+              inputClassName={`${inputBase} ${validationErrors.currentPassword ? 'border-red-500' : 'border-lead-300'}`}
               placeholder="Ingresa tu contraseña temporal"
               disabled={submitting}
               autoFocus
@@ -141,15 +142,12 @@ const ForcePasswordChangeModal: React.FC<ForcePasswordChangeModalProps> = ({
             <label htmlFor="newPassword" className="block text-sm font-medium text-lead-700">
               Nueva contraseña *
             </label>
-            <input
+            <PasswordInput
               id="newPassword"
               name="newPassword"
-              type="password"
               value={form.newPassword}
               onChange={handleChange}
-              className={`mt-1 block w-full rounded-lg border px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500 ${
-                validationErrors.newPassword ? 'border-red-500' : 'border-lead-300'
-              }`}
+              inputClassName={`${inputBase} ${validationErrors.newPassword ? 'border-red-500' : 'border-lead-300'}`}
               placeholder="Ingresa tu nueva contraseña"
               disabled={submitting}
             />
@@ -162,15 +160,12 @@ const ForcePasswordChangeModal: React.FC<ForcePasswordChangeModalProps> = ({
             <label htmlFor="confirmPassword" className="block text-sm font-medium text-lead-700">
               Confirmar nueva contraseña *
             </label>
-            <input
+            <PasswordInput
               id="confirmPassword"
               name="confirmPassword"
-              type="password"
               value={form.confirmPassword}
               onChange={handleChange}
-              className={`mt-1 block w-full rounded-lg border px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500 ${
-                validationErrors.confirmPassword ? 'border-red-500' : 'border-lead-300'
-              }`}
+              inputClassName={`${inputBase} ${validationErrors.confirmPassword ? 'border-red-500' : 'border-lead-300'}`}
               placeholder="Confirma tu nueva contraseña"
               disabled={submitting}
             />

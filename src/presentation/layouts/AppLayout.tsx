@@ -3,6 +3,7 @@ import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../providers/AuthProvider';
 import UserDropdown from '../components/UserDropdown';
 import { useToast } from '../components/shared/Toast';
+import PasswordInput from '../components/shared/PasswordInput';
 import { container } from '../../infrastructure/config/container';
 
 const ChangePasswordForm: React.FC<{ userId: number; onClose: () => void }> = ({ userId, onClose }) => {
@@ -26,15 +27,27 @@ const ChangePasswordForm: React.FC<{ userId: number; onClose: () => void }> = ({
     }
   };
 
+  const inputBase = 'mt-1 block w-full rounded-lg border px-3 py-2 border-lead-300';
+
   return (
     <form onSubmit={submit} className="space-y-4">
       <div>
         <label className="block text-sm font-medium">Nueva contraseña</label>
-        <input value={password} onChange={e => setPassword(e.target.value)} type="password" className="mt-1 block w-full rounded-lg border px-3 py-2" />
+        <PasswordInput
+          value={password}
+          onChange={e => setPassword(e.target.value)}
+          inputClassName={inputBase}
+          placeholder="••••••••"
+        />
       </div>
       <div>
         <label className="block text-sm font-medium">Confirmar contraseña</label>
-        <input value={confirm} onChange={e => setConfirm(e.target.value)} type="password" className="mt-1 block w-full rounded-lg border px-3 py-2" />
+        <PasswordInput
+          value={confirm}
+          onChange={e => setConfirm(e.target.value)}
+          inputClassName={inputBase}
+          placeholder="••••••••"
+        />
       </div>
       <div className="flex justify-end gap-2">
         <button type="button" onClick={onClose} className="px-4 py-2 rounded border">Cancelar</button>

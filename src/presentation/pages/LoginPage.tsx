@@ -1,6 +1,7 @@
 import React, { useState, useEffect, FormEvent } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../providers/AuthProvider';
+import PasswordInput from '../components/shared/PasswordInput';
 
 export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
@@ -102,10 +103,9 @@ export const LoginPage: React.FC = () => {
               <label className="text-xs font-bold uppercase tracking-wider text-brand-200" htmlFor="password">
                 Contraseña
               </label>
-              <input
+              <PasswordInput
                 id="password"
-                type="password"
-                className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-white/30 focus:border-accent-400 focus:bg-white/10 focus:outline-none focus:ring-1 focus:ring-accent-400 transition-all"
+                inputClassName="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-white/30 focus:border-accent-400 focus:bg-white/10 focus:outline-none focus:ring-1 focus:ring-accent-400 transition-all"
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
                 autoComplete="current-password"
