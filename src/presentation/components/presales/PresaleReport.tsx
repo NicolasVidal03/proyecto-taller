@@ -39,15 +39,45 @@ const FilterDropdown: React.FC<FilterDropdownProps> = ({ users, onApply }) => {
     const [userId, setUserId]     = useState<number | ''>('');
     const [dateFrom, setDateFrom] = useState('');
     const [dateTo, setDateTo]     = useState('');
-    const ref = useRef<HTMLDivElement>(null);
+    const btnRef                  = useRef<HTMLButtonElement>(null);
+    const dropRef                 = useRef<HTMLDivElement>(null);
+    const mobileRef               = useRef<HTMLDivElement>(null);
+    const [dropPos, setDropPos]   = useState<{ top: number; right: number } | null>(null);
 
     useEffect(() => {
         const handler = (e: MouseEvent) => {
-            if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+            const target = e.target as Node;
+            const outsideDropdown = !dropRef.current?.contains(target);
+            const outsideMobile   = !mobileRef.current?.contains(target);
+            const outsideBtn      = !btnRef.current?.contains(target);
+
+            if (outsideBtn && outsideDropdown && outsideMobile) {
+                setOpen(false);
+            }
         };
         document.addEventListener('mousedown', handler);
         return () => document.removeEventListener('mousedown', handler);
     }, []);
+
+    const recalcPos = useCallback(() => {
+        if (!btnRef.current) return;
+        const rect = btnRef.current.getBoundingClientRect();
+        setDropPos({
+            top:   rect.bottom + 8,
+            right: window.innerWidth - rect.right,
+        });
+    }, []);
+
+    useEffect(() => {
+        if (!open) return;
+        recalcPos();
+        window.addEventListener('scroll', recalcPos, true);
+        window.addEventListener('resize', recalcPos);
+        return () => {
+            window.removeEventListener('scroll', recalcPos, true);
+            window.removeEventListener('resize', recalcPos);
+        };
+    }, [open, recalcPos]);
 
     const handleApply = () => {
         const filters: PresaleReportFilters = {};
@@ -63,7 +93,6 @@ const FilterDropdown: React.FC<FilterDropdownProps> = ({ users, onApply }) => {
     const presellers = users.filter(u =>
         u.role?.toLowerCase() === 'prevendedor' || u.role?.toLowerCase() === 'transportista'
     );
-
 
     const filterContent = (
         <div className="p-5 space-y-4">
@@ -124,23 +153,12 @@ const FilterDropdown: React.FC<FilterDropdownProps> = ({ users, onApply }) => {
         </div>
     );
 
-    const btnRef = useRef<HTMLButtonElement>(null);
-    const [dropPos, setDropPos] = useState<{ top: number; right: number } | null>(null);
-
-    const handleOpen = () => {
-        if (!open && btnRef.current) {
-            const rect = btnRef.current.getBoundingClientRect();
-            setDropPos({ top: rect.bottom + window.scrollY + 8, right: window.innerWidth - rect.right });
-        }
-        setOpen(v => !v);
-    };
-
     return (
-        <div ref={ref}>
+        <>
             <button
                 ref={btnRef}
                 type="button"
-                onClick={handleOpen}
+                onClick={() => setOpen(v => !v)}
                 className="btn-primary flex items-center gap-2 bg-white border text-brand-700 shadow-sm"
             >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -158,16 +176,22 @@ const FilterDropdown: React.FC<FilterDropdownProps> = ({ users, onApply }) => {
 
             {open && createPortal(
                 <>
-                    <div className="fixed inset-0 z-[90]" onClick={() => setOpen(false)} />
-
-                    <div className="fixed inset-x-4 top-1/2 -translate-y-1/2 z-[100] sm:hidden rounded-2xl border border-lead-100 bg-white shadow-2xl">
+                    {/* Mobile */}
+                    <div
+                        ref={mobileRef}
+                        className="fixed inset-x-4 top-1/2 -translate-y-1/2 z-[100] sm:hidden rounded-2xl border border-lead-100 bg-white shadow-2xl"
+                        onClick={e => e.stopPropagation()}
+                    >
                         {filterContent}
                     </div>
 
+                    {/* Desktop */}
                     {dropPos && (
                         <div
+                            ref={dropRef}
                             className="hidden sm:block fixed z-[100] w-80 rounded-2xl border border-lead-100 bg-white shadow-2xl"
                             style={{ top: dropPos.top, right: dropPos.right }}
+                            onClick={e => e.stopPropagation()}
                         >
                             {filterContent}
                         </div>
@@ -175,7 +199,7 @@ const FilterDropdown: React.FC<FilterDropdownProps> = ({ users, onApply }) => {
                 </>,
                 document.body
             )}
-        </div>
+        </>
     );
 };
 
@@ -186,12 +210,12 @@ interface ReportModalProps {
 }
 
 const ReportModal: React.FC<ReportModalProps> = ({ open, filters, onClose }) => {
-    const [report, setReport]               = useState<PaginatedPresaleReport | null>(null);
-    const [loading, setLoading]             = useState(false);
-    const [page, setPage]                   = useState(1);
+    const [report, setReport]                     = useState<PaginatedPresaleReport | null>(null);
+    const [loading, setLoading]                   = useState(false);
+    const [page, setPage]                         = useState(1);
     const [downloadingPdf, setDownloadingPdf]     = useState(false);
     const [downloadingExcel, setDownloadingExcel] = useState(false);
-    const [expandedId, setExpandedId]       = useState<number | null>(null);
+    const [expandedId, setExpandedId]             = useState<number | null>(null);
 
     const fetchReport = useCallback(async (p: number) => {
         setLoading(true);
