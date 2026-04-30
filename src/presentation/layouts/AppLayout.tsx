@@ -5,6 +5,7 @@ import UserDropdown from '../components/UserDropdown';
 import { useToast } from '../components/shared/Toast';
 import PasswordInput from '../components/shared/PasswordInput';
 import { container } from '../../infrastructure/config/container';
+import { hasPrivilegedRole } from '../routes/ProtectedRoute';
 
 const ChangePasswordForm: React.FC<{ userId: number; onClose: () => void }> = ({ userId, onClose }) => {
   const [password, setPassword] = useState('');
@@ -64,6 +65,8 @@ const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const location = useLocation();
   const navigate = useNavigate();
 
+  const isPrivileged = hasPrivilegedRole(user?.role);
+
   const [isHovered, setIsHovered] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [showChangePassword, setShowChangePassword] = useState(false);
@@ -99,7 +102,9 @@ const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           {user?.names ? user.names.charAt(0) : 'A'}
         </div>
         <div className={`leading-tight overflow-hidden transition-all duration-300 ${expanded ? 'opacity-100 w-auto' : 'opacity-0 w-0'}`}>
-          <p className="text-[0.6rem] uppercase tracking-[0.2em] text-brand-200 font-bold whitespace-nowrap">Administrador</p>
+          <p className="text-[0.6rem] uppercase tracking-[0.2em] text-brand-200 font-bold whitespace-nowrap">
+            {user?.role?.replace(/_/g, ' ') ?? 'Usuario'}
+          </p>
           <p className="text-sm font-bold text-white truncate max-w-[140px]">
             {user ? `${user.names?.split(' ')[0] || user.names} ${user.lastName || ''}`.trim() : 'Usuario'}
           </p>
@@ -143,7 +148,6 @@ const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     </>
   );
 
-  // Dropdown compartido para reutilizar en mobile y desktop
   const UserDropdownShared = () => (
     <React.Suspense fallback={
       <div className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-100 text-brand-700 font-bold border border-brand-200 text-sm">
@@ -161,57 +165,66 @@ const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
   return (
     <div className="flex min-h-screen bg-lead-200 text-lead-800 font-sans">
-      {mobileOpen && (
+      {isPrivileged && mobileOpen && (
         <div
           className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm lg:hidden"
           onClick={() => setMobileOpen(false)}
         />
       )}
 
-      {/* Sidebar mobile */}
-      <div
-        className={`fixed inset-y-0 left-0 z-50 flex flex-col w-64 bg-gradient-to-b from-brand-900 via-brand-800 to-brand-900 text-white shadow-2xl transition-transform duration-300 lg:hidden ${mobileOpen ? 'translate-x-0' : '-translate-x-full'
-          }`}
-      >
-        <button
-          onClick={() => setMobileOpen(false)}
-          className="absolute top-3 right-3 p-1.5 rounded-lg bg-white/10 text-white/70 hover:bg-white/20 hover:text-white transition"
+      {isPrivileged && (
+        <div
+          className={`fixed inset-y-0 left-0 z-50 flex flex-col w-64 bg-gradient-to-b from-brand-900 via-brand-800 to-brand-900 text-white shadow-2xl transition-transform duration-300 lg:hidden ${mobileOpen ? 'translate-x-0' : '-translate-x-full'
+            }`}
         >
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
-        <SidebarContent expanded={true} />
-      </div>
+          <button
+            onClick={() => setMobileOpen(false)}
+            className="absolute top-3 right-3 p-1.5 rounded-lg bg-white/10 text-white/70 hover:bg-white/20 hover:text-white transition"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+          <SidebarContent expanded={true} />
+        </div>
+      )}
 
-      {/* Sidebar desktop */}
+      {isPrivileged && (
+        <div
+          className={`hidden lg:flex fixed inset-y-0 left-0 z-30 flex-col bg-gradient-to-b from-brand-900 via-brand-800 to-brand-900 text-white shadow-2xl transition-all duration-300 ease-in-out ${isHovered ? 'w-60' : 'w-16'
+            }`}
+          onMouseEnter={() => setIsHovered(true)}
+          onMouseLeave={() => setIsHovered(false)}
+        >
+          <SidebarContent expanded={isHovered} />
+        </div>
+      )}
+
       <div
-        className={`hidden lg:flex fixed inset-y-0 left-0 z-30 flex-col bg-gradient-to-b from-brand-900 via-brand-800 to-brand-900 text-white shadow-2xl transition-all duration-300 ease-in-out ${isHovered ? 'w-60' : 'w-16'
+        className={`flex flex-1 flex-col relative z-10 transition-all duration-300 ml-0 ${isPrivileged ? (isHovered ? 'lg:ml-60' : 'lg:ml-16') : ''
           }`}
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
       >
-        <SidebarContent expanded={isHovered} />
-      </div>
-
-      <div className={`flex flex-1 flex-col relative z-10 transition-all duration-300 ml-0 ${isHovered ? 'lg:ml-60' : 'lg:ml-16'}`}>
-
-        {/* Header */}
         <header className="sticky top-0 z-40 flex items-center justify-between bg-lead-100 px-4 py-3 shadow-sm border-b border-lead-300 sm:px-6 lg:px-8">
           <div className="flex items-center gap-3">
-            <button
-              onClick={() => setMobileOpen(true)}
-              className="lg:hidden p-2 rounded-lg text-lead-600 hover:bg-lead-200 transition"
-              aria-label="Abrir menú"
-            >
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-              </svg>
-            </button>
+            {isPrivileged && (
+              <button
+                onClick={() => setMobileOpen(true)}
+                className="lg:hidden p-2 rounded-lg text-lead-600 hover:bg-lead-200 transition"
+                aria-label="Abrir menú"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              </button>
+            )}
             <div>
-              <p className="text-[0.6rem] uppercase tracking-[0.3em] text-brand-600 font-bold hidden sm:block">Panel General</p>
+              <p className="text-[0.6rem] uppercase tracking-[0.3em] text-brand-600 font-bold hidden sm:block">
+                {isPrivileged ? 'Panel General' : 'Mi cuenta'}
+              </p>
               <h1 className="text-base font-bold text-lead-900 sm:text-lg">
-                {user?.role === 'gerente' ? 'Gerente' : 'Administración'}
+                {isPrivileged
+                  ? (user?.role === 'gerente' ? 'Gerente' : 'Administración')
+                  : (user ? `${user.names} ${user.lastName}`.trim() : 'Perfil')}
               </h1>
             </div>
           </div>
@@ -223,12 +236,10 @@ const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                 <p className="text-[0.6rem] uppercase tracking-wider text-lead-400 font-semibold">{user.role?.replace(/_/g, ' ')}</p>
               </div>
             )}
-            {/* ✅ Fix: UserDropdown unificado para mobile y desktop */}
             <UserDropdownShared />
           </div>
         </header>
 
-        {/* Modal cambiar contraseña */}
         {showChangePassword && user && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-lead-900/60 backdrop-blur-sm px-4">
             <div className="w-full max-w-md overflow-hidden rounded-xl bg-lead-50 shadow-2xl ring-1 ring-black/5">

@@ -2,6 +2,7 @@ import React, { useState, useEffect, FormEvent } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../providers/AuthProvider';
 import PasswordInput from '../components/shared/PasswordInput';
+import { hasPrivilegedRole } from '../routes/ProtectedRoute';
 
 export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
@@ -14,9 +15,14 @@ export const LoginPage: React.FC = () => {
 
   useEffect(() => {
     if (isAuthenticated && user) {
-      const fallback = user.role === 'admin' ? '/dashboard' : '/dashboard';
-      const target = (location.state as { from?: string } | null)?.from || fallback;
-      navigate(target, { replace: true });
+      const from = (location.state as { from?: string } | null)?.from;
+      if (from && hasPrivilegedRole(user.role)) {
+        navigate(from, { replace: true });
+      } else if (hasPrivilegedRole(user.role)) {
+        navigate('/users', { replace: true });
+      } else {
+        navigate('/profile', { replace: true });
+      }
     }
   }, [isAuthenticated, user, location.state, navigate]);
 
@@ -37,7 +43,6 @@ export const LoginPage: React.FC = () => {
     }
   };
 
-  // Loading state
   if (isLoading && !submitting && !isAuthenticated) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-brand-900">
@@ -60,7 +65,6 @@ export const LoginPage: React.FC = () => {
       <div className="absolute -top-40 -right-28 h-96 w-96 rounded-full bg-brand-400/20 blur-3xl" />
 
       <div className="relative w-full max-w-sm space-y-10">
-        {/* Logo / Brand */}
         <div className="space-y-2 text-center">
           <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-xl border border-white/20 bg-white/10 backdrop-blur-sm text-white">
             <span className="text-xl font-semibold">S</span>
@@ -69,14 +73,12 @@ export const LoginPage: React.FC = () => {
           <div className="text-2xl font-bold tracking-[0.3em] text-accent-400">ELECTRIK</div>
         </div>
 
-        {/* Login Card */}
         <div className="space-y-6 rounded-[2rem] bg-brand-900/40 px-8 py-10 shadow-2xl border border-white/10 backdrop-blur-xl">
           <div>
             <h1 className="text-2xl font-bold uppercase tracking-wide text-white">Iniciar sesión</h1>
             <p className="text-sm text-brand-100/80 mt-1">Accede con tu usuario y contraseña.</p>
           </div>
 
-          {/* Error message */}
           {(formError || error) && (
             <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm font-medium text-red-200">
               {formError || error}
