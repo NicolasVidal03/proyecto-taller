@@ -64,17 +64,17 @@ const PresaleFormModal: React.FC<PresaleFormModalProps> = ({
 
     const { presaleById } = usePresales();
 
-    const [presale, setPresale]               = useState<Presale | null>(null);
+    const [presale, setPresale] = useState<Presale | null>(null);
     const [productDetails, setProductDetails] = useState<ProductDetail[]>([]);
-    const [deliveryDate, setDeliveryDate]     = useState('');
-    const [note, setNote]                     = useState('');
-    const [errors, setErrors]                 = useState<Record<string, string>>({});
+    const [deliveryDate, setDeliveryDate] = useState('');
+    const [note, setNote] = useState('');
+    const [errors, setErrors] = useState<Record<string, string>>({});
 
-    const [searchBusiness, setSearchBusiness]             = useState('');
-    const [selectedBusiness, setSelectedBusiness]         = useState<Business | null>(null);
+    const [searchBusiness, setSearchBusiness] = useState('');
+    const [selectedBusiness, setSelectedBusiness] = useState<Business | null>(null);
     const [showBusinessDropdown, setShowBusinessDropdown] = useState(false);
 
-    const [searchProduct, setSearchProduct]             = useState('');
+    const [searchProduct, setSearchProduct] = useState('');
     const [showProductDropdown, setShowProductDropdown] = useState(false);
 
     const debouncedBusinessSearch = useDebounce(searchBusiness, 400);
@@ -204,16 +204,16 @@ const PresaleFormModal: React.FC<PresaleFormModalProps> = ({
         }
 
         onSubmit({
-            clientId:     selectedBusiness.clientId,
-            businessId:   selectedBusiness.id,
-            branchId:     auth.user.branchId,
+            clientId: selectedBusiness.clientId,
+            businessId: selectedBusiness.id,
+            branchId: auth.user.branchId,
             deliveryDate,
-            notes:        note || null,
+            notes: note || null,
             details: productDetails.map((d) => ({
-                productId:         d.product.id,
+                productId: d.product.id,
                 quantityRequested: d.productQuantity ?? 1,
-                priceTypeId:       d.selectedPriceTypeId!,
-                unitPrice:         Number(d.selectedPrice),
+                priceTypeId: d.selectedPriceTypeId!,
+                unitPrice: Number(d.selectedPrice),
             })),
         });
     };
@@ -274,9 +274,8 @@ const PresaleFormModal: React.FC<PresaleFormModalProps> = ({
                                         key={b.id}
                                         type="button"
                                         onClick={() => handleSelectBusiness(b)}
-                                        className={`w-full text-left px-4 py-3 hover:bg-lead-50 transition-colors border-b border-lead-100 last:border-b-0 ${
-                                            selectedBusiness?.id === b.id ? 'bg-brand-50 text-brand-700' : ''
-                                        }`}
+                                        className={`w-full text-left px-4 py-3 hover:bg-lead-50 transition-colors border-b border-lead-100 last:border-b-0 ${selectedBusiness?.id === b.id ? 'bg-brand-50 text-brand-700' : ''
+                                            }`}
                                     >
                                         <p className="font-medium text-sm text-lead-800">
                                             {b.name}{b.clientName ? ` — ${b.clientName}` : ''}
@@ -376,11 +375,10 @@ const PresaleFormModal: React.FC<PresaleFormModalProps> = ({
                                                                 )
                                                             )
                                                         }
-                                                        className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs border transition-colors ${
-                                                            detail.selectedPriceTypeId === price.priceTypeId
+                                                        className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs border transition-colors ${detail.selectedPriceTypeId === price.priceTypeId
                                                                 ? 'bg-brand-600 text-white border-brand-600'
                                                                 : 'bg-brand-50 text-brand-700 border-brand-100 hover:bg-brand-100'
-                                                        }`}
+                                                            }`}
                                                     >
                                                         {price.priceTypeName}: {Number(price.price).toFixed(2)} Bs.
                                                     </button>
@@ -427,12 +425,12 @@ const PresaleFormModal: React.FC<PresaleFormModalProps> = ({
                                                                 prev.map((d, i) =>
                                                                     i === index
                                                                         ? {
-                                                                              ...d,
-                                                                              productQuantity: Math.min(
-                                                                                  (d.productQuantity ?? 1) + 1,
-                                                                                  detail.product.branch?.stockQty ?? Infinity,
-                                                                              ),
-                                                                          }
+                                                                            ...d,
+                                                                            productQuantity: Math.min(
+                                                                                (d.productQuantity ?? 1) + 1,
+                                                                                detail.product.branch?.stockQty ?? Infinity,
+                                                                            ),
+                                                                        }
                                                                         : d,
                                                                 )
                                                             )
@@ -452,9 +450,9 @@ const PresaleFormModal: React.FC<PresaleFormModalProps> = ({
                                             )}
                                         </div>
                                         <div className="mx-3 flex items-center justify-end min-w-[90px]">
-                                            {detail.selectedPrice && detail.productQuantity ? (
+                                            {detail.selectedPrice !== null ? (
                                                 <p className="text-base font-semibold text-brand-700">
-                                                    {(Number(detail.selectedPrice) * detail.productQuantity).toFixed(2)} Bs.
+                                                    {(Number(detail.selectedPrice) * (detail.productQuantity ?? 1)).toFixed(2)} Bs.
                                                 </p>
                                             ) : (
                                                 <p className="text-base text-lead-300">—</p>
@@ -486,9 +484,8 @@ const PresaleFormModal: React.FC<PresaleFormModalProps> = ({
                                 value={deliveryDate}
                                 onChange={(e) => setDeliveryDate(e.target.value)}
                                 min={new Date().toISOString().split('T')[0]}
-                                className={`mt-1 block w-full rounded-lg border px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500 focus:outline-none ${
-                                    errors.date ? 'border-red-500' : 'border-lead-300 bg-white'
-                                }`}
+                                className={`mt-1 block w-full rounded-lg border px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500 focus:outline-none ${errors.date ? 'border-red-500' : 'border-lead-300 bg-white'
+                                    }`}
                             />
                             {errors.date && <p className="mt-1 text-xs text-red-500">{errors.date}</p>}
                         </div>
