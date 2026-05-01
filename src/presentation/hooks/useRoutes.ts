@@ -41,6 +41,7 @@ export const useRoutes = (): UseRoutesReturn => {
     setError(null);
     try {
       const newRoute = await container.routes.create(data);
+      setRoutes(prev => [newRoute, ...prev]);
       return newRoute;
     } catch (err) {
       setError({ message: extractErrorMessage(err), code: 'CREATE_ERROR' });

@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Area, Route, User } from '@domain/entities';
+import { Pagination } from '@presentation/components/shared/Pagination';
 
 type RoutesTableProps = {
     routes: Route[];
@@ -9,11 +10,11 @@ type RoutesTableProps = {
     onEdit: (route: Route) => void;
 };
 
-/** Devuelve true si la fecha de la ruta es hoy o en el futuro */
+const PAGE_SIZE_OPTIONS = [10, 20, 50];
+
 function isEditableDate(assignedDate: string): boolean {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    // Normalizar a YYYY-MM-DD para evitar desfase por timezone
     const routeDate = new Date(String(assignedDate).slice(0, 10) + 'T00:00:00');
     return routeDate >= today;
 }
@@ -26,41 +27,76 @@ const RoutesTable: React.FC<RoutesTableProps> = ({
     onEdit,
 }) => {
     const [filterDate, setFilterDate] = useState('');
+    const [page, setPage] = useState(1);
+    const [pageSize, setPageSize] = useState(PAGE_SIZE_OPTIONS[0]);
 
-    const filteredRoutes = [...routes]
-        .filter(r => !filterDate || String(r.assignedDate).slice(0, 10) === filterDate)
-        .sort((a, b) => new Date(b.assignedDate).getTime() - new Date(a.assignedDate).getTime());
-
-    const isEmpty = filteredRoutes.length === 0;
-    const userMap = new Map(users.map(u => [u.id, u.names + ' ' + u.lastName]));
-    const areaMap = new Map(areas.map(a => [a.id, a.name]));
+    const userMap = useMemo(() => new Map(users.map(u => [u.id, `${u.names} ${u.lastName}`])), [users]);
+    const areaMap = useMemo(() => new Map(areas.map(a => [a.id, a.name])), [areas]);
     const isBusy = (id: number) => busyId != null && busyId === id;
+
+    const filteredRoutes = useMemo(() => {
+        return [...routes]
+            .filter(r => !filterDate || String(r.assignedDate).slice(0, 10) === filterDate)
+            .sort((a, b) => new Date(b.assignedDate).getTime() - new Date(a.assignedDate).getTime());
+    }, [routes, filterDate]);
+
+    const handleFilterChange = (value: string) => {
+        setFilterDate(value);
+        setPage(1);
+    };
+
+    const handlePageSizeChange = (value: number) => {
+        setPageSize(value);
+        setPage(1);
+    };
+
+    const totalPages = Math.max(1, Math.ceil(filteredRoutes.length / pageSize));
+    const safePage = Math.min(page, totalPages);
+    const paginatedRoutes = filteredRoutes.slice((safePage - 1) * pageSize, safePage * pageSize);
+    const isEmpty = filteredRoutes.length === 0;
 
     return (
         <div className="card shadow-xl ring-1 ring-black/5">
             <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between border-b border-lead-100 pb-4">
                 <div>
                     <h3 className="text-xl font-bold text-brand-900">Rutas Asignadas</h3>
-                    <p className="text-sm text-lead-500">{routes.length} ruta(s) asignadas.</p>
+                    <p className="text-sm text-lead-500">
+                        {filteredRoutes.length} ruta(s)
+                        {filterDate ? ' para la fecha seleccionada' : ' en total'}.
+                    </p>
                 </div>
-                <div className="flex flex-col gap-2 justify-center">
+                <div className="flex flex-col gap-2 items-end">
                     {filterDate && (
                         <button
                             type="button"
-                            onClick={() => setFilterDate('')}
+                            onClick={() => handleFilterChange('')}
                             className="text-xs text-lead-500 hover:text-lead-700"
                         >
-                            Limpiar
+                            Limpiar filtro
                         </button>
                     )}
                     <input
                         type="date"
                         value={filterDate}
-                        onChange={(e) => setFilterDate(e.target.value)}
-                        className="mt-1 block rounded-lg border border-lead-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500"
+                        onChange={(e) => handleFilterChange(e.target.value)}
+                        className="block rounded-lg border border-lead-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500"
                     />
                 </div>
             </div>
+
+            {!isEmpty && (
+                <div className="mb-3 flex justify-end">
+                    <select
+                        value={pageSize}
+                        onChange={(e) => handlePageSizeChange(Number(e.target.value))}
+                        className="rounded-lg border border-lead-300 bg-white px-3 py-1.5 text-xs shadow-sm focus:border-brand-500 focus:outline-none"
+                    >
+                        {PAGE_SIZE_OPTIONS.map(s => (
+                            <option key={s} value={s}>{s} por página</option>
+                        ))}
+                    </select>
+                </div>
+            )}
 
             <div className="overflow-x-auto rounded-lg border border-lead-200 bg-lead-50 shadow-lg">
                 <table className="min-w-full text-sm">
@@ -76,11 +112,13 @@ const RoutesTable: React.FC<RoutesTableProps> = ({
                     <tbody className="divide-y divide-lead-200">
                         {isEmpty ? (
                             <tr>
-                                <td className="px-4 py-6 text-center text-sm text-lead-600" colSpan={5}>
-                                    No hay rutas asignadas para mostrar.
+                                <td className="px-4 py-10 text-center text-sm text-lead-500" colSpan={5}>
+                                    <div className="flex flex-col items-center gap-2">
+                                        <span>No hay rutas para mostrar.</span>
+                                    </div>
                                 </td>
                             </tr>
-                        ) : filteredRoutes.map(r => {
+                        ) : paginatedRoutes.map(r => {
                             const editable = isEditableDate(r.assignedDate);
                             const busy = isBusy(r.id);
 
@@ -129,6 +167,14 @@ const RoutesTable: React.FC<RoutesTableProps> = ({
                     </tbody>
                 </table>
             </div>
+            <Pagination
+                currentPage={safePage}
+                totalPages={totalPages}
+                totalItems={filteredRoutes.length}
+                itemsPerPage={pageSize}
+                onPageChange={setPage}
+                className="mt-5"
+            />
         </div>
     );
 };
