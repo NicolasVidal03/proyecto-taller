@@ -10,7 +10,7 @@ type BranchesTableProps = {
 
 const BranchesTable: React.FC<BranchesTableProps> = ({ branches, onEdit, onDelete, busyBranchId = null }) => {
   const isEmpty = branches.length === 0;
-  const isBusy  = (id: number) => busyBranchId != null && busyBranchId === id;
+  const isBusy = (id: number) => busyBranchId != null && busyBranchId === id;
 
   if (isEmpty) {
     return (
@@ -28,7 +28,7 @@ const BranchesTable: React.FC<BranchesTableProps> = ({ branches, onEdit, onDelet
             key={branch.id}
             className="flex items-center justify-between gap-3 rounded-xl border border-lead-200 bg-lead-50 px-4 py-3 shadow-sm"
           >
-            <span className="truncate font-medium text-lead-800">{branch.name}</span>
+            <span className="min-w-0 max-w-[60%] whitespace-normal break-words font-medium text-lead-800">{branch.name}</span>
             <div className="flex shrink-0 gap-2">
               <button
                 type="button"
@@ -50,6 +50,7 @@ const BranchesTable: React.FC<BranchesTableProps> = ({ branches, onEdit, onDelet
           </div>
         ))}
       </div>
+
       <div className="hidden md:block overflow-x-auto rounded-lg border border-lead-200 bg-lead-50 shadow-lg">
         <table className="min-w-full text-sm">
           <thead className="bg-brand-600 text-xs uppercase tracking-wider text-white">
@@ -61,7 +62,9 @@ const BranchesTable: React.FC<BranchesTableProps> = ({ branches, onEdit, onDelet
           <tbody className="divide-y divide-lead-200">
             {branches.map(branch => (
               <tr key={branch.id} className="transition-colors hover:bg-white">
-                <td className="px-4 py-3 text-lead-600">{branch.name}</td>
+                <td className="px-4 py-3 text-lead-600 max-w-[300px]">
+                  <span className="block truncate" title={branch.name}>{branch.name}</span>
+                </td>
                 <td className="px-4 py-3 text-center">
                   <div className="flex items-center justify-center gap-2">
                     <button

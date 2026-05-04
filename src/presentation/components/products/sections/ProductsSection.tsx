@@ -55,7 +55,6 @@ export const ProductsSection: React.FC<ProductsSectionProps> = ({
   const [viewProduct, setViewProduct] = React.useState<Product | null>(null);
   const debouncedSearch = useDebounce(searchTerm, 500);
 
-  // Ordenar productos
   const sortedProducts = useMemo(() => {
     const safeProducts = Array.isArray(products) ? products.filter(Boolean) : [];
     return [...safeProducts].sort((a, b) => 
@@ -63,12 +62,10 @@ export const ProductsSection: React.FC<ProductsSectionProps> = ({
     );
   }, [products]);
 
-  // Cargar datos auxiliares
   useEffect(() => {
     Promise.all([fetchCategories(), fetchBrands(), fetchPresentations(), fetchColors()]);
   }, [fetchCategories, fetchBrands, fetchPresentations, fetchColors]);
 
-  // Aplicar filtros
   useEffect(() => {
     const filters: { search?: string; categoryId?: number; brandId?: number } = {};
     if (debouncedSearch.trim()) {
@@ -83,7 +80,6 @@ export const ProductsSection: React.FC<ProductsSectionProps> = ({
     applyFilters(filters);
   }, [debouncedSearch, categoryFilter, brandFilter, applyFilters]);
 
-  // Mostrar errores
   useEffect(() => {
     if (error) {
       onToast('error', error);
