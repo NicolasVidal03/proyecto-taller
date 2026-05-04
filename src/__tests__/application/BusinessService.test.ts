@@ -1,9 +1,16 @@
 import { BusinessService } from '@application/BusinessService';
-import { IBusinessRepository, CreateBusinessDTO } from '@domain/ports/IBusinessRepository';
+import { IBusinessRepository, CreateBusinessDTO, PaginatedBusinessesResult } from '@domain/ports/IBusinessRepository';
 import { Business } from '@domain/entities/Business';
 
 const mockBusiness = (): Business => ({ id: 1, name: 'Tienda Central' } as Business);
 const mockBusiness2 = (): Business => ({ id: 2, name: 'Tienda Norte' } as Business);
+
+const mockPaginated = (businesses: Business[]): PaginatedBusinessesResult => ({
+    data: businesses,
+    total: businesses.length,
+    totalPages: 1,
+    page: 1,
+});
 
 const makeBusinessRepo = (): jest.Mocked<IBusinessRepository> => ({
     getAll: jest.fn(),
@@ -14,10 +21,19 @@ const makeBusinessRepo = (): jest.Mocked<IBusinessRepository> => ({
 });
 
 describe('BusinessService', () => {
-    it('listAll retorna todos los negocios', async () => {
+    it('listPaginated retorna los negocios paginados', async () => {
         const repo = makeBusinessRepo();
-        repo.getAll.mockResolvedValue([mockBusiness(), mockBusiness2()]);
-        expect(await new BusinessService(repo).listAll()).toHaveLength(2);
+        repo.getAll.mockResolvedValue(mockPaginated([mockBusiness(), mockBusiness2()]));
+        const result = await new BusinessService(repo).listPaginated({});
+        expect(result.data).toHaveLength(2);
+        expect(result.total).toBe(2);
+    });
+
+    it('listPaginated transmite los filtros al repositorio', async () => {
+        const repo = makeBusinessRepo();
+        repo.getAll.mockResolvedValue(mockPaginated([mockBusiness()]));
+        await new BusinessService(repo).listPaginated({ page: 2, limit: 5, search: 'Tienda' });
+        expect(repo.getAll).toHaveBeenCalledWith({ page: 2, limit: 5, search: 'Tienda' });
     });
 
     it('getByClient busca según el clientId', async () => {
@@ -27,7 +43,7 @@ describe('BusinessService', () => {
         expect(repo.getByClientId).toHaveBeenCalledWith(5);
     });
 
-        it('create funciona, usa el DTO y gaurda con userId', async () => {
+    it('create funciona, usa el DTO y guarda con userId', async () => {
         const repo = makeBusinessRepo();
         repo.create.mockResolvedValue(mockBusiness());
         const dto: CreateBusinessDTO = { name: 'Nueva', businessTypeId: 1, clientId: 2 };
