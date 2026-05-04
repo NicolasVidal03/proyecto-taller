@@ -1,12 +1,21 @@
 import { Presale } from "@domain/entities/Presale";
-import { CreatePresaleDTO, IPresaleRepository, PaginatedPresaleReport, PaginatedPresales, PresaleFilters, PresaleReportFilters, UpdatePresaleDTO } from "@domain/ports/IPresaleRepository";
+import {
+    CreatePresaleDTO,
+    GetPresalesByDateBusinessAndUserFilters,
+    IPresaleRepository,
+    PaginatedPresaleReport,
+    PaginatedPresales,
+    PresaleFilters,
+    PresaleReportFilters,
+    UpdatePresaleDTO,
+} from "@domain/ports/IPresaleRepository";
 
 export class PresaleService {
-    constructor(private repo: IPresaleRepository) {}
+    constructor(private repo: IPresaleRepository) { }
 
     async getAll(filters?: PresaleFilters): Promise<PaginatedPresales> {
         return this.repo.getAll(filters)
-    } 
+    }
 
     async getById(id: number, details?: boolean): Promise<Presale> {
         return this.repo.getById(id, details);
@@ -36,12 +45,16 @@ export class PresaleService {
         filters?: PresaleReportFilters, page?: number, limit?: number,): Promise<PaginatedPresaleReport> {
         return this.repo.getReport(filters, page, limit);
     }
- 
+
     async downloadReportPdf(filters?: PresaleReportFilters): Promise<Blob> {
         return this.repo.downloadReportPdf(filters);
     }
- 
+
     async downloadReportExcel(filters?: PresaleReportFilters): Promise<Blob> {
         return this.repo.downloadReportExcel(filters);
+    }
+
+    async getByDateBusinessAndUser(filters: GetPresalesByDateBusinessAndUserFilters): Promise<Presale[]> {
+        return this.repo.getByDateBusinessAndUser(filters);
     }
 }

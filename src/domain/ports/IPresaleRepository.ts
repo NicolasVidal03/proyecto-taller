@@ -124,6 +124,11 @@ export interface PaginatedPresaleReport {
   totalPages: number;
 }
 
+export interface GetPresalesByDateBusinessAndUserFilters {
+  deliveryDate: string;
+  businessId: number;
+  userId: number;
+}
 
 export interface IPresaleRepository {
   getAll(filters?: PresaleFilters): Promise<PaginatedPresales>;
@@ -136,4 +141,5 @@ export interface IPresaleRepository {
   getReport(filters?: PresaleReportFilters, page?: number, limit?: number): Promise<PaginatedPresaleReport>;
   downloadReportPdf(filters?: PresaleReportFilters): Promise<Blob>;
   downloadReportExcel(filters?: PresaleReportFilters): Promise<Blob>;
+  getByDateBusinessAndUser(filters: GetPresalesByDateBusinessAndUserFilters): Promise<Presale[]>;
 }

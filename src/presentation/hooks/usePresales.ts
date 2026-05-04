@@ -1,5 +1,5 @@
 import { Presale } from "@domain/entities";
-import { CreatePresaleDTO, PresaleFilters, UpdatePresaleDTO } from "@domain/ports";
+import { CreatePresaleDTO, GetPresalesByDateBusinessAndUserFilters, PresaleFilters, UpdatePresaleDTO } from "@domain/ports";
 import { container } from "@infrastructure/config";
 import { useCallback, useState } from "react";
 import { extractErrorMessage, usePagination } from "./shared";
@@ -24,6 +24,7 @@ export interface UsePresalesReturn {
     createPresale: (data: CreatePresaleDTO) => Promise<Presale | null>;
     updatePresale: (id: number, data: UpdatePresaleDTO) => Promise<Presale | null>;
     cancelPresale: (id: number, reason?: string) => Promise<Presale | null>;
+    fetchPresalesByDateBusinessAndUser: (filters: GetPresalesByDateBusinessAndUserFilters) => Promise<Presale[]>;
 }
 
 const LIMIT = 10;
@@ -136,6 +137,18 @@ export const usePresales = (): UsePresalesReturn => {
         }
     }, [clearCache, refreshCurrentPage]);
 
+    const fetchPresalesByDateBusinessAndUser = useCallback(
+        async (filters: GetPresalesByDateBusinessAndUserFilters): Promise<Presale[]> => {
+            try {
+                return await container.presales.getByDateBusinessAndUser(filters);
+            } catch (err) {
+                setCrudError(extractErrorMessage(err));
+                return [];
+            }
+        },
+        []
+    );
+
     const clearError = useCallback(() => {
         clearPaginationError();
         setCrudError(null);
@@ -158,6 +171,6 @@ export const usePresales = (): UsePresalesReturn => {
         updatePresale,
         presaleById,
         cancelPresale,
+        fetchPresalesByDateBusinessAndUser,
     };
 };
-

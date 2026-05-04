@@ -6,6 +6,7 @@ import Loader from '../components/shared/Loader';
 import { ToastContainer, useToast } from '../components/shared/Toast';
 import { User } from '../../domain/entities/User';
 import { Activity, ActivityBusinesses } from '../../domain/entities/Activity';
+import BusinessPresalesPanel from '@presentation/components/activities/BusinessPresalePanel';
 
 const formatDateForInput = (date: Date): string => date.toISOString().split('T')[0];
 const getToday = (): Date => new Date();
@@ -424,7 +425,16 @@ export const ActivitiesPage: React.FC = () => {
                     </div>
                   </div>
                 </div>
+
+                <BusinessPresalesPanel
+                  deliveryDate={selectedDate}
+                  businessId={selectedActivity.business.id ?? 0}
+                  userId={selectedUser?.id ?? 0}
+                />
+
               </section>
+
+
             )}
           </div>
 

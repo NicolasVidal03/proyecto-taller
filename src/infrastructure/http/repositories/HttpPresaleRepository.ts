@@ -1,6 +1,15 @@
 import { Presale } from '@domain/entities';
 import { http } from '../httpClient';
-import { CreatePresaleDTO, IPresaleRepository, PaginatedPresaleReport, PaginatedPresales, PresaleFilters, PresaleReportFilters, UpdatePresaleDTO } from "@domain/ports/IPresaleRepository";
+import {
+    CreatePresaleDTO,
+    GetPresalesByDateBusinessAndUserFilters,
+    IPresaleRepository,
+    PaginatedPresaleReport,
+    PaginatedPresales,
+    PresaleFilters,
+    PresaleReportFilters,
+    UpdatePresaleDTO,
+} from "@domain/ports/IPresaleRepository";
 
 export class HttpPresaleRepository implements IPresaleRepository {
     async getAll(filters?: PresaleFilters): Promise<PaginatedPresales> {
@@ -51,6 +60,7 @@ export class HttpPresaleRepository implements IPresaleRepository {
         const res = await http.patch(`/presales/${id}/cancel`, { reason: reason ?? null });
         return res.data;
     }
+
     private buildReportParams(filters?: PresaleReportFilters): URLSearchParams {
         const params = new URLSearchParams();
         if (filters?.userId) params.append('userId', String(filters.userId));
@@ -65,7 +75,7 @@ export class HttpPresaleRepository implements IPresaleRepository {
         return res.data;
     }
 
-    async getReport(filters?: PresaleReportFilters, page?: number, limit?: number,): Promise<PaginatedPresaleReport> {
+    async getReport(filters?: PresaleReportFilters, page?: number, limit?: number): Promise<PaginatedPresaleReport> {
         const params = this.buildReportParams(filters);
         if (page) params.append('page', String(page));
         if (limit) params.append('limit', String(limit));
@@ -89,6 +99,16 @@ export class HttpPresaleRepository implements IPresaleRepository {
         const qs = params.toString();
         const url = qs ? `/presales/report/excel?${qs}` : '/presales/report/excel';
         const res = await http.get(url, { responseType: 'blob' });
+        return res.data;
+    }
+
+    async getByDateBusinessAndUser(filters: GetPresalesByDateBusinessAndUserFilters): Promise<Presale[]> {
+        const params = new URLSearchParams({
+            delivery_date: filters.deliveryDate,
+            business_id: String(filters.businessId),
+            user_id: String(filters.userId),
+        });
+        const res = await http.get(`/presales/by-date-business-user?${params.toString()}`);
         return res.data;
     }
 }
