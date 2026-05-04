@@ -19,7 +19,6 @@ type BusinessFormModalProps = {
   saving: boolean;
 };
 
-
 const BusinessFormModal: React.FC<BusinessFormModalProps> = ({
   business,
   clients,
@@ -44,7 +43,6 @@ const BusinessFormModal: React.FC<BusinessFormModalProps> = ({
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Client search state
   const [clientSearch, setClientSearch] = useState('');
   const [clientResults, setClientResults] = useState<Client[]>([]);
   const [clientSearching, setClientSearching] = useState(false);
@@ -53,13 +51,11 @@ const BusinessFormModal: React.FC<BusinessFormModalProps> = ({
   const clientSearchRef = useRef<HTMLDivElement>(null);
   const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Search clients dynamically
-  const searchClients = useCallback(async (term: string) => {
-    if (!term.trim()) {
-      setClientResults([]);
-      return;
-    }
+  const getClientFullName = (client: Client): string =>
+    `${client.lastName} ${client.secondLastName} ${client.name}`.trim();
 
+  const searchClients = useCallback(async (term: string) => {
+    if (!term.trim()) { setClientResults([]); return; }
     setClientSearching(true);
     try {
       const results = await container.clients.search({ search: term, limit: 10 });
@@ -72,21 +68,13 @@ const BusinessFormModal: React.FC<BusinessFormModalProps> = ({
     }
   }, []);
 
-  // Debounced search
   const handleClientSearchChange = (value: string) => {
     setClientSearch(value);
     setShowClientDropdown(true);
-
-    if (searchTimeoutRef.current) {
-      clearTimeout(searchTimeoutRef.current);
-    }
-
-    searchTimeoutRef.current = setTimeout(() => {
-      searchClients(value);
-    }, 300);
+    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+    searchTimeoutRef.current = setTimeout(() => { searchClients(value); }, 300);
   };
 
-  // Select client from dropdown
   const handleSelectClient = (client: Client) => {
     setSelectedClient(client);
     setClientId(client.id);
@@ -96,14 +84,12 @@ const BusinessFormModal: React.FC<BusinessFormModalProps> = ({
     if (errors.clientId) setErrors((prev) => ({ ...prev, clientId: '' }));
   };
 
-  // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (clientSearchRef.current && !clientSearchRef.current.contains(event.target as Node)) {
         setShowClientDropdown(false);
       }
     };
-
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
@@ -126,8 +112,6 @@ const BusinessFormModal: React.FC<BusinessFormModalProps> = ({
         setLng('');
       }
       setImageFile(null);
-
-      // Set selected client from clients list if editing
       if (business.clientId && clients.length > 0) {
         const existingClient = clients.find((c) => c.id === business.clientId);
         if (existingClient) {
@@ -174,11 +158,10 @@ const BusinessFormModal: React.FC<BusinessFormModalProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
-
     const dto: any = {
-      name: name.trim().replace(/\s+/g, " "),
+      name: name.trim().replace(/\s+/g, ' '),
       nit: nit.trim() || null,
-      address: address.trim().replace(/\s+/g, " ") || null,
+      address: address.trim().replace(/\s+/g, ' ') || null,
       clientId: clientId ? Number(clientId) : undefined,
       businessTypeId: businessTypeId ? Number(businessTypeId) : undefined,
       priceTypeId: priceTypeId === '' ? null : Number(priceTypeId),
@@ -188,53 +171,48 @@ const BusinessFormModal: React.FC<BusinessFormModalProps> = ({
     };
     if (imageFile) dto.imageFile = imageFile;
     if (isEdit && business) dto.id = business.id;
-
     onSave(dto as CreateBusinessDTO | UpdateBusinessDTO);
   };
 
   const title = isEdit ? 'Editar Negocio' : 'Nuevo Negocio';
   const submitLabel = isEdit ? 'Guardar cambios' : 'Crear negocio';
 
-  const getClientFullName = (client: Client): string => {
-    return `${client.lastName} ${client.secondLastName} ${client.name}`.trim();
-  };
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-lead-900/60 backdrop-blur-sm overflow-y-auto">
-      <div className="mx-4 my-10 w-full max-w-4xl overflow-hidden rounded-xl bg-lead-50 shadow-2xl ring-1 ring-black/5">
-        <div className="flex items-center justify-between bg-brand-600 px-6 py-4 text-white">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-lead-900/60 backdrop-blur-sm px-4">
+      <div className="w-full max-w-4xl max-h-[90vh] rounded-xl bg-lead-50 shadow-2xl ring-1 ring-black/5 flex flex-col">
+        <div className="sticky top-0 z-10 flex items-center justify-between bg-brand-600 px-6 py-4 text-white shrink-0">
           <h2 className="text-lg font-semibold tracking-wide">{title}</h2>
           <button
             type="button"
             onClick={onClose}
-            className="text-brand-100 hover:text-white transition-colors"
+            className="rounded-full p-1 text-brand-100 hover:text-white hover:bg-brand-700 transition-colors"
             disabled={saving}
           >
-            ✕
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+            </svg>
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-5 px-6 py-6">
+        <form onSubmit={handleSubmit} className="space-y-5 px-4 py-5 sm:px-6 sm:py-6 overflow-y-auto flex-1">
 
           <div className="flex flex-col gap-4">
 
-            {/* Fila 1: Nombre (70%) + NIT (30%) */}
-            <div className="flex gap-4">
-              <div style={{ flex: '0 0 66%' }}>
+            <div className="flex flex-col gap-4 sm:flex-row">
+              <div className="w-full sm:flex-[0_0_66%]">
                 <label className="block text-sm font-medium text-lead-700">Nombre *</label>
                 <input
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder='Ferretería San José'
-                  className={`mt-1 block w-full rounded-lg border px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500 ${errors.name ? 'border-red-500' : 'border-lead-300 bg-white'
-                    }`}
-                    maxLength={45}
+                  placeholder="Ferretería San José"
+                  className={`mt-1 block w-full rounded-lg border px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500 ${errors.name ? 'border-red-500' : 'border-lead-300 bg-white'}`}
+                  maxLength={45}
                   disabled={saving}
                 />
                 {errors.name && <p className="mt-1 text-xs text-red-600">{errors.name}</p>}
               </div>
 
-              <div style={{ flex: '0 0 calc(30% - 1rem)' }}>
+              <div className="w-full sm:flex-[0_0_calc(34%-1rem)]">
                 <label className="block text-sm font-medium text-lead-700">NIT</label>
                 <input
                   value={nit}
@@ -244,15 +222,14 @@ const BusinessFormModal: React.FC<BusinessFormModalProps> = ({
                     if (errors.nit) setErrors((prev) => ({ ...prev, nit: '' }));
                   }}
                   placeholder="Ej: 1234567891"
-                  className={`mt-1 block w-full rounded-lg border px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500 ${errors.nit ? 'border-red-500' : 'border-lead-300 bg-white'
-                    }`}
+                  className={`mt-1 block w-full rounded-lg border px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500 ${errors.nit ? 'border-red-500' : 'border-lead-300 bg-white'}`}
                   disabled={saving}
                 />
                 {errors.nit && <p className="mt-1 text-xs text-red-600">{errors.nit}</p>}
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
               <div ref={clientSearchRef} className="relative z-[60]">
                 <label className="block text-sm font-medium text-lead-700">Dueño (Cliente) *</label>
                 <div className="relative mt-1">
@@ -262,15 +239,14 @@ const BusinessFormModal: React.FC<BusinessFormModalProps> = ({
                     onChange={(e) => handleClientSearchChange(e.target.value)}
                     onFocus={() => clientSearch && setShowClientDropdown(true)}
                     placeholder="Buscar cliente..."
-                    className={`block w-full rounded-lg border px-3 py-2 text-sm pr-10 shadow-sm focus:border-brand-500 focus:ring-brand-500 ${errors.clientId ? 'border-red-500' : 'border-lead-300 bg-white'
-                      }`}
+                    className={`block w-full rounded-lg border px-3 py-2 text-sm pr-10 shadow-sm focus:border-brand-500 focus:ring-brand-500 ${errors.clientId ? 'border-red-500' : 'border-lead-300 bg-white'}`}
                     disabled={saving}
                   />
                   {clientSearching && (
                     <div className="absolute right-3 top-1/2 -translate-y-1/2">
                       <svg className="animate-spin h-4 w-4 text-brand-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                       </svg>
                     </div>
                   )}
@@ -323,8 +299,7 @@ const BusinessFormModal: React.FC<BusinessFormModalProps> = ({
                     setBusinessTypeId(e.target.value ? Number(e.target.value) : '');
                     if (errors.businessTypeId) setErrors((prev) => ({ ...prev, businessTypeId: '' }));
                   }}
-                  className={`mt-1 block w-full rounded-lg border px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500 ${errors.businessTypeId ? 'border-red-500' : 'border-lead-300 bg-white'
-                    }`}
+                  className={`mt-1 block w-full rounded-lg border px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500 ${errors.businessTypeId ? 'border-red-500' : 'border-lead-300 bg-white'}`}
                   disabled={saving}
                 >
                   <option value="">Seleccione...</option>
@@ -351,8 +326,7 @@ const BusinessFormModal: React.FC<BusinessFormModalProps> = ({
               </div>
             </div>
 
-            {/* Fila 3: Área + Dirección */}
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
               <div>
                 <label className="block text-sm font-medium text-lead-700">Área</label>
                 <select
@@ -368,7 +342,7 @@ const BusinessFormModal: React.FC<BusinessFormModalProps> = ({
                 </select>
               </div>
 
-              <div className="col-span-2">
+              <div className="sm:col-span-2">
                 <label className="block text-sm font-medium text-lead-700">Dirección</label>
                 <textarea
                   value={address}
@@ -379,7 +353,7 @@ const BusinessFormModal: React.FC<BusinessFormModalProps> = ({
                     el.style.height = `${el.scrollHeight}px`;
                   }}
                   maxLength={150}
-                  placeholder='Ej. Avenida América entre Jaime Mendoza y Daniel Albornos'
+                  placeholder="Ej. Avenida América entre Jaime Mendoza y Daniel Albornos"
                   rows={1}
                   className="mt-1 block w-full rounded-lg border border-lead-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500 resize-none overflow-hidden"
                   disabled={saving}
@@ -387,7 +361,6 @@ const BusinessFormModal: React.FC<BusinessFormModalProps> = ({
               </div>
             </div>
 
-            {/* Mapa + Estado activo + Imagen (igual que antes) */}
             <BusinessMapLocationPicker
               lat={lat}
               lng={lng}
@@ -421,12 +394,7 @@ const BusinessFormModal: React.FC<BusinessFormModalProps> = ({
                 type="file"
                 accept="image/*"
                 onChange={handleFileChange}
-                className="mt-1 block w-full text-sm text-lead-500
-        file:mr-4 file:py-2 file:px-4
-        file:rounded-lg file:border-0
-        file:text-sm file:font-semibold
-        file:bg-brand-50 file:text-brand-700
-        hover:file:bg-brand-100"
+                className="mt-1 block w-full text-sm text-lead-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100"
                 disabled={saving}
               />
               {business?.pathImage && !imageFile && (
@@ -436,18 +404,18 @@ const BusinessFormModal: React.FC<BusinessFormModalProps> = ({
 
           </div>
 
-          <div className="flex justify-end gap-3 pt-4 border-t border-lead-100">
+          <div className="flex flex-col-reverse gap-2 pt-4 border-t border-lead-100 sm:flex-row sm:justify-end sm:gap-3">
             <button
               type="button"
               onClick={onClose}
-              className="rounded-lg border border-lead-300 px-4 py-2 text-sm font-medium text-lead-700 hover:bg-lead-100 transition-colors"
+              className="w-full sm:w-auto rounded-lg border border-lead-300 px-4 py-2 text-sm font-medium text-lead-700 hover:bg-lead-100 transition-colors"
               disabled={saving}
             >
               Cancelar
             </button>
             <button
               type="submit"
-              className="rounded-lg bg-accent-500 px-4 py-2 text-sm font-medium text-white shadow-md hover:bg-accent-600 disabled:opacity-60"
+              className="w-full sm:w-auto rounded-lg bg-accent-500 px-4 py-2 text-sm font-medium text-white shadow-md hover:bg-accent-600 disabled:opacity-60"
               disabled={saving}
             >
               {saving ? 'Guardando...' : submitLabel}

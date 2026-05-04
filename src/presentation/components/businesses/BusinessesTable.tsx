@@ -65,9 +65,8 @@ const BusinessesTable: React.FC<BusinessesTableProps> = ({
                 <p className="text-xs text-lead-400 mt-0.5">{businessTypeMap[b.businessTypeId] || `Tipo ${b.businessTypeId}`}</p>
                 {b.address && <p className="text-xs text-lead-400 mt-0.5 truncate">{b.address}</p>}
               </div>
-              <span className={`shrink-0 inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                b.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-              }`}>
+              <span className={`shrink-0 inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${b.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                }`}>
                 {b.isActive ? 'Activo' : 'Inactivo'}
               </span>
             </div>
@@ -185,9 +184,8 @@ const BusinessesTable: React.FC<BusinessesTableProps> = ({
                   <span className="block truncate" title={b.address || ''}>{b.address || '-'}</span>
                 </td>
                 <td className="px-4 py-3">
-                  <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                    b.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                  }`}>
+                  <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${b.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                    }`}>
                     {b.isActive ? 'Activo' : 'Inactivo'}
                   </span>
                 </td>

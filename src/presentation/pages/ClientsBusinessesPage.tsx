@@ -294,11 +294,10 @@ export const ClientsBusinessesPage: React.FC = () => {
               <button
                 key={sec}
                 type="button"
-                className={`rounded-full px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-semibold transition shadow ${
-                  activeSection === sec
+                className={`rounded-full px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-semibold transition shadow ${activeSection === sec
                     ? 'bg-white text-brand-700 ring-2 ring-brand-200'
                     : 'bg-white/70 text-lead-600 hover:bg-white'
-                }`}
+                  }`}
                 onClick={() => setActiveSection(sec)}
               >
                 {sec === 'clients' ? 'Clientes' : 'Negocios'}
@@ -445,11 +444,10 @@ export const ClientsBusinessesPage: React.FC = () => {
         <ConfirmDialog
           open={!!toToggleBusiness}
           title={`${toToggleBusiness.isActive ? 'Desactivar' : 'Activar'} negocio`}
-          description={`¿Confirmas ${toToggleBusiness.isActive ? 'desactivar' : 'activar'} el negocio "${toToggleBusiness.name}"? ${
-            toToggleBusiness.isActive
+          description={`¿Confirmas ${toToggleBusiness.isActive ? 'desactivar' : 'activar'} el negocio "${toToggleBusiness.name}"? ${toToggleBusiness.isActive
               ? 'El negocio se marcará como inactivo pero seguirá visible en el sistema.'
               : 'El negocio se marcará como activo nuevamente.'
-          }`}
+            }`}
           confirmLabel={toToggleBusiness.isActive ? 'Desactivar' : 'Activar'}
           onConfirm={confirmToggleBusiness}
           onCancel={() => setToToggleBusiness(null)}

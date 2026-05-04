@@ -34,8 +34,8 @@ export const CategoriesSection: React.FC<CategoriesSectionProps> = ({ searchTerm
     const term = searchTerm.trim().toLowerCase();
     let list = [...categories];
     if (term) {
-      list = list.filter(c => 
-        (c.name || '').toLowerCase().includes(term) || 
+      list = list.filter(c =>
+        (c.name || '').toLowerCase().includes(term) ||
         (c.description || '').toLowerCase().includes(term)
       );
     }
@@ -64,8 +64,8 @@ export const CategoriesSection: React.FC<CategoriesSectionProps> = ({ searchTerm
     modal.setSubmitting(true);
     try {
       if (modal.modalState.mode === 'create') {
-        const result = await createCategory({ 
-          name: values.name, 
+        const result = await createCategory({
+          name: values.name,
           description: values.description,
           userId: auth.user.id
         });
@@ -75,8 +75,8 @@ export const CategoriesSection: React.FC<CategoriesSectionProps> = ({ searchTerm
           modal.close();
         }
       } else if (modal.modalState.entity) {
-        const result = await updateCategory(modal.modalState.entity.id, { 
-          name: values.name, 
+        const result = await updateCategory(modal.modalState.entity.id, {
+          name: values.name,
           description: values.description,
           user_id: auth.user.id
         });
@@ -97,7 +97,7 @@ export const CategoriesSection: React.FC<CategoriesSectionProps> = ({ searchTerm
   const handleConfirmDelete = async () => {
     if (!confirm.dialogState.entity || !auth.user) return;
     const category = confirm.dialogState.entity;
-    
+
     await confirm.executeWithLoading(async () => {
       const success = await updateCategoryState(category.id, auth.user!.id);
       if (success) {
@@ -113,9 +113,9 @@ export const CategoriesSection: React.FC<CategoriesSectionProps> = ({ searchTerm
           <h3 className="text-xl font-bold text-brand-900">Listado de categorías</h3>
           <p className="text-sm text-lead-500">{filteredCategories.length} categoría(s) encontradas.</p>
         </div>
-        <button 
-          type="button" 
-          className="btn-primary bg-accent-500 hover:bg-accent-600 border-transparent text-white shadow-md flex items-center gap-2" 
+        <button
+          type="button"
+          className="btn-primary bg-accent-500 hover:bg-accent-600 border-transparent text-white shadow-md flex items-center gap-2"
           onClick={modal.openCreate}
         >
           Crear categoría
