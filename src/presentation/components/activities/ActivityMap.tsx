@@ -3,7 +3,6 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { Activity, ActivityBusinesses, ActivityDetails } from '../../../domain/entities/Activity';
 
-// Fix para iconos de Leaflet
 delete (L.Icon.Default.prototype as any)._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
@@ -11,7 +10,6 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
 });
 
-// Iconos personalizados por estado de actividad
 const createCustomIcon = (color: string, borderColor: string) => {
   return L.divIcon({
     className: 'custom-marker',
@@ -90,7 +88,6 @@ const ActivityMap: React.FC<ActivityMapProps> = ({
   const mapRef = useRef<L.Map | null>(null);
   const markersLayerRef = useRef<L.FeatureGroup | null>(null);
 
-
   useEffect(() => {
     if (!mapContainerRef.current || mapRef.current) return;
 
@@ -112,7 +109,6 @@ const ActivityMap: React.FC<ActivityMapProps> = ({
       mapRef.current = null;
     };
   }, []);
-
 
   useEffect(() => {
     const map = mapRef.current;
@@ -136,7 +132,7 @@ const ActivityMap: React.FC<ActivityMapProps> = ({
       const marker = L.marker([business.position.lat, business.position.lng], { icon });
 
       const popupContent = `
-        <div style="min-width: 200px; font-family: 'Inter', system-ui, sans-serif;">
+        <div style="min-width: 180px; max-width: 260px; font-family: 'Inter', system-ui, sans-serif;">
           <h3 style="margin: 0 0 8px 0; font-size: 14px; font-weight: 700; color: #1e293b;">
             ${business.name}
           </h3>
@@ -146,12 +142,7 @@ const ActivityMap: React.FC<ActivityMapProps> = ({
           </div>
           <hr style="margin: 10px 0; border: none; border-top: 1px solid #e2e8f0;">
           <div style="display: flex; align-items: center; gap: 6px;">
-            <span style="
-              width: 10px; 
-              height: 10px; 
-              border-radius: 50%; 
-              background: ${getStatusColor(status)};
-            "></span>
+            <span style="width: 10px; height: 10px; border-radius: 50%; background: ${getStatusColor(status)};"></span>
             <span style="font-size: 12px; font-weight: 600; color: ${getStatusColor(status)};">
               ${getStatusLabel(status)}
             </span>
@@ -196,57 +187,54 @@ const ActivityMap: React.FC<ActivityMapProps> = ({
     const presale = activities.businesses?.filter(a => getActivityStatus(a.activityDetail, userRole) === 'presale').length;
     const rejected = activities.businesses?.filter(a => getActivityStatus(a.activityDetail, userRole) === 'rejected').length;
     const pending = activities.businesses?.filter(a => getActivityStatus(a.activityDetail, userRole) === 'pending').length;
-
     return { total, visited, sold, rejected, pending, presale };
   }, [activities]);
 
   return (
-    <div className="relative">
+    <div className="relative w-full">
       <div
         ref={mapContainerRef}
-        style={{ height, width: '100%' }}
-        className="rounded-xl overflow-hidden border border-gray-200 shadow-sm"
+        className="rounded-xl overflow-hidden border border-gray-200 shadow-sm w-full"
+        style={{ height: typeof height === 'string' ? height : `${height}px` }}
       />
 
-      <div className="absolute bottom-4 left-4 z-[1000] bg-white/95 backdrop-blur rounded-xl shadow-lg border border-gray-200 p-3">
-        <p className="text-xs font-semibold text-gray-700 mb-2">Leyenda</p>
-        <div className="flex flex-col gap-1.5">
-
+      <div className="absolute bottom-3 left-3 z-[1000] bg-white/95 backdrop-blur rounded-xl shadow-lg border border-gray-200 p-2 sm:p-3">
+        <p className="text-[10px] sm:text-xs font-semibold text-gray-700 mb-1.5 sm:mb-2">Leyenda</p>
+        <div className="flex flex-col gap-1 sm:gap-1.5">
           {userRole === 'transportista' && (
             <>
-              <div className="flex items-center gap-2">
-                <span className="w-3 h-3 rounded-full bg-green-500 border-2 border-green-700"></span>
-                <span className="text-xs text-gray-600">Venta ({stats.sold})</span>
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <span className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-green-500 border-2 border-green-700 shrink-0" />
+                <span className="text-[10px] sm:text-xs text-gray-600">Venta ({stats.sold})</span>
               </div>
-              <div className="flex items-center gap-2">
-                <span className="w-3 h-3 rounded-full bg-red-500 border-2 border-red-700"></span>
-                <span className="text-xs text-gray-600">No entregado ({stats.rejected})</span>
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <span className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-red-500 border-2 border-red-700 shrink-0" />
+                <span className="text-[10px] sm:text-xs text-gray-600">No entregado ({stats.rejected})</span>
               </div>
             </>
           )}
-
           {userRole === 'prevendedor' && (
             <>
-              <div className="flex items-center gap-2">
-                <span className="w-3 h-3 rounded-full bg-blue-500 border-2 border-blue-700"></span>
-                <span className="text-xs text-gray-600">Visitado ({stats.visited})</span>
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <span className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-blue-500 border-2 border-blue-700 shrink-0" />
+                <span className="text-[10px] sm:text-xs text-gray-600">Visitado ({stats.visited})</span>
               </div>
-              <div className="flex items-center gap-2">
-                <span className="w-3 h-3 rounded-full bg-orange-500 border-2 border-orange-700"></span>
-                <span className="text-xs text-gray-600">Preventa ({stats.presale})</span>
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <span className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-orange-500 border-2 border-orange-700 shrink-0" />
+                <span className="text-[10px] sm:text-xs text-gray-600">Preventa ({stats.presale})</span>
               </div>
             </>
           )}
-          <div className="flex items-center gap-2">
-            <span className="w-3 h-3 rounded-full bg-gray-400 border-2 border-gray-600"></span>
-            <span className="text-xs text-gray-600">Sin visitar ({stats.pending})</span>
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            <span className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-gray-400 border-2 border-gray-600 shrink-0" />
+            <span className="text-[10px] sm:text-xs text-gray-600">Sin visitar ({stats.pending})</span>
           </div>
         </div>
       </div>
 
-      <div className="absolute top-4 right-4 z-[1000] bg-white/95 backdrop-blur rounded-xl shadow-lg border border-gray-200 p-3">
-        <p className="text-xs font-semibold text-gray-700 mb-1">Total de negocios</p>
-        <p className="text-2xl font-bold text-brand-700">{stats.total}</p>
+      <div className="absolute top-3 right-3 z-[1000] bg-white/95 backdrop-blur rounded-xl shadow-lg border border-gray-200 p-2 sm:p-3">
+        <p className="text-[10px] sm:text-xs font-semibold text-gray-700 mb-0.5 sm:mb-1">Total de negocios</p>
+        <p className="text-xl sm:text-2xl font-bold text-brand-700">{stats.total}</p>
       </div>
     </div>
   );

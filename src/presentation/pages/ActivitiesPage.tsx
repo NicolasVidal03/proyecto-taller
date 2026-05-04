@@ -7,16 +7,8 @@ import { ToastContainer, useToast } from '../components/shared/Toast';
 import { User } from '../../domain/entities/User';
 import { Activity, ActivityBusinesses } from '../../domain/entities/Activity';
 
-// Formatear fecha a YYYY-MM-DD
-const formatDateForInput = (date: Date): string => {
-  return date.toISOString().split('T')[0];
-};
-
-
-// Obtener fecha de hoy
-const getToday = (): Date => {
-  return new Date();
-};
+const formatDateForInput = (date: Date): string => date.toISOString().split('T')[0];
+const getToday = (): Date => new Date();
 
 export const ActivitiesPage: React.FC = () => {
   const toast = useToast();
@@ -38,19 +30,15 @@ export const ActivitiesPage: React.FC = () => {
     clearError: clearUsersError,
   } = useUsers();
 
-  // Estado del filtro
   const [selectedDate, setSelectedDate] = useState<string>(formatDateForInput(getToday()));
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [showUserDropdown, setShowUserDropdown] = useState(false);
   const [selectedActivity, setSelectedActivity] = useState<ActivityBusinesses | null>(null);
+  const [statsOpen, setStatsOpen] = useState(false);
 
-  // Cargar usuarios al montar
-  useEffect(() => {
-    fetchUsers();
-  }, [fetchUsers]);
+  useEffect(() => { fetchUsers(); }, [fetchUsers]);
 
-  // Manejar errores
   useEffect(() => {
     if (activitiesError) {
       toast.error(activitiesError.message);
@@ -66,15 +54,12 @@ export const ActivitiesPage: React.FC = () => {
     }
   }, [usersError, toast, clearUsersError]);
 
-
-  const prevendedorUsers = useMemo(() => {
-    return users.filter(u =>
+  const prevendedorUsers = useMemo(() =>
+    users.filter(u =>
       u.role?.toLowerCase() === 'prevendedor' ||
       u.role?.toLowerCase() === 'transportista'
-    );
-  }, [users]);
+    ), [users]);
 
-  // Filtrar usuarios por término de búsqueda
   const filteredUsers = useMemo(() => {
     const term = searchTerm.trim().toLowerCase();
     if (!term) return prevendedorUsers;
@@ -84,41 +69,20 @@ export const ActivitiesPage: React.FC = () => {
     });
   }, [prevendedorUsers, searchTerm]);
 
-  // Manejar selección de usuario
   const handleSelectUser = useCallback((user: User) => {
     setSelectedUser(user);
     setSearchTerm(`${user.names} ${user.lastName}`);
     setShowUserDropdown(false);
   }, []);
 
-  // Buscar actividades
   const handleSearch = useCallback(() => {
-    if (!selectedUser) {
-      toast.error('Selecciona un usuario');
-      return;
-    }
-    if (selectedUser.role != 'transportista' && selectedUser.role != 'prevendedor') {
-      toast.error('Rol de usuario inválido');
-      return;
-    }
-    if (!selectedDate) {
-      toast.error('Selecciona una fecha');
-      return;
-    }
-
-    // Validar que la fecha no sea futura
-    // const selected = new Date(selectedDate);
-    // const today = getToday();
-    // today.setHours(0, 0, 0, 0);
+    if (!selectedUser) { toast.error('Selecciona un usuario'); return; }
+    if (selectedUser.role != 'transportista' && selectedUser.role != 'prevendedor') { toast.error('Rol de usuario inválido'); return; }
+    if (!selectedDate) { toast.error('Selecciona una fecha'); return; }
     setSelectedActivity(null);
-    // if (selected > today) {
-    //   toast.error('No puedes ver actividades de fechas futuras');
-    //   return;
-    // }
     getActivityByUserAndDate(selectedUser.id, selectedDate, selectedUser.role);
   }, [selectedUser, selectedDate, getActivityByUserAndDate, toast]);
 
-  // Limpiar búsqueda
   const handleClear = useCallback(() => {
     setSelectedUser(null);
     setSearchTerm('');
@@ -127,81 +91,131 @@ export const ActivitiesPage: React.FC = () => {
     setSelectedActivity(null);
   }, [clearActivities]);
 
-  // Manejar clic en marcador del mapa
   const handleMarkerClick = useCallback((activity: any) => {
     setSelectedActivity(activity);
   }, []);
 
-  // Calcular estadísticas
   const stats = useMemo(() => {
-    if (!activities) return
+    if (!activities) return;
     const total = activities.businesses?.length;
     const visited = activities.businesses?.filter(a => a.activityDetail?.action && a.activityDetail?.action.toLowerCase() !== 'rejected').length;
     const sales = activities.businesses?.filter(a => a.activityDetail?.action?.toLowerCase() === 'sold' || a.activityDetail?.action?.toLowerCase() === 'venta').length;
     const presales = activities.businesses?.filter(a => a.activityDetail?.action?.toLowerCase() === 'presale' || a.activityDetail?.action?.toLowerCase() === 'preventa').length;
     const rejected = activities.businesses?.filter(a => a.activityDetail?.rejectionId).length;
     const pending = activities.businesses?.filter(a => !a.activityDetail?.action).length;
-
     return { total, visited, sales, rejected, pending, presales };
   }, [activities]);
 
   const isLoading = activitiesLoading || usersLoading;
+  const hasActivities = !!(activities?.businesses?.length && activities.businesses.length > 0);
+
+  const mapHeight = typeof window !== 'undefined' && window.innerWidth < 640 ? '320px' : '600px';
 
   return (
     <>
       <div className="relative overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(17,93,216,0.12),transparent_60%),radial-gradient(circle_at_80%_0%,rgba(255,100,27,0.08),transparent_55%)]" />
-        <div className="relative space-y-8 px-6 py-8 lg:px-10 lg:py-12">
+        <div className="relative space-y-6 px-3 py-5 sm:px-6 sm:py-8 lg:px-10 lg:py-12">
 
-          {/* Header */}
-          <section className="relative overflow-hidden rounded-[2.5rem] bg-gradient-to-r from-brand-900 via-brand-700 to-brand-500 text-white shadow-2xl">
+          <section className="relative overflow-hidden rounded-2xl sm:rounded-[2.5rem] bg-gradient-to-r from-brand-900 via-brand-700 to-brand-500 text-white shadow-2xl">
             <div
               className="absolute inset-0 opacity-30"
-              style={{
-                backgroundImage: 'linear-gradient(135deg, rgba(255,255,255,0.25) 0%, rgba(255,255,255,0) 45%)',
-              }}
+              style={{ backgroundImage: 'linear-gradient(135deg, rgba(255,255,255,0.25) 0%, rgba(255,255,255,0) 45%)' }}
             />
-            <div className="grid gap-8 px-8 py-10 md:px-12 lg:grid-cols-[2fr,1.2fr]">
-              <div className="space-y-6">
-                <p className="text-xs uppercase tracking-[0.45em] text-white/70">Panel de Seguimiento</p>
-                <h2 className="text-3xl font-semibold leading-tight md:text-4xl">Actividades de Prevendedores y Transportistas</h2>
-                <p className="text-sm text-white/80 max-w-lg">
-                  Visualiza la actividad diaria de tus trabajadores en el mapa.
-                  Selecciona una fecha y un usuario para ver sus visitas, ventas y rechazos.
-                </p>
+            <div className="relative grid gap-6 px-5 py-7 sm:px-8 sm:py-10 md:px-12 lg:grid-cols-[2fr,1.2fr] lg:items-start">
+
+              <div className="flex flex-col gap-5">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="space-y-1">
+                    <p className="text-[0.6rem] uppercase tracking-[0.45em] text-white/70">Panel de Seguimiento</p>
+                    <h2 className="text-xl font-semibold leading-tight sm:text-2xl md:text-3xl lg:text-4xl">
+                      Actividades de Prevendedores y Transportistas
+                    </h2>
+                    <p className="text-sm text-white/80 hidden sm:block">
+                      Visualiza la actividad diaria de tus trabajadores en el mapa.
+                    </p>
+                  </div>
+                  {hasActivities && (
+                    <button
+                      type="button"
+                      onClick={() => setStatsOpen(o => !o)}
+                      className="lg:hidden mt-1 shrink-0 flex items-center gap-1 rounded-full border border-white/30 bg-white/10 px-3 py-1.5 text-xs font-semibold text-white/80 backdrop-blur transition hover:bg-white/20"
+                    >
+                      <span>{statsOpen ? 'Ocultar' : 'Ver'} stats</span>
+                      <svg
+                        className={`h-3.5 w-3.5 transition-transform duration-200 ${statsOpen ? 'rotate-180' : ''}`}
+                        fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </button>
+                  )}
+                </div>
+
+                {hasActivities && statsOpen && (
+                  <div className="lg:hidden">
+                    <div className="relative rounded-2xl border border-white/20 bg-white/10 px-5 py-6 backdrop-blur space-y-3">
+                      <p className="text-xs uppercase tracking-[0.35em] text-white/60">Resumen del día</p>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="rounded-xl bg-white/10 px-4 py-3">
+                          <p className="text-xs text-white/70">Total</p>
+                          <p className="text-2xl font-bold">{stats?.total}</p>
+                        </div>
+                        <div className="rounded-xl bg-green-500/30 px-4 py-3">
+                          <p className="text-xs text-white/70">Visitados</p>
+                          <p className="text-2xl font-bold">{stats?.visited}</p>
+                        </div>
+                        {selectedUser?.role === 'prevendedor' ? (
+                          <div className="rounded-xl bg-purple-500/30 px-4 py-3">
+                            <p className="text-xs text-white/70">Preventas</p>
+                            <p className="text-2xl font-bold">{stats?.presales}</p>
+                          </div>
+                        ) : (
+                          <div className="rounded-xl bg-blue-500/30 px-4 py-3">
+                            <p className="text-xs text-white/70">Ventas</p>
+                            <p className="text-2xl font-bold">{stats?.sales}</p>
+                          </div>
+                        )}
+                        <div className="rounded-xl bg-red-500/30 px-4 py-3">
+                          <p className="text-xs text-white/70">Rechazos</p>
+                          <p className="text-2xl font-bold">{stats?.rejected}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
 
-              {/* Stats Card */}
-              {activities?.businesses?.length && activities?.businesses?.length > 0 && (
-                <div className="relative">
-                  <div className="absolute inset-0 rounded-[2rem] bg-white/10 blur-xl" />
-                  <div className="relative space-y-4 rounded-[2rem] border border-white/20 bg-white/10 px-6 py-6 backdrop-blur">
-                    <p className="text-xs uppercase tracking-[0.35em] text-white/60">Resumen del día</p>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="rounded-xl bg-white/10 px-4 py-3">
-                        <p className="text-xs text-white/70">Total</p>
-                        <p className="text-2xl font-bold">{stats?.total}</p>
-                      </div>
-                      <div className="rounded-xl bg-green-500/30 px-4 py-3">
-                        <p className="text-xs text-white/70">Visitados</p>
-                        <p className="text-2xl font-bold">{stats?.visited}</p>
-                      </div>
-                      {selectedUser?.role === 'prevendedor' ? (
-                        <div className="rounded-xl bg-purple-500/30 px-4 py-3">
-                          <p className="text-xs text-white/70">Preventas</p>
-                          <p className="text-2xl font-bold">{stats?.presales}</p>
+              {hasActivities && (
+                <div className="hidden lg:block">
+                  <div className="relative">
+                    <div className="absolute inset-0 rounded-[2rem] bg-white/10 blur-xl" />
+                    <div className="relative space-y-4 rounded-[2rem] border border-white/20 bg-white/10 px-6 py-6 backdrop-blur">
+                      <p className="text-xs uppercase tracking-[0.35em] text-white/60">Resumen del día</p>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="rounded-xl bg-white/10 px-4 py-3">
+                          <p className="text-xs text-white/70">Total</p>
+                          <p className="text-2xl font-bold">{stats?.total}</p>
                         </div>
-                      ) : (
-                        <div className="rounded-xl bg-blue-500/30 px-4 py-3">
-                          <p className="text-xs text-white/70">Ventas</p>
-                          <p className="text-2xl font-bold">{stats?.sales}</p>
+                        <div className="rounded-xl bg-green-500/30 px-4 py-3">
+                          <p className="text-xs text-white/70">Visitados</p>
+                          <p className="text-2xl font-bold">{stats?.visited}</p>
                         </div>
-                      )}
-
-
-                      <div className="rounded-xl bg-red-500/30 px-4 py-3">
-                        <p className="text-xs text-white/70">Rechazos</p>
-                        <p className="text-2xl font-bold">{stats?.rejected}</p>
+                        {selectedUser?.role === 'prevendedor' ? (
+                          <div className="rounded-xl bg-purple-500/30 px-4 py-3">
+                            <p className="text-xs text-white/70">Preventas</p>
+                            <p className="text-2xl font-bold">{stats?.presales}</p>
+                          </div>
+                        ) : (
+                          <div className="rounded-xl bg-blue-500/30 px-4 py-3">
+                            <p className="text-xs text-white/70">Ventas</p>
+                            <p className="text-2xl font-bold">{stats?.sales}</p>
+                          </div>
+                        )}
+                        <div className="rounded-xl bg-red-500/30 px-4 py-3">
+                          <p className="text-xs text-white/70">Rechazos</p>
+                          <p className="text-2xl font-bold">{stats?.rejected}</p>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -210,28 +224,20 @@ export const ActivitiesPage: React.FC = () => {
             </div>
           </section>
 
-          {/* Filtros */}
           <section className="card shadow-xl ring-1 ring-black/5">
-            <div className="flex flex-col gap-4 md:flex-row md:items-end">
-              {/* Filtro de fecha */}
-              <div className="flex-1 max-w-xs">
-                <label className="block text-sm font-medium text-lead-700 mb-2">
-                  Fecha
-                </label>
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
+              <div className="w-full sm:flex-1 sm:max-w-xs">
+                <label className="block text-sm font-medium text-lead-700 mb-2">Fecha</label>
                 <input
                   type="date"
                   value={selectedDate}
-                  // max={formatDateForInput(getToday())}
                   onChange={(e) => setSelectedDate(e.target.value)}
                   className="input-plain w-full"
                 />
               </div>
 
-              {/* Búsqueda de usuario */}
-              <div className="flex-1 max-w-md relative">
-                <label className="block text-sm font-medium text-lead-700 mb-2">
-                  Usuario
-                </label>
+              <div className="w-full sm:flex-1 sm:max-w-md relative">
+                <label className="block text-sm font-medium text-lead-700 mb-2">Usuario</label>
                 <input
                   type="text"
                   value={searchTerm}
@@ -244,8 +250,6 @@ export const ActivitiesPage: React.FC = () => {
                   placeholder="Buscar por nombre..."
                   className="input-plain w-full"
                 />
-
-                {/* Dropdown de usuarios */}
                 {showUserDropdown && filteredUsers.length > 0 && (
                   <div className="absolute z-50 mt-1 w-full max-h-60 overflow-auto rounded-xl bg-white border border-lead-200 shadow-lg">
                     {filteredUsers.map((user) => (
@@ -253,18 +257,14 @@ export const ActivitiesPage: React.FC = () => {
                         key={user.id}
                         type="button"
                         onClick={() => handleSelectUser(user)}
-                        className={`w-full text-left px-4 py-3 hover:bg-lead-50 transition-colors border-b border-lead-100 last:border-b-0 ${selectedUser === user ? 'bg-brand-50 text-brand-700' : ''
-                          }`}
+                        className={`w-full text-left px-4 py-3 hover:bg-lead-50 transition-colors border-b border-lead-100 last:border-b-0 ${selectedUser === user ? 'bg-brand-50 text-brand-700' : ''}`}
                       >
-                        <p className="font-medium text-sm text-lead-800">
-                          {user.names} {user.lastName} {user.secondLastName}
-                        </p>
+                        <p className="font-medium text-sm text-lead-800">{user.names} {user.lastName} {user.secondLastName}</p>
                         <p className="text-xs text-lead-500">@{user.userName} • {user.role.toUpperCase()}</p>
                       </button>
                     ))}
                   </div>
                 )}
-
                 {showUserDropdown && filteredUsers.length === 0 && searchTerm && (
                   <div className="absolute z-50 mt-1 w-full rounded-xl bg-white border border-lead-200 shadow-lg p-4">
                     <p className="text-sm text-lead-500 text-center">No se encontraron usuarios</p>
@@ -272,13 +272,12 @@ export const ActivitiesPage: React.FC = () => {
                 )}
               </div>
 
-              {/* Botones */}
-              <div className="flex gap-3">
+              <div className="flex gap-3 sm:shrink-0">
                 <button
                   type="button"
                   onClick={handleSearch}
                   disabled={isLoading || !selectedUser}
-                  className="btn-primary bg-accent-500 hover:bg-accent-600 border-transparent text-white shadow-md flex items-center gap-2 disabled:opacity-50"
+                  className="flex-1 sm:flex-none btn-primary bg-accent-500 hover:bg-accent-600 border-transparent text-white shadow-md flex items-center justify-center gap-2 disabled:opacity-50"
                 >
                   {activitiesLoading ? (
                     <>
@@ -297,63 +296,57 @@ export const ActivitiesPage: React.FC = () => {
                     </>
                   )}
                 </button>
-
                 <button
                   type="button"
                   onClick={handleClear}
-                  className="btn-outline"
+                  className="flex-1 sm:flex-none btn-outline"
                 >
                   Limpiar
                 </button>
               </div>
             </div>
 
-            {/* Usuario seleccionado info */}
             {selectedUser && (
               <div className="mt-4 p-3 rounded-xl bg-brand-50 border border-brand-200 flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-brand-500 text-white flex items-center justify-center font-bold text-sm">
+                <div className="w-10 h-10 shrink-0 rounded-full bg-brand-500 text-white flex items-center justify-center font-bold text-sm">
                   {selectedUser.names.charAt(0)}{selectedUser.lastName.charAt(0)}
                 </div>
-                <div>
-                  <p className="font-medium text-brand-800">
+                <div className="min-w-0">
+                  <p className="font-medium text-brand-800 truncate">
                     {selectedUser.names} {selectedUser.lastName} {selectedUser.secondLastName}
                   </p>
-                  <p className="text-xs text-brand-600">
-                    @{selectedUser.userName} • {selectedUser.role.toUpperCase()}
-                  </p>
+                  <p className="text-xs text-brand-600">@{selectedUser.userName} • {selectedUser.role.toUpperCase()}</p>
                 </div>
               </div>
             )}
           </section>
 
-          <div className="flex gap-6 items-start overflow-hidden">
-            {/* Mapa */}
-            <section className="card shadow-xl ring-1 ring-black/5 p-0 overflow-hidden relative z-0 shrink-0 w-[calc(100%-31rem)]">
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
+            <section className="card shadow-xl ring-1 ring-black/5 p-0 overflow-hidden relative z-0 w-full lg:flex-1">
               {isLoading ? (
-                <div className="h-[500px] flex items-center justify-center">
+                <div className="h-[400px] sm:h-[500px] flex items-center justify-center">
                   <Loader />
                 </div>
-              ) : activities?.businesses?.length && activities.businesses.length > 0 ? (
+              ) : hasActivities ? (
                 <ActivityMap
                   activities={activities}
-                  height="600px"
+                  height={mapHeight}
                   onMarkerClick={handleMarkerClick}
                   userRole={selectedUser?.role}
                 />
               ) : (
-                <div className="h-[400px] flex flex-col items-center justify-center text-lead-500">
+                <div className="h-[300px] sm:h-[400px] flex flex-col items-center justify-center text-lead-500">
                   <svg className="w-16 h-16 mb-4 text-lead-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
                   </svg>
                   <p className="text-lg font-medium">No hay actividades para mostrar</p>
-                  <p className="text-sm mt-1">Selecciona una fecha y un usuario para ver sus actividades</p>
+                  <p className="text-sm mt-1 text-center px-4">Selecciona una fecha y un usuario para ver sus actividades</p>
                 </div>
               )}
             </section>
 
-            {/* Detalle de actividad seleccionada */}
             {selectedActivity && (
-              <section className="card shadow-xl ring-1 ring-black/5">
+              <section className="card shadow-xl ring-1 ring-black/5 w-full lg:w-[28rem] lg:shrink-0">
                 <div className="flex items-start justify-between mb-4">
                   <h3 className="text-lg font-bold text-brand-900">Detalle del Negocio</h3>
                   <button
@@ -366,7 +359,7 @@ export const ActivitiesPage: React.FC = () => {
                   </button>
                 </div>
 
-                <div className="grid md:grid-cols-2 gap-6">
+                <div className="grid sm:grid-cols-2 gap-6">
                   <div>
                     <h4 className="font-semibold text-lead-800 mb-3">{selectedActivity.business.name}</h4>
                     <div className="space-y-2 text-sm text-lead-600">
@@ -409,14 +402,12 @@ export const ActivitiesPage: React.FC = () => {
                                   : selectedActivity.activityDetail.action.toLowerCase() === 'preventa'
                                     ? 'bg-orange-500'
                                     : 'bg-gray-500'
-                              }`}></span>
-                            {
-                              !selectedActivity.activityDetail.rejectionId
-                                ? selectedActivity.activityDetail.action
-                                : selectedUser?.role === 'transportista'
-                                  ? "No entregado"
-                                  : "Visitado"
-                            }
+                              }`} />
+                            {!selectedActivity.activityDetail.rejectionId
+                              ? selectedActivity.activityDetail.action
+                              : selectedUser?.role === 'transportista'
+                                ? 'No entregado'
+                                : 'Visitado'}
                           </div>
                           {selectedActivity.activityDetail.createdAt && (
                             <p className="text-sm text-lead-500">
@@ -426,7 +417,7 @@ export const ActivitiesPage: React.FC = () => {
                         </>
                       ) : (
                         <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium bg-gray-100 text-gray-600">
-                          <span className="w-2 h-2 rounded-full bg-gray-400"></span>
+                          <span className="w-2 h-2 rounded-full bg-gray-400" />
                           Sin visitar
                         </div>
                       )}
@@ -434,18 +425,14 @@ export const ActivitiesPage: React.FC = () => {
                   </div>
                 </div>
               </section>
-
             )}
           </div>
+
         </div>
       </div>
 
-      {/* Click outside handler for dropdown */}
       {showUserDropdown && (
-        <div
-          className="fixed inset-0 z-40"
-          onClick={() => setShowUserDropdown(false)}
-        />
+        <div className="fixed inset-0 z-40" onClick={() => setShowUserDropdown(false)} />
       )}
 
       <ToastContainer toasts={toast.toasts} onDismiss={toast.dismissToast} />
