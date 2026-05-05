@@ -7,4 +7,6 @@ dist
 .env.local
 .env.development
 .env*.local
+playwright-report
+test-results
 coverage
