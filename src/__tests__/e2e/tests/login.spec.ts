@@ -1,5 +1,6 @@
 import { test, expect, Page } from '@playwright/test';
-import { adminUser } from '../mocks/fixtures';
+import { adminUser, preseller } from '../mocks/fixtures';
+import { apiRoute } from '../mocks/handlers';
 
 async function fillAndSubmit(page: Page, user = 'admin', pass = 'secreto') {
   await page.fill('#username', user);
@@ -10,9 +11,7 @@ async function fillAndSubmit(page: Page, user = 'admin', pass = 'secreto') {
 test.describe('LoginPage', () => {
 
   test.beforeEach(async ({ page }) => {
-    await page.route('**/api/auth/me', route =>
-      route.fulfill({ status: 401, json: { error: 'No autorizado' } })
-    );
+    await page.addInitScript(() => localStorage.clear());
   });
 
   test('muestra el formulario de login con los campos y el botón', async ({ page }) => {
@@ -25,11 +24,14 @@ test.describe('LoginPage', () => {
   });
 
   test('login exitoso con rol administrador redirige a /users', async ({ page }) => {
-    await page.route('**/api/auth/login', route =>
-      route.fulfill({ status: 200, json: { user: adminUser } })
-    );
-    await page.route('**/api/auth/me', route =>
-      route.fulfill({ status: 200, json: adminUser })
+    await apiRoute(page, '**/login', route =>
+      route.fulfill({
+        status: 200,
+        json: {
+          token: { accessToken: 'fake-token-123', expiresIn: 3600 },
+          user: adminUser
+        }
+      })
     );
 
     await page.goto('/login');
@@ -38,20 +40,36 @@ test.describe('LoginPage', () => {
     await expect(page).toHaveURL(/\/users/);
   });
 
+  test('login exitoso con otro rol redirige a /profile', async ({ page }) => {
+    await apiRoute(page, '**/login', route =>
+      route.fulfill({
+        status: 200,
+        json: {
+          token: { accessToken: 'fake-token-123', expiresIn: 3600 },
+          user: preseller
+        }
+      })
+    );
+
+    await page.goto('/login');
+    await fillAndSubmit(page);
+
+    await expect(page).toHaveURL(/\/profile/);
+  });
 
   test('usuario ya autenticado al cargar la página redirige automáticamente', async ({ page }) => {
-    await page.route('**/api/auth/me', route =>
-      route.fulfill({ status: 200, json: adminUser })
-    );
+    await page.addInitScript((user) => {
+      localStorage.setItem('auth_token', 'fake-token-123');
+      localStorage.setItem('auth_user', JSON.stringify(user));
+    }, adminUser);
 
     await page.goto('/login');
 
     await expect(page).toHaveURL(/\/users/);
   });
 
-
   test('credenciales inválidas muestra mensaje de error en pantalla', async ({ page }) => {
-    await page.route('**/api/auth/login', route =>
+    await apiRoute(page, '**/login', route =>
       route.fulfill({ status: 401, json: { error: 'Credenciales inválidas' } })
     );
 
@@ -62,7 +80,7 @@ test.describe('LoginPage', () => {
   });
 
   test('error de red muestra mensaje de error genérico', async ({ page }) => {
-    await page.route('**/api/auth/login', route =>
+    await apiRoute(page, '**/login', route =>
       route.abort('failed')
     );
 
@@ -97,7 +115,7 @@ test.describe('LoginPage', () => {
   });
 
   test('después de un error el botón vuelve a habilitarse', async ({ page }) => {
-    await page.route('**/api/auth/login', route =>
+    await apiRoute(page, '**/login', route =>
       route.fulfill({ status: 401, json: { error: 'Fallo' } })
     );
 
