@@ -295,6 +295,7 @@ const BusinessFormModal: React.FC<BusinessFormModalProps> = ({
                 <label className="block text-sm font-medium text-lead-700">Tipo de negocio *</label>
                 <select
                   value={businessTypeId}
+                  id='businessType'
                   onChange={(e) => {
                     setBusinessTypeId(e.target.value ? Number(e.target.value) : '');
                     if (errors.businessTypeId) setErrors((prev) => ({ ...prev, businessTypeId: '' }));
@@ -314,6 +315,7 @@ const BusinessFormModal: React.FC<BusinessFormModalProps> = ({
                 <label className="block text-sm font-medium text-lead-700">Tipo de precio</label>
                 <select
                   value={priceTypeId}
+                  id='businessPrice'
                   onChange={(e) => setPriceTypeId(e.target.value ? Number(e.target.value) : '')}
                   className="mt-1 block w-full rounded-lg border border-lead-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500"
                   disabled={saving}
