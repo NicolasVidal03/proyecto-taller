@@ -127,6 +127,13 @@ export const inventory = {
     {
       id: 1,
       name: 'Cable 1.5mm',
+      barcode: null,
+      internalCode: null,
+      presentationId: null,
+      colorId: null,
+      prices: [{ priceTypeId: 1, price: 5.5 }],
+      brand: { id: 1, name: 'Voltex' },
+      category: { id: 1, name: 'Cables' },
       branch: { branchId: 1, hasStock: true, stockQty: 50 },
     },
   ],
