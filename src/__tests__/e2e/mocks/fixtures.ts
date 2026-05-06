@@ -144,10 +144,30 @@ export const inventory = {
 };
 
 export const activities = {
-  date: '2024-06-01',
-  userId: 2,
-  role: 'prevendedor',
+  id: 1,
+  responsibleUserId: 2,
+  assignedDate: '2024-06-01',
   businesses: [
-    { businessId: 1, businessName: 'Bodega Central', lat: -17.39, lng: -66.16, visited: true },
+    {
+      business: {
+        id: 1,
+        name: 'Bodega Central',
+        businessTypeId: 1,
+        clientId: 1,
+        priceTypeId: 1,
+        areaId: 1,
+        nit: null,
+        position: { lat: -17.39, lng: -66.16 },
+        pathImage: null,
+        address: 'Calle Comercio 123',
+      },
+      activityDetail: {
+        id: 1,
+        action: 'preventa',
+        rejectionId: null,
+        bussinesId: 1,
+        createdAt: '2024-06-01T10:00:00.000Z',
+      },
+    },
   ],
 };
