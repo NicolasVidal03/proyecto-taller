@@ -385,13 +385,13 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
             </div>
           </div>
 
-          {/* Precios */}
           <div>
             <div className='flex gap-10 items-center mb-2'>
               <label className="block text-sm font-medium text-lead-700">
                 Precios de Venta *
               </label>
               <select
+                id="priceId"
                 onChange={handleSelectPriceType}
                 className="mt-2 block rounded-lg border border-lead-300
                           px-3 py-2 text-sm
@@ -418,6 +418,7 @@ const ProductFormModal: React.FC<ProductFormModalProps> = ({
                     <input
                       type="text"
                       inputMode="decimal"
+                      id={type}
                       value={valuesPrices[type] || ""}
                       onChange={handlePriceChange(type)}
                       className="mt-1 block w-full rounded-lg border border-lead-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:ring-brand-500"
