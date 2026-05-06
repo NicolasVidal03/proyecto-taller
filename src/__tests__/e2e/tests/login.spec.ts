@@ -1,5 +1,5 @@
 import { test, expect, Page } from '@playwright/test';
-import { adminUser, preseller } from '../mocks/fixtures';
+import { adminUser, preseller, allUsers, branches } from '../mocks/fixtures';
 import { apiRoute } from '../mocks/handlers';
 
 async function fillAndSubmit(page: Page, user = 'admin', pass = 'secreto') {
@@ -124,4 +124,32 @@ test.describe('LoginPage', () => {
 
     await expect(page.getByRole('button', { name: /ingresar/i })).toBeEnabled();
   });
+
+  test('logout redirige al login y limpia la sesión', async ({ page }) => {
+    await page.addInitScript((user) => {
+      localStorage.setItem('auth_token', 'fake-token-123');
+      localStorage.setItem('auth_user', JSON.stringify(user));
+    }, adminUser);
+    await apiRoute(page, '**/users*', route =>
+      route.fulfill({ status: 200, json: allUsers })
+    );
+    await apiRoute(page, '**/branches*', route =>
+      route.fulfill({ status: 200, json: branches })
+    );
+
+    await page.goto('/users');
+    await expect(page).toHaveURL(/\/users/);
+
+    await page.locator('button[aria-haspopup]').click();
+    await expect(page.getByText('🚪 Cerrar Sesión')).toBeVisible();
+    await page.getByText('🚪 Cerrar Sesión').click();
+
+    await expect(page).toHaveURL(/\/login/);
+
+    const token = await page.evaluate(() => localStorage.getItem('auth_token'));
+    const user = await page.evaluate(() => localStorage.getItem('auth_user'));
+    expect(token).toBeNull();
+    expect(user).toBeNull();
+  });
 });
+
