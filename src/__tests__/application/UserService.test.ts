@@ -4,7 +4,7 @@ import { User } from '@domain/entities/User';
 
 const mockUser = (): User => ({
     id: 1, userName: 'ffer', ci: '12345678', names: 'Fernando',
-    lastName: 'Fernandez', secondLastName: 'Villegas', role: 'admin',
+    lastName: 'Fernandez', secondLastName: 'Villegas', role: 'administrador',
     branchId: null, email: null, isFirstLogin: false,
 });
 
@@ -37,7 +37,7 @@ describe('UserService', () => {
     it('create manda el DTO al repositorio', async () => {
         const repo = makeUserRepo();
         repo.create.mockResolvedValue(mockUser());
-        const dto: CreateUserDTO = { ci: '1', names: 'X', lastName: 'Y', secondLastName: null, role: 'admin', branchId: 1, email: 'a@b.com' };
+        const dto: CreateUserDTO = { ci: '1', names: 'X', lastName: 'Y', secondLastName: null, role: 'administrador', branchId: 1, email: 'a@b.com' };
         await new UserService(repo).create(dto);
         expect(repo.create).toHaveBeenCalledWith(dto);
     });

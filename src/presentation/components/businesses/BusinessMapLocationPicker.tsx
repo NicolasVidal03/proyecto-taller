@@ -60,6 +60,7 @@ export const BusinessMapLocationPicker: React.FC<Props> = ({ lat, lng, onChange,
             <label className="block text-sm font-medium text-lead-700">Latitud</label>
             <input
               type="number"
+              id='businessLat'
               step="any"
               value={lat}
               onChange={(e) => onChange(e.target.value, lng)}
@@ -73,6 +74,7 @@ export const BusinessMapLocationPicker: React.FC<Props> = ({ lat, lng, onChange,
             <label className="block text-sm font-medium text-lead-700">Longitud</label>
             <input
               type="number"
+              id='businessLon'
               step="any"
               value={lng}
               onChange={(e) => onChange(lat, e.target.value)}

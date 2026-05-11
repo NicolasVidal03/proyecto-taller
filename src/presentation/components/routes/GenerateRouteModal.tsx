@@ -187,6 +187,7 @@ const GenerateRouteModal: React.FC<GenerateRouteModalProps> = ({
                 </label>
                 <select
                   value={selectedAreaId}
+                  id='areaRoute'
                   onChange={(e) => {
                     setSelectedAreaId(e.target.value ? Number(e.target.value) : '');
                     if (errors.area) setErrors(prev => ({ ...prev, area: undefined }));
@@ -221,6 +222,7 @@ const GenerateRouteModal: React.FC<GenerateRouteModalProps> = ({
                 </label>
                 <input
                   type="date"
+                  id="routeDate"
                   value={assignedDate}
                   onChange={(e) => {
                     setAssignedDate(e.target.value);
