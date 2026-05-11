@@ -5,7 +5,7 @@ export const adminUser = {
   names: 'Carlos',
   lastName: 'Mamani',
   secondLastName: 'Quispe',
-  role: 'admin',
+  role: 'administrador',
   branchId: 1,
   email: 'admin@sicme.com',
   isFirstLogin: false,

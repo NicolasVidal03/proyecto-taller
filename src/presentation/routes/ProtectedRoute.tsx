@@ -2,7 +2,7 @@ import React from 'react';
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../providers/AuthProvider';
 
-const PRIVILEGED_ROLES = ['admin', 'gerente'];
+const PRIVILEGED_ROLES = ['administrador', 'gerente'];
 
 export const hasPrivilegedRole = (role?: string | null): boolean => {
   return PRIVILEGED_ROLES.includes(role ?? '');
