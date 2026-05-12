@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import ReactDOM from 'react-dom';
 
 export type ToastType = 'success' | 'error' | 'warning' | 'info';
 
@@ -93,12 +94,13 @@ interface ToastContainerProps {
 export const ToastContainer: React.FC<ToastContainerProps> = ({ toasts, onDismiss }) => {
   if (toasts.length === 0) return null;
 
-  return (
+  return ReactDOM.createPortal(
     <div className="fixed bottom-4 right-4 z-[200000] flex flex-col gap-2 max-w-sm">
       {toasts.map(toast => (
         <Toast key={toast.id} toast={toast} onDismiss={onDismiss} />
       ))}
-    </div>
+    </div>,
+    document.body
   );
 };
 
