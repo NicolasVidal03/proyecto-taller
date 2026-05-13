@@ -42,13 +42,11 @@ const ProductsTable: React.FC<ProductsTableProps> = ({
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0 max-w-[60%]">
                 <p className="font-semibold text-brand-900 whitespace-normal break-words">{product.name}</p>
-                {(product.presentationName || (product.presentationId && presentationMap.get(product.presentationId))) && (
-                  <p className="text-xs text-lead-500 mt-0.5">
-                    {product.presentationName || (product.presentationId ? presentationMap.get(product.presentationId) : '')}
-                  </p>
-                )}
                 <p className="text-xs text-lead-500 mt-0.5">
-                  {product.categoryName || categoryMap.get(product.categoryId) || '—'} · {product.brandName || brandMap.get(product.brandId) || '—'}
+                  {product.internalCode ?? "-"}
+                </p>
+                <p className="text-xs text-lead-500 mt-0.5">
+                  {product.colorName || colorMap.get(product.colorId ?? 0) || '—'} .  {product.presentationName || (product.presentationId ? presentationMap.get(product.presentationId) : '')}
                 </p>
               </div>
               <div className="shrink-0 text-right space-y-0.5">
@@ -105,8 +103,9 @@ const ProductsTable: React.FC<ProductsTableProps> = ({
         <table className="min-w-full text-sm">
           <thead className="bg-brand-600 text-xs uppercase tracking-wider text-white">
             <tr>
+              <th className="px-4 py-4 text-left font-semibold">C. Interno</th>
               <th className="px-4 py-4 text-left font-semibold">Nombre</th>
-              <th className="px-4 py-4 text-left font-semibold">Categoría</th>
+              <th className="px-4 py-4 text-left font-semibold">Color</th>
               <th className="px-4 py-4 text-left font-semibold">Marca</th>
               <th className="px-4 py-4 text-left font-semibold">Regular</th>
               <th className="px-4 py-4 text-left font-semibold">Minorista</th>
@@ -124,6 +123,9 @@ const ProductsTable: React.FC<ProductsTableProps> = ({
               </tr>
             ) : products.map(product => (
               <tr key={product.id} className="transition-colors hover:bg-white">
+                <td className="px-4 py-3 text-lead-600">
+                  {product.internalCode || '—'}
+                </td>
                 <td className="px-4 py-3 max-w-[200px]">
                   <span className="block truncate font-medium text-lead-800" title={product.name}>{product.name}</span>
                   {(product.presentationName || (product.presentationId && presentationMap.get(product.presentationId))) && (
@@ -133,7 +135,7 @@ const ProductsTable: React.FC<ProductsTableProps> = ({
                   )}
                 </td>
                 <td className="px-4 py-3 text-lead-600">
-                  {product.categoryName || categoryMap.get(product.categoryId) || '—'}
+                  {product.colorName || categoryMap.get(product.colorId ?? 0) || '—'}
                 </td>
                 <td className="px-4 py-3 text-lead-600">
                   {product.brandName || brandMap.get(product.brandId) || '—'}
