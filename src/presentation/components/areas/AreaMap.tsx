@@ -4,25 +4,9 @@ import 'leaflet/dist/leaflet.css';
 import 'leaflet-draw';
 import 'leaflet-draw/dist/leaflet.draw.css';
 import '../../../types/leaflet-draw.d';
-import {
-  Area,
-  AreaPoint,
-  LeafletPolygonCoords,
-} from '../../../domain/entities/Area';
-import {
-  leafletToApi,
-  apiToLeaflet,
-  getAreaColor,
-} from '../../utils/areaHelpers';
-import {
-  areaPointsToPoints,
-  isPointInPolygon,
-  closestPointOnPolygonEdge,
-  distance,
-  areaPolygonsOverlap,
-  isAreaPolygonValid,
-  Point,
-} from '../../../domain/utils/geometry';
+import { Area, AreaPoint, LeafletPolygonCoords } from '../../../domain/entities/Area';
+import { leafletToApi, apiToLeaflet, getAreaColor } from '../../utils/areaHelpers';
+import { areaPolygonsOverlap, isAreaPolygonValid } from '../../../domain/utils/geometry';
 
 delete (L.Icon.Default.prototype as any)._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -31,8 +15,6 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
 });
 
-const SNAP_THRESHOLD = 0.0005;
-const SNAP_OFFSET = 0.00005;
 
 interface AreaMapProps {
   areas?: Area[];
@@ -47,85 +29,10 @@ interface AreaMapProps {
   zoom?: number;
   height?: string;
   editingAreaId?: number;
-  enableSnapToEdge?: boolean;
   onOverlapError?: (areaName: string) => void;
   onOverlapResolved?: () => void;
 }
 
-function applySnapToEdge(
-  point: AreaPoint,
-  existingPolygons: AreaPoint[][],
-  threshold: number = SNAP_THRESHOLD
-): AreaPoint {
-  const p: Point = { x: point.lng, y: point.lat };
-  let bestSnap: Point | null = null;
-  let minDist = Infinity;
-
-  for (const polygon of existingPolygons) {
-    const polyPoints = areaPointsToPoints(polygon);
-    const closest = closestPointOnPolygonEdge(p, polyPoints);
-    const d = distance(p, closest);
-
-    if (d < threshold && d < minDist) {
-      minDist = d;
-      bestSnap = closest;
-    }
-  }
-
-  if (bestSnap) {
-    return { lat: bestSnap.y, lng: bestSnap.x };
-  }
-
-  return point;
-}
-
-function snapPointOutsidePolygons(
-  point: AreaPoint,
-  existingPolygons: AreaPoint[][],
-  offset: number = SNAP_OFFSET
-): AreaPoint {
-  const p: Point = { x: point.lng, y: point.lat };
-
-  for (const polygon of existingPolygons) {
-    const polyPoints = areaPointsToPoints(polygon);
-
-    if (isPointInPolygon(p, polyPoints)) {
-      const closestOnEdge = closestPointOnPolygonEdge(p, polyPoints);
-
-      const centerX = polyPoints.reduce((s, pt) => s + pt.x, 0) / polyPoints.length;
-      const centerY = polyPoints.reduce((s, pt) => s + pt.y, 0) / polyPoints.length;
-
-      let dx = closestOnEdge.x - centerX;
-      let dy = closestOnEdge.y - centerY;
-      const len = Math.sqrt(dx * dx + dy * dy);
-
-      if (len > 0) {
-        dx /= len;
-        dy /= len;
-      }
-      return {
-        lat: closestOnEdge.y + dy * offset,
-        lng: closestOnEdge.x + dx * offset,
-      };
-    }
-  }
-
-  return point;
-}
-
-function processPolygonWithSnap(
-  polygon: AreaPoint[],
-  existingPolygons: AreaPoint[][],
-  enableSnap: boolean
-): AreaPoint[] {
-  if (!enableSnap || polygon.length < 3) return polygon;
-
-  return polygon.map(point => {
-    let processed = applySnapToEdge(point, existingPolygons);
-    processed = snapPointOutsidePolygons(processed, existingPolygons);
-    return processed;
-  });
-}
 
 const AreaMap: React.FC<AreaMapProps> = ({
   areas = [],
@@ -140,7 +47,6 @@ const AreaMap: React.FC<AreaMapProps> = ({
   zoom = 12,
   height = '500px',
   editingAreaId,
-  enableSnapToEdge = true,
   onOverlapError,
   onOverlapResolved,
 }) => {
@@ -151,13 +57,6 @@ const AreaMap: React.FC<AreaMapProps> = ({
   const drawControlRef = useRef<L.Control.Draw | null>(null);
   const [hasOverlap, setHasOverlap] = useState(false);
   const [invalidPolygon, setInvalidPolygon] = useState(false);
-
-  const getExistingPolygons = useCallback((): AreaPoint[][] => {
-    return areas
-      .filter(a => a.id !== editingAreaId && a.area && a.area.length >= 3)
-      .map(a => a.area!)
-      .filter((area): area is AreaPoint[] => area !== undefined);
-  }, [areas, editingAreaId]);
 
   const checkAndNotifyOverlap = useCallback((
     polygon: AreaPoint[]
@@ -182,15 +81,9 @@ const AreaMap: React.FC<AreaMapProps> = ({
 
   const onPolygonChangeRef = useRef(onPolygonChange);
   onPolygonChangeRef.current = onPolygonChange;
-  
+
   const checkAndNotifyOverlapRef = useRef(checkAndNotifyOverlap);
   checkAndNotifyOverlapRef.current = checkAndNotifyOverlap;
-
-  const enableSnapToEdgeRef = useRef(enableSnapToEdge);
-  enableSnapToEdgeRef.current = enableSnapToEdge;
-
-  const getExistingPolygonsRef = useRef(getExistingPolygons);
-  getExistingPolygonsRef.current = getExistingPolygons;
 
   const onOverlapErrorRef = useRef(onOverlapError);
   onOverlapErrorRef.current = onOverlapError;
@@ -257,6 +150,7 @@ const AreaMap: React.FC<AreaMapProps> = ({
             showArea: true,
             showLength: true,
             metric: true,
+            maxPoints: 0,
             drawError: {
               color: '#e1e1e1',
               message: '<strong>¡Error!</strong>'
@@ -287,9 +181,9 @@ const AreaMap: React.FC<AreaMapProps> = ({
 
       const handleCreated = (e: L.LeafletEvent) => {
         const event = e as L.DrawEvents.Created;
-        
+
         drawLayer.clearLayers();
-        
+
         const latLngs = (event.layer as L.Polygon).getLatLngs()[0] as L.LatLng[];
         const coords: LeafletPolygonCoords = latLngs.map(ll => [ll.lat, ll.lng]);
         let apiPoints = leafletToApi(coords);
@@ -308,27 +202,16 @@ const AreaMap: React.FC<AreaMapProps> = ({
         }
         setInvalidPolygon(false);
 
-        if (enableSnapToEdgeRef.current) {
-          apiPoints = processPolygonWithSnap(
-            apiPoints,
-            getExistingPolygonsRef.current(),
-            true
-          );
-
-          const adjustedCoords = apiToLeaflet(apiPoints);
-          const adjustedPolygon = L.polygon(adjustedCoords, {
-            color: '#3B82F6',
-            fillColor: '#3B82F6',
-            fillOpacity: 0.3,
-            weight: 2,
-          });
-          drawLayer.addLayer(adjustedPolygon);
-        } else {
-          drawLayer.addLayer(event.layer);
-        }
+        const finalPolygon = L.polygon(apiToLeaflet(apiPoints), {
+          color: '#3B82F6',
+          fillColor: '#3B82F6',
+          fillOpacity: 0.3,
+          weight: 2,
+        });
+        drawLayer.addLayer(finalPolygon);
 
         const overlaps = checkAndNotifyOverlapRef.current(apiPoints);
-        
+
         drawLayer.eachLayer((layer) => {
           if (layer instanceof L.Polygon) {
             if (overlaps) {
@@ -338,17 +221,17 @@ const AreaMap: React.FC<AreaMapProps> = ({
             }
           }
         });
-        
+
         onPolygonChangeRef.current?.(apiPoints);
       };
 
       const handleEdited = (e: L.LeafletEvent) => {
         const event = e as L.DrawEvents.Edited;
-        
+
         event.layers.eachLayer((layer) => {
           const latLngs = (layer as L.Polygon).getLatLngs()[0] as L.LatLng[];
           const coords: LeafletPolygonCoords = latLngs.map(ll => [ll.lat, ll.lng]);
-          let apiPoints = leafletToApi(coords);
+          const apiPoints = leafletToApi(coords);
 
           if (!isAreaPolygonValid(apiPoints)) {
             setInvalidPolygon(true);
@@ -361,17 +244,6 @@ const AreaMap: React.FC<AreaMapProps> = ({
             return;
           }
           setInvalidPolygon(false);
-
-          if (enableSnapToEdgeRef.current) {
-            apiPoints = processPolygonWithSnap(
-              apiPoints,
-              getExistingPolygonsRef.current(),
-              true
-            );
-
-            const adjustedCoords = apiToLeaflet(apiPoints);
-            (layer as L.Polygon).setLatLngs(adjustedCoords);
-          }
 
           const overlaps = checkAndNotifyOverlapRef.current(apiPoints);
 
@@ -413,16 +285,16 @@ const AreaMap: React.FC<AreaMapProps> = ({
 
     if (initialPolygon && initialPolygon.length >= 3) {
       const leafletCoords = apiToLeaflet(initialPolygon);
-      
+
       const overlaps = checkAndNotifyOverlap(initialPolygon);
-      
+
       const polygon = L.polygon(leafletCoords, {
         color: overlaps ? '#EF4444' : '#3B82F6',
         fillColor: overlaps ? '#EF4444' : '#3B82F6',
         fillOpacity: 0.3,
         weight: 2,
       });
-      
+
       drawLayer.addLayer(polygon);
       map?.fitBounds(polygon.getBounds(), { padding: [50, 50] });
     }
@@ -437,13 +309,13 @@ const AreaMap: React.FC<AreaMapProps> = ({
 
     if (!areas || areas.length === 0) return;
 
-    const displayAreas = editMode 
+    const displayAreas = editMode
       ? areas.filter(a => a.id !== editingAreaId)
       : areas;
 
     displayAreas.forEach((area) => {
       if (!area.area || area.area.length < 3) return;
-      
+
       const leafletCoords = apiToLeaflet(area.area);
       const isSelected = selectedAreaId === area.id;
       const color = getAreaColor(area.id || 0);
@@ -481,8 +353,8 @@ const AreaMap: React.FC<AreaMapProps> = ({
               </div>
             </div>
           `;
-          
-          polygon.bindPopup(popupContent, { 
+
+          polygon.bindPopup(popupContent, {
             closeButton: true,
             className: 'area-popup'
           });
@@ -490,7 +362,7 @@ const AreaMap: React.FC<AreaMapProps> = ({
           polygon.on('popupopen', () => {
             const editBtn = document.getElementById(`edit-area-${area.id}`);
             const deleteBtn = document.getElementById(`delete-area-${area.id}`);
-            
+
             if (editBtn && onAreaEdit) {
               editBtn.onclick = () => {
                 polygon.closePopup();
@@ -552,20 +424,20 @@ const AreaMap: React.FC<AreaMapProps> = ({
         style={{ height, width: '100%' }}
         className="rounded-xl overflow-hidden border border-gray-200 shadow-sm"
       />
-      
+
       {editMode && (
         <div className="absolute top-3 left-3 z-[1000] flex flex-col gap-2">
           <div className="bg-blue-600 text-white px-3 py-1.5 rounded-lg shadow-lg text-sm font-medium flex items-center gap-2">
             <span className="animate-pulse">●</span>
             Modo Edición
           </div>
-          
+
           {hasOverlap && (
             <div className="bg-red-600 text-white px-3 py-1.5 rounded-lg shadow-lg text-xs animate-pulse">
               ⚠️ Solapamiento detectado
             </div>
           )}
-          
+
           {invalidPolygon && (
             <div className="bg-red-600 text-white px-3 py-1.5 rounded-lg shadow-lg text-xs animate-pulse">
               ❌ Polígono inválido (se cruza)

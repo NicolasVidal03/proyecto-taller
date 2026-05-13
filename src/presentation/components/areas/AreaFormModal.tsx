@@ -99,17 +99,17 @@ const AreaFormModal: React.FC<AreaFormModalProps> = ({
   if (!open) return null;
 
   return (
-    <div 
+    <div
       className="fixed inset-0 flex items-center justify-center p-4"
       style={{ zIndex: 99999 }}
     >
-      <div 
+      <div
         className="absolute inset-0 bg-black/70 backdrop-blur-sm"
         onClick={!submitting ? onClose : undefined}
       />
-      
-      
-      <div 
+
+
+      <div
         className="relative bg-white rounded-2xl shadow-2xl w-full max-w-6xl max-h-[95vh] overflow-hidden flex flex-col"
         style={{ zIndex: 100000 }}
       >
@@ -142,7 +142,7 @@ const AreaFormModal: React.FC<AreaFormModalProps> = ({
           </button>
         </div>
 
-  
+
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto">
           <div className="p-6 space-y-6">
             <div className="max-w-xl">
@@ -161,11 +161,10 @@ const AreaFormModal: React.FC<AreaFormModalProps> = ({
                 }}
                 maxLength={35}
                 placeholder="Ej: Zona Centro, Área Industrial Norte, Barrio Sur..."
-                className={`w-full px-4 py-3 rounded-xl border-2 ${
-                  errors.name 
-                    ? 'border-red-400 focus:ring-red-500 focus:border-red-500 bg-red-50' 
+                className={`w-full px-4 py-3 rounded-xl border-2 ${errors.name
+                    ? 'border-red-400 focus:ring-red-500 focus:border-red-500 bg-red-50'
                     : 'border-gray-200 focus:ring-brand-500 focus:border-brand-500'
-                } focus:outline-none focus:ring-2 transition-all`}
+                  } focus:outline-none focus:ring-2 transition-all`}
                 disabled={submitting}
                 autoFocus
               />
@@ -179,12 +178,12 @@ const AreaFormModal: React.FC<AreaFormModalProps> = ({
               )}
             </div>
 
-            
+
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
                 🗺️ Polígono del Área <span className="text-red-500">*</span>
               </label>
-              
+
               <div className="bg-gray-50 rounded-xl p-4 space-y-4">
                 <AreaMap
                   editMode
@@ -194,12 +193,11 @@ const AreaFormModal: React.FC<AreaFormModalProps> = ({
                   onPolygonChange={handlePolygonChange}
                   onOverlapError={handleOverlapError}
                   onOverlapResolved={handleOverlapResolved}
-                  enableSnapToEdge={true}
                   height="450px"
                 />
 
                 <div className="space-y-2">
-                  
+
                   {errors.polygon && (
                     <div className="flex items-center gap-2 p-3 bg-red-50 rounded-lg text-sm text-red-700 border border-red-200">
                       <svg className="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -209,7 +207,7 @@ const AreaFormModal: React.FC<AreaFormModalProps> = ({
                     </div>
                   )}
 
-                 
+
                   {overlapWarning && !errors.polygon && (
                     <div className="flex items-center gap-2 p-3 bg-amber-50 rounded-lg text-sm text-amber-700 border border-amber-200">
                       <svg className="w-5 h-5 flex-shrink-0 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -219,7 +217,7 @@ const AreaFormModal: React.FC<AreaFormModalProps> = ({
                     </div>
                   )}
 
-                 
+
                   {areaPoints && areaPoints.length >= 3 && !errors.polygon && !overlapWarning && (
                     <div className="flex items-center gap-2 p-3 bg-green-50 rounded-lg text-sm text-green-700 border border-green-200">
                       <svg className="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -235,7 +233,7 @@ const AreaFormModal: React.FC<AreaFormModalProps> = ({
             </div>
           </div>
 
-          
+
           <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 flex items-center justify-between gap-4">
             <div className="flex items-center gap-3 ml-auto">
               <button
@@ -249,11 +247,10 @@ const AreaFormModal: React.FC<AreaFormModalProps> = ({
               <button
                 type="submit"
                 disabled={submitting || !!overlapWarning}
-                className={`px-6 py-2.5 rounded-xl font-medium transition-all flex items-center gap-2 ${
-                  submitting || overlapWarning
+                className={`px-6 py-2.5 rounded-xl font-medium transition-all flex items-center gap-2 ${submitting || overlapWarning
                     ? 'bg-gray-400 text-white cursor-not-allowed'
                     : 'bg-brand-600 text-white hover:bg-brand-700 shadow-lg shadow-brand-500/30 hover:shadow-brand-500/40'
-                }`}
+                  }`}
               >
                 {submitting ? (
                   <>

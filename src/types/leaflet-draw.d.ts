@@ -1,4 +1,3 @@
-
 import * as L from 'leaflet';
 
 declare module 'leaflet' {
@@ -42,6 +41,12 @@ declare module 'leaflet' {
       nautic?: boolean;
       showLength?: boolean;
       repeatMode?: boolean;
+      /**
+       * Número máximo de vértices permitidos al dibujar.
+       * Usar 0 para ilimitado (por defecto leaflet-draw puede limitar a 17
+       * en algunas versiones). Establecer explícitamente en 0 elimina ese límite.
+       */
+      maxPoints?: number;
     }
 
     interface PolygonOptions extends PolylineOptions {
@@ -153,4 +158,4 @@ declare module 'leaflet' {
   }
 }
 
-export {};
+export { };
