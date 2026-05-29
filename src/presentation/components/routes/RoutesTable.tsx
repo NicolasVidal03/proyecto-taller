@@ -127,7 +127,6 @@ const RoutesTable: React.FC<RoutesTableProps> = ({ routes, users, areas, busyId,
                             </div>
                         </div>
                         <div className="mt-3 flex items-center justify-between border-t border-lead-100 pt-3">
-                            <span className="text-xs text-lead-400">ID #{r.id || '—'}</span>
                             <EditButton route={r} />
                         </div>
                     </div>
@@ -138,10 +137,9 @@ const RoutesTable: React.FC<RoutesTableProps> = ({ routes, users, areas, busyId,
                 <table className="min-w-full text-sm">
                     <thead className="bg-brand-600 text-xs uppercase tracking-wider text-white">
                         <tr>
-                            <th className="px-4 py-4 text-left font-semibold">ID</th>
+                            <th className="px-4 py-4 text-left font-semibold">Fecha</th>
                             <th className="px-4 py-4 text-left font-semibold">Prevendedor</th>
                             <th className="px-4 py-4 text-left font-semibold">Área</th>
-                            <th className="px-4 py-4 text-left font-semibold">Fecha</th>
                             <th className="w-40 px-4 py-4 text-center font-semibold">Acciones</th>
                         </tr>
                     </thead>
@@ -154,10 +152,9 @@ const RoutesTable: React.FC<RoutesTableProps> = ({ routes, users, areas, busyId,
                             </tr>
                         ) : paginatedRoutes.map(r => (
                             <tr key={r.id} className="transition-colors hover:bg-white">
-                                <td className="px-4 py-3">{r.id || '—'}</td>
+                                <td className="px-4 py-3 text-lead-600 text-xs">{String(r.assignedDate).slice(0, 10) || '—'}</td>
                                 <td className="px-4 py-3 text-lead-600">{userMap.get(r.assignedIdUser) || '—'}</td>
                                 <td className="px-4 py-3 text-lead-600">{areaMap.get(r.assignedIdArea) || '—'}</td>
-                                <td className="px-4 py-3 text-lead-600 text-xs">{String(r.assignedDate).slice(0, 10) || '—'}</td>
                                 <td className="px-4 py-3 text-center align-middle">
                                     <div className="flex items-center justify-center gap-2">
                                         <EditButton route={r} />

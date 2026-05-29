@@ -31,9 +31,7 @@ export interface UseCrudOperationsReturn<T, CreateDTO, UpdateDTO> {
   remove: (id: number, ...args: unknown[]) => Promise<boolean>;
 }
 
-/**
- * Hook genérico para operaciones CRUD
- */
+
 export function useCrudOperations<T, CreateDTO, UpdateDTO>(
   config: UseCrudOperationsConfig<T, CreateDTO, UpdateDTO>
 ): UseCrudOperationsReturn<T, CreateDTO, UpdateDTO> {
