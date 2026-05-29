@@ -64,6 +64,7 @@ export const ClientsBusinessesPage: React.FC = () => {
   const [clientsPage, setClientsPage] = useState(1);
   const [search, setSearch] = useState('');
   const [statsOpen, setStatsOpen] = useState(false);
+  const [selectedAreaId, setSelectedAreaId] = useState<number | 'all'>('all');
 
   const debouncedSearch = useDebounce(search, 500);
 
@@ -115,8 +116,9 @@ export const ClientsBusinessesPage: React.FC = () => {
     if (activeSection !== 'businesses') return;
     const filters: BusinessFilters = {};
     if (debouncedSearch.trim()) filters.search = debouncedSearch.trim();
+    if (selectedAreaId !== 'all') filters.areaId = selectedAreaId;
     applyFilters(filters);
-  }, [debouncedSearch, activeSection, applyFilters]);
+  }, [debouncedSearch, selectedAreaId, activeSection, applyFilters]);
 
   useEffect(() => setClientsPage(1), [search, activeSection]);
 
@@ -256,6 +258,25 @@ export const ClientsBusinessesPage: React.FC = () => {
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                   />
+                  {activeSection === 'businesses' && (
+                    <div>
+                      <label className="block text-xs uppercase tracking-wide text-white/70 mb-1">Área</label>
+                      <select
+                        className="w-full rounded-lg px-4 py-2.5 text-sm font-medium bg-white/20 text-white border border-white/20 focus:outline-none focus:ring-2 focus:ring-white/30"
+                        value={selectedAreaId}
+                        onChange={(e) =>
+                          setSelectedAreaId(e.target.value === 'all' ? 'all' : Number(e.target.value))
+                        }
+                      >
+                        <option value="all" className="text-lead-900">Todas las áreas</option>
+                        {areas.map((area) => (
+                          <option key={area.id} value={area.id} className="text-lead-900">
+                            {area.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
                 </div>
 
                 {statsOpen && (
@@ -295,8 +316,8 @@ export const ClientsBusinessesPage: React.FC = () => {
                 key={sec}
                 type="button"
                 className={`rounded-full px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-semibold transition shadow ${activeSection === sec
-                    ? 'bg-white text-brand-700 ring-2 ring-brand-200'
-                    : 'bg-white/70 text-lead-600 hover:bg-white'
+                  ? 'bg-white text-brand-700 ring-2 ring-brand-200'
+                  : 'bg-white/70 text-lead-600 hover:bg-white'
                   }`}
                 onClick={() => setActiveSection(sec)}
               >
@@ -445,8 +466,8 @@ export const ClientsBusinessesPage: React.FC = () => {
           open={!!toToggleBusiness}
           title={`${toToggleBusiness.isActive ? 'Desactivar' : 'Activar'} negocio`}
           description={`¿Confirmas ${toToggleBusiness.isActive ? 'desactivar' : 'activar'} el negocio "${toToggleBusiness.name}"? ${toToggleBusiness.isActive
-              ? 'El negocio se marcará como inactivo pero seguirá visible en el sistema.'
-              : 'El negocio se marcará como activo nuevamente.'
+            ? 'El negocio se marcará como inactivo pero seguirá visible en el sistema.'
+            : 'El negocio se marcará como activo nuevamente.'
             }`}
           confirmLabel={toToggleBusiness.isActive ? 'Desactivar' : 'Activar'}
           onConfirm={confirmToggleBusiness}

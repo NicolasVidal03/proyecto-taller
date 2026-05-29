@@ -35,7 +35,6 @@ const RootRedirect: React.FC = () => {
 export const AppRoutes: React.FC = () => {
   return (
     <Routes>
-      {/* Pública */}
       <Route path="/login" element={<LoginPage />} />
 
       <Route element={<ProtectedRoute />}>

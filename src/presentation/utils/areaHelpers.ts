@@ -1,61 +1,26 @@
-/**
- * Area Helpers - Presentation Layer
- * Funciones de utilidad para áreas en la UI
- */
 import type { Area, AreaPoint, LeafletPolygonCoords, LeafletLatLng } from '../../domain/entities/Area';
 
-// ══════════════════════════════════════════════════════════════
-// CONVERSIÓN LEAFLET <-> API
-// ══════════════════════════════════════════════════════════════
 
-/**
- * Convierte array de Leaflet a array de API
- * Leaflet: [[lat, lng], ...] → API: [{lat, lng}, ...]
- */
 export function leafletToApi(leafletCoords: LeafletPolygonCoords): AreaPoint[] {
   return leafletCoords.map(([lat, lng]) => ({ lat, lng }));
 }
 
-/**
- * Convierte array de API a array de Leaflet
- * API: [{lat, lng}, ...] → Leaflet: [[lat, lng], ...]
- */
 export function apiToLeaflet(apiPoints: AreaPoint[]): LeafletPolygonCoords {
   return apiPoints.map((p) => [p.lat, p.lng]);
 }
 
-// ══════════════════════════════════════════════════════════════
-// VALIDACIONES
-// ══════════════════════════════════════════════════════════════
-
-/**
- * Valida que un polígono tenga al menos 3 puntos
- */
 export function isValidPolygon(coords: LeafletPolygonCoords): boolean {
   return coords.length >= 3;
 }
 
-/**
- * Valida que un array de AreaPoint tenga al menos 3 puntos
- */
 export function isValidAreaPoints(points: AreaPoint[]): boolean {
   return points.length >= 3;
 }
 
-/**
- * Valida coordenadas dentro de rangos válidos
- */
 export function isValidCoordinate(lat: number, lng: number): boolean {
   return lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180;
 }
 
-// ══════════════════════════════════════════════════════════════
-// CÁLCULOS
-// ══════════════════════════════════════════════════════════════
-
-/**
- * Calcula el centro aproximado de un polígono (para centrar el mapa)
- */
 export function getPolygonCenter(coords: LeafletPolygonCoords): LeafletLatLng {
   if (coords.length === 0) return [0, 0];
 
@@ -65,14 +30,6 @@ export function getPolygonCenter(coords: LeafletPolygonCoords): LeafletLatLng {
   return [sumLat / coords.length, sumLng / coords.length];
 }
 
-// ══════════════════════════════════════════════════════════════
-// COLORES Y VISUALIZACIÓN
-// ══════════════════════════════════════════════════════════════
-
-/**
- * Genera un color único basado en el ID del área
- * Paleta inspirada en Google My Maps - colores sólidos y distinguibles
- */
 export function getAreaColor(areaId: number): string {
   const colors = [
     '#4285F4', // Google Blue
@@ -98,10 +55,6 @@ export function getAreaColor(areaId: number): string {
   ];
   return colors[areaId % colors.length];
 }
-
-// ══════════════════════════════════════════════════════════════
-// MAPA DE ÁREAS (lookup rápido)
-// ══════════════════════════════════════════════════════════════
 
 export type AreaMap = Record<number, string>;
 

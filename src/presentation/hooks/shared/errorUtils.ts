@@ -1,16 +1,9 @@
-/**
- * Utilidades compartidas para manejo de errores en hooks
- */
-
 export interface AppError {
   message: string;
   code?: string;
   field?: string;
 }
 
-/**
- * Extrae el mensaje de error de diferentes tipos de errores (Axios, Error estándar, string)
- */
 export function extractErrorMessage(err: unknown): string {
   if (err instanceof Error) {
     const axiosError = err as { 
@@ -33,9 +26,6 @@ export function extractErrorMessage(err: unknown): string {
   return 'Error desconocido';
 }
 
-/**
- * Crea un objeto AppError a partir de un error desconocido
- */
 export function createAppError(err: unknown, code?: string): AppError {
   return {
     message: extractErrorMessage(err),
