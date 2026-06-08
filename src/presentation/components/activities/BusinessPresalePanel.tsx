@@ -155,10 +155,10 @@ const BusinessPresalesPanel: React.FC<BusinessPresalesPanelProps> = ({ deliveryD
                                                 <p className="font-medium text-lead-700">{presale.distributorName}</p>
                                             </div>
                                         )}
-                                        {presale.notes && (
+                                        {presale.deliveryNotes && (
                                             <div className="col-span-2">
                                                 <p className="text-xs text-lead-400">Notas</p>
-                                                <p className="font-medium text-lead-700">{presale.notes}</p>
+                                                <p className="font-medium text-lead-700">{presale.deliveryNotes}</p>
                                             </div>
                                         )}
                                     </div>
@@ -173,7 +173,7 @@ const BusinessPresalesPanel: React.FC<BusinessPresalesPanelProps> = ({ deliveryD
                                                             <th className="text-left px-3 py-2 font-semibold text-lead-600">Producto</th>
                                                             <th className="text-center px-3 py-2 font-semibold text-lead-600">Cant.</th>
                                                             <th className="text-right px-3 py-2 font-semibold text-lead-600">P. Unit.</th>
-                                                            <th className="text-right px-3 py-2 font-semibold text-lead-600">Subtotal</th>
+                                                            <th className="text-right px-3 py-2 font-semibold text-lead-600">Total</th>
                                                         </tr>
                                                     </thead>
                                                     <tbody className="divide-y divide-lead-100">
@@ -190,7 +190,7 @@ const BusinessPresalesPanel: React.FC<BusinessPresalesPanelProps> = ({ deliveryD
                                                                     {formatCurrency(detail.unitPrice)}
                                                                 </td>
                                                                 <td className="px-3 py-2 text-right font-semibold text-lead-700">
-                                                                    {formatCurrency(detail.subtotalRequested)}
+                                                                    {formatCurrency(detail.subtotalDelivered ?? detail.subtotalRequested)}
                                                                 </td>
                                                             </tr>
                                                         ))}
